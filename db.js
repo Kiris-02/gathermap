@@ -1527,6 +1527,15 @@ function formatVenueRecord(r) {
         reviewsCount: Number(r.reviews_count || 100),
         pricePerPersonVnd: Number(r.price_per_person_vnd || attrs.price_per_person_vnd || 50000),
         avgPrice: r.avg_price || '35k - 80k VND',
+        heroImage: r.hero_image || attrs.hero_image || attrs.heroImage || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
+        photos: r.photos || attrs.photos || [attrs.heroImage || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80'],
+        openingHours: r.opening_hours || attrs.opening_hours || attrs.openingHours || {
+            open: '09:00',
+            close: '22:00',
+            is24_7: false,
+            displayText: '09:00 - 22:00',
+            openDays: 'Thứ 2 - Chủ Nhật'
+        },
         tags: typeof r.tags === 'string' ? JSON.parse(r.tags || '[]') : (r.tags || []),
         attributes: safeAttrs,
         unknowns: typeof r.unknowns === 'string' ? JSON.parse(r.unknowns || '[]') : (r.unknowns || []),

@@ -39,12 +39,16 @@ Thuật toán trung tâm nhận vị trí nhóm và trả về danh sách quán 
 ```
 * **Response fields quan trọng**:
   - `shortlist[]`: Danh sách quán đã sắp xếp theo `groupScore` (0–100).
+  - `venue.heroImage`: URL ảnh bìa ẩm thực sắc nét chất lượng cao (Unsplash CDN).
+  - `venue.photos[]`: Mảng 2-3 ảnh chi tiết món ăn / không gian.
+  - `venue.openingHours`: Object giờ mở cửa `{ open: "09:30", close: "22:00", is24_7: false, displayText: "09:30 - 22:00", openDays: "Thứ 2 - Chủ Nhật" }`.
   - `venue.signatureDishes`: Mảng 2-3 món ruột (ví dụ: ["Cơm tấm sườn nướng", "Chả trứng"]).
   - `venue.socialPros`: Điểm khen MXH.
   - `venue.socialCons`: Lưu ý gửi xe, giờ cao điểm.
   - `venue.reviewerCount`: Số lượng reviewer có sẵn.
   - `venue.directionsUrl`: Link chỉ đường Google Maps trực tiếp.
   - `venue.friendDistances[]`: Khoảng cách từng bạn tới quán.
+
 
 ---
 

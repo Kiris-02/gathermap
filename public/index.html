@@ -421,13 +421,24 @@
                                 </template>
                             </div>
 
-                            <!-- Spec Section 2.2: Opening Hours Advisory Notice -->
-                            <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200/90 flex items-center justify-between">
+                            <!-- Opening Hours Real Badge & Notice -->
+                            <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] flex items-center justify-between">
                                 <div class="flex items-center space-x-1.5 min-w-0">
-                                    <i class="fa-regular fa-clock text-amber-400 shrink-0"></i>
-                                    <span class="truncate">Kiểm tra giờ mở cửa thực tế trên Google Maps trước khi xuất phát</span>
+                                    <template x-if="venue.openingHours && venue.openingHours.is24_7">
+                                        <span class="bg-indigo-500/20 text-indigo-300 font-extrabold px-1.5 py-0.5 rounded text-[10px] border border-indigo-500/30 flex items-center space-x-1">
+                                            <i class="fa-solid fa-bolt text-amber-400"></i>
+                                            <span>Mở 24/7</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="venue.openingHours && !venue.openingHours.is24_7">
+                                        <span class="bg-emerald-500/20 text-emerald-300 font-extrabold px-1.5 py-0.5 rounded text-[10px] border border-emerald-500/30 flex items-center space-x-1">
+                                            <i class="fa-regular fa-clock text-emerald-400"></i>
+                                            <span x-text="venue.openingHours.displayText || '09:00 - 22:00'"></span>
+                                        </span>
+                                    </template>
+                                    <span class="text-slate-400 truncate text-[10px]" x-text="venue.openingHours?.openDays || 'Mỗi ngày'"></span>
                                 </div>
-                                <a :href="venue.mapsUrl || venue.directionsUrl" target="_blank" class="text-amber-400 hover:text-amber-300 font-bold underline shrink-0 ml-2 text-[10px]">Xem giờ</a>
+                                <a :href="venue.mapsUrl || venue.directionsUrl" target="_blank" class="text-amber-400 hover:text-amber-300 font-bold underline shrink-0 ml-2 text-[10px]">Google Maps</a>
                             </div>
 
                             <!-- Bottom Action Bar: Vote, Reviewer Drawer & Google Maps Navigation -->
@@ -1399,6 +1410,9 @@
                 },
 
                 getVenueImage(venue) {
+                    if (venue && venue.heroImage) return venue.heroImage;
+                    if (venue && venue.photos && venue.photos.length > 0) return venue.photos[0];
+
                     const name = (venue.name || '').toLowerCase();
                     const cat = (venue.category || '').toLowerCase();
 

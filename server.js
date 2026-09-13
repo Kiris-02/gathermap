@@ -888,10 +888,35 @@ app.post('/api/outings/generate-share-text', (req, res) => {
     }
 });
 
+// Health check endpoint for uptime monitors & cold-start prevention
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptimeSeconds: Math.floor(process.uptime()),
+        database: db.dbType
+    });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 GATHERMAP backend running at http://localhost:${PORT}`);
     console.log(`🤖 AI Engine: ${GEMINI_KEY ? 'Connected (Gemini Multi-Model Fallback)' : 'Disabled'}`);
     console.log(`💾 Database: ${db.dbType}`);
+
+    // Self-ping every 9 minutes to prevent Render Free Tier from falling asleep
+    const RENDER_APP_URL = process.env.RENDER_EXTERNAL_URL || 'https://gathermap.onrender.com';
+    if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+        console.log(`⏱️ Keep-Alive ping active targeting: ${RENDER_APP_URL}/api/health`);
+        setInterval(async () => {
+            try {
+                await fetch(`${RENDER_APP_URL}/api/health`);
+                console.log(`💓 Keep-alive ping sent to ${RENDER_APP_URL}`);
+            } catch (err) {
+                // silent fallback
+            }
+        }, 9 * 60 * 1000);
+    }
 });
+
 
