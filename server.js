@@ -11,6 +11,21 @@ function calcDistanceKm(p1, p2) {
     return R * c;
 }
 
+function buildDirectionsUrl(venue) {
+    if (!venue || !venue.lat || !venue.lng) return 'https://www.google.com/maps';
+    const isRealPlaceId = venue.placeId && typeof venue.placeId === 'string' && venue.placeId.startsWith('ChIJ');
+    const placeIdSuffix = isRealPlaceId ? `&destination_place_id=${venue.placeId}` : '';
+    return `https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}${placeIdSuffix}`;
+}
+
+function buildSearchUrl(venue) {
+    if (!venue) return 'https://www.google.com/maps';
+    const isRealPlaceId = venue.placeId && typeof venue.placeId === 'string' && venue.placeId.startsWith('ChIJ');
+    const placeIdSuffix = isRealPlaceId ? `&query_place_id=${venue.placeId}` : '';
+    const query = encodeURIComponent(`${venue.name}, ${venue.address || 'TP.HCM'}`);
+    return `https://www.google.com/maps/search/?api=1&query=${query}${placeIdSuffix}`;
+}
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -622,8 +637,8 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
                 principalCompromises,
                 aiRationale: '',
                 votes: venue.votes || 0,
-                directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}&destination_place_id=${venue.placeId}`,
-                mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name)}&query_place_id=${venue.placeId}`,
+                directionsUrl: buildDirectionsUrl(venue),
+                mapsUrl: buildSearchUrl(venue),
                 openingHoursNote: 'Vui lòng kiểm tra lại giờ mở cửa thực tế trên Google Maps trước khi xuất phát'
             };
         });
@@ -746,8 +761,7 @@ app.get('/api/venues/:id/map-link', async (req, res) => {
     try {
         const venues = await db.getAllVenues();
         const venue = venues.find(v => v.id === req.params.id);
-        if (!venue) return res.status(404).json({ error: 'venue_not_found' });
-        const url = `https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}&destination_place_id=${venue.placeId}`;
+        const url = buildDirectionsUrl(venue);
         res.json({ url, venueName: venue.name, address: venue.address });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -878,7 +892,7 @@ app.post('/api/outings/generate-share-text', (req, res) => {
             ? venue.signatureDishes.join(', ')
             : (venue.category || 'Món ngon bản địa');
 
-        const mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + venue.lat + ',' + venue.lng;
+        const mapsUrl = buildDirectionsUrl(venue);
 
         const host = req.get('host') || 'gathermap.onrender.com';
         const protocol = req.protocol === 'https' || host.includes('render.com') ? 'https' : 'http';
