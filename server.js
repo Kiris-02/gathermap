@@ -444,13 +444,14 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
         // Apply hard required constraints
         const passedVenues = inCircleVenues.filter(venue => {
             for (const req of normReqs) {
-                if (req.criterion === 'vegetarian' && !venue.attributes.dietary.vegetarian) return false;
-                if (req.criterion === 'no_alcohol' && !venue.attributes.dietary.noAlcohol) return false;
+                if (req.criterion === 'vegetarian' && !venue.attributes?.dietary?.vegetarian) return false;
+                if (req.criterion === 'no_alcohol' && !venue.attributes?.dietary?.noAlcohol) return false;
                 if (req.criterion === 'max_price_vnd' && venue.pricePerPersonVnd > req.value) return false;
-                if (req.criterion === 'quiet_only' && venue.attributes.noiseLevel.value !== 'quiet') return false;
+                if (req.criterion === 'quiet_only' && venue.attributes?.noiseLevel?.value !== 'quiet') return false;
             }
             return true;
         });
+
 
         if (passedVenues.length === 0) {
             return res.json({
@@ -486,8 +487,8 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
                     let match = 0.5;
 
                     if (pref.criterion === 'quiet_atmosphere') {
-                        if (venue.attributes.noiseLevel.value === 'quiet') match = 1.0;
-                        else if (venue.attributes.noiseLevel.value === 'moderate') match = 0.6;
+                        if (venue.attributes?.noiseLevel?.value === 'quiet') match = 1.0;
+                        else if (venue.attributes?.noiseLevel?.value === 'moderate') match = 0.6;
                         else match = 0.2;
                     } else if (pref.criterion === 'matcha_and_aesthetic') {
                         if (venue.attributes.matcha?.value && venue.tags.includes('Aesthetic')) match = 1.0;
@@ -536,7 +537,7 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
             }
             if (venue.isAlley) {
                 principalReasons.push('Authentic Saigon alley eatery with hearty dining and high value');
-            } else if (venue.attributes.noiseLevel.value === 'quiet') {
+            } else if (venue.attributes?.noiseLevel?.value === 'quiet') {
                 principalReasons.push('Quiet atmosphere with comfortable seating, optimal for talking or working');
             }
 

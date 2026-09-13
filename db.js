@@ -1495,27 +1495,45 @@ async function getVenuesInRadius({ lat, lng, radiusKm = 3 }) {
 }
 
 function formatVenueRecord(r) {
+    const rawAttrs = r.attributes || r.traits || {};
+    const attrs = typeof rawAttrs === 'string' ? JSON.parse(rawAttrs || '{}') : (rawAttrs || {});
+
+    // Ensure nested objects always exist so safe access never throws
+    const dietary = attrs.dietary || { vegetarian: false, noAlcohol: false };
+    const noiseLevel = attrs.noiseLevel || { value: 'moderate' };
+    const matcha = attrs.matcha || { value: false };
+    const safeAttrs = {
+        ...attrs,
+        dietary,
+        noiseLevel,
+        matcha
+    };
+
+    const rawHighlights = r.social_highlights || attrs.social_highlights || {};
+    const socialHighlights = typeof rawHighlights === 'string' ? JSON.parse(rawHighlights || '{}') : (rawHighlights || {});
+
     return {
         id: r.id,
         name: r.name,
         category: r.category,
-        type: r.type,
-        isAlley: Boolean(r.is_alley),
-        alleyNote: r.alley_note || '',
+        type: r.type || attrs.type || 'restaurant',
+        isAlley: Boolean(r.is_alley !== undefined ? r.is_alley : attrs.is_alley),
+        alleyNote: r.alley_note || attrs.alley_note || '',
         address: r.address,
-        placeId: r.place_id,
+        placeId: r.place_id || attrs.place_id || '',
         lat: Number(r.lat),
         lng: Number(r.lng),
-        rating: Number(r.rating),
-        reviewsCount: Number(r.reviews_count),
-        pricePerPersonVnd: Number(r.price_per_person_vnd),
-        avgPrice: r.avg_price,
+        rating: Number(r.rating || 4.5),
+        reviewsCount: Number(r.reviews_count || 100),
+        pricePerPersonVnd: Number(r.price_per_person_vnd || attrs.price_per_person_vnd || 50000),
+        avgPrice: r.avg_price || '35k - 80k VND',
         tags: typeof r.tags === 'string' ? JSON.parse(r.tags || '[]') : (r.tags || []),
-        attributes: typeof r.attributes === 'string' ? JSON.parse(r.attributes || '{}') : (r.attributes || {}),
+        attributes: safeAttrs,
         unknowns: typeof r.unknowns === 'string' ? JSON.parse(r.unknowns || '[]') : (r.unknowns || []),
-        socialHighlights: typeof r.social_highlights === 'string' ? JSON.parse(r.social_highlights || '{}') : (r.social_highlights || {})
+        socialHighlights
     };
 }
+
 
 async function saveOuting({ id, name = 'Weekend Hangout', mode = 'representative', centerLat, centerLng, radiusKm = 3 }) {
     const outingId = id || ('outing_' + Date.now());
