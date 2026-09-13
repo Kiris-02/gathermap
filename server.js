@@ -22,6 +22,23 @@ const db = require('./db');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Guard against malformed client JSON payloads
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        console.warn('⚠️ Rejected malformed JSON request:', err.message);
+        return res.status(400).json({ error: 'Malformed JSON payload', message: err.message });
+    }
+    next(err);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('🛡️ Handled uncaughtException:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+    console.warn('🛡️ Handled unhandledRejection:', reason);
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 let GOOGLE_KEY = process.env.GOOGLE_MAPS_API_KEY || '';
@@ -604,6 +621,7 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
                 principalReasons,
                 principalCompromises,
                 aiRationale: '',
+                votes: venue.votes || 0,
                 directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}&destination_place_id=${venue.placeId}`,
                 mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name)}&query_place_id=${venue.placeId}`,
                 openingHoursNote: 'Vui lòng kiểm tra lại giờ mở cửa thực tế trên Google Maps trước khi xuất phát'
@@ -862,12 +880,16 @@ app.post('/api/outings/generate-share-text', (req, res) => {
 
         const mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + venue.lat + ',' + venue.lng;
 
+        const host = req.get('host') || 'gathermap.onrender.com';
+        const protocol = req.protocol === 'https' || host.includes('render.com') ? 'https' : 'http';
+        const appUrl = `${protocol}://${host}`;
+
         const message = [
             '🎉 KÈO ĂN UỐNG ĐÃ CHỐT BẰNG GATHERMAP!',
             '──────────────────────',
             '📍 Quán: ' + venue.name,
             '🏠 Địa chỉ: ' + (venue.address || 'Trung tâm TP.HCM'),
-            '⭐ Đánh giá: ' + (venue.rating || 4.5) + '★ | 💰 Giá: ' + (venue.priceLevel || 'Bình dân'),
+            '⭐ Đánh giá: ' + (venue.rating || 4.5) + '★ | 💰 Giá: ' + (venue.avgPrice || venue.priceLevel || 'Bình dân'),
             '⚖️ Độ công bằng vị trí nhóm: ' + (venue.groupScore || groupScore || 90) + '/100',
             '',
             '🚗 Khoảng cách di chuyển của từng bạn:',
@@ -879,10 +901,10 @@ app.post('/api/outings/generate-share-text', (req, res) => {
             '🗺️ Bấm vào đây để chỉ đường Google Maps:',
             mapsUrl,
             '──────────────────────',
-            '👉 Tạo kèo hẹn công bằng tại: http://localhost:3000 (Mã: #' + outingCode + ')'
+            '👉 Xem bản đồ & cùng bình chọn tại: ' + appUrl + ' (Mã kèo: #' + outingCode + ')'
         ].filter(line => line !== null && line !== undefined).join('\n');
 
-        res.json({ message, shareUrl: mapsUrl, venueName: venue.name });
+        res.json({ message, shareUrl: mapsUrl, venueName: venue.name, appUrl });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
