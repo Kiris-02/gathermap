@@ -246,8 +246,9 @@
                             <span>Add</span>
                         </button>
                         <span class="text-slate-600">|</span>
-                        <button @click="showFriendsModal = true" class="text-xs text-slate-400 hover:text-white font-medium">
-                            Edit
+                        <button @click="openGroupModal()" class="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center space-x-1">
+                            <i class="fa-solid fa-users-gear text-[11px]"></i>
+                            <span>Sửa nhóm & Mong muốn</span>
                         </button>
                     </div>
                 </div>
@@ -276,7 +277,10 @@
                 <div class="space-y-1.5">
                     <div class="flex items-center justify-between text-[11px] text-slate-400">
                         <span class="font-semibold">Quick Preference Chips (Tap to toggle):</span>
-                        <button @click="showWishModal = true" class="text-amber-400 hover:underline">Custom Prompt</button>
+                        <button @click="openGroupModal()" class="text-amber-400 hover:text-amber-300 font-semibold flex items-center space-x-1">
+                            <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+                            <span>Nhập mong muốn AI</span>
+                        </button>
                     </div>
                     <div class="flex flex-wrap gap-1.5">
                         <button @click="toggleConstraint('vegetarian')" :class="confirmedConstraints.vegetarian ? 'bg-emerald-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-300 border border-slate-700'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
@@ -463,7 +467,7 @@
         </aside>
 
         <!-- MAP CONTAINER (RIGHT COLUMN) -->
-        <div id="map-container" class="flex-1 relative h-full w-full bg-dark-950 flex flex-col" :class="(showFriendsModal || showWishModal || showReviewersModal) ? 'hidden' : (mobileView === 'list' ? 'hidden lg:flex' : 'flex')">
+        <div id="map-container" class="flex-1 relative h-full w-full bg-dark-950 flex flex-col" :class="(showGroupModal || showReviewersModal) ? 'hidden' : (mobileView === 'list' ? 'hidden lg:flex' : 'flex')">
             <div id="map"></div>
 
             <!-- Floating Map Legend & Guide -->
@@ -495,105 +499,126 @@
         </div>
     </div>
 
-    <!-- MODAL: EDIT FRIENDS & LOCATIONS -->
-    <div x-show="showFriendsModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md" x-cloak>
-        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl" @click.away="closeFriendsModal()">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-users text-amber-400"></i>
-                    <h3 class="font-bold text-base text-white">Manage Group Members</h3>
+    <!-- UNIFIED MASTER MODAL: GROUP MEMBERS & DINING WISHES -->
+    <div x-show="showGroupModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-dark-950/85 backdrop-blur-md" x-cloak>
+        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-lg w-full p-4 sm:p-5 space-y-3.5 shadow-2xl max-h-[92vh] flex flex-col" @click.away="closeGroupModal()">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-users-gear text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-white">Quản lý Nhóm & Mong muốn Ăn uống</h3>
+                        <p class="text-[10px] sm:text-[11px] text-slate-400">Điểm xuất phát để tính tâm Weiszfeld, mong muốn để Gemini AI tìm quán</p>
+                    </div>
                 </div>
-                <button @click="closeFriendsModal()" class="text-slate-400 hover:text-white">
+                <button @click="closeGroupModal()" class="text-slate-400 hover:text-white p-1">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <div class="space-y-2.5 max-h-72 overflow-y-auto custom-scroll pr-1">
-                <template x-for="(f, idx) in friends" :key="f.id">
-                    <div class="p-3 rounded-xl bg-dark-850 border border-slate-800 flex items-center justify-between space-x-2">
-                        <div class="flex items-center space-x-2 flex-1 min-w-0">
-                            <span :class="f.color" class="w-7 h-7 rounded-full text-white font-bold text-xs flex items-center justify-center shrink-0" x-text="f.name.charAt(0)"></span>
-                            <div class="flex-1 min-w-0">
-                                <input type="text" x-model="f.name" class="bg-transparent font-bold text-xs text-white border-b border-transparent focus:border-amber-400 focus:outline-none w-28 truncate" />
-                                <input type="text" x-model="f.wish" placeholder="e.g. matcha, vegetarian..." class="bg-dark-950 text-[11px] text-slate-300 rounded mt-1 px-2 py-1 border border-slate-700 w-full truncate focus:outline-none" />
-                                <div class="flex items-center space-x-1 mt-1">
-                                    <input type="text" x-model="f.customAddress" placeholder="Địa chỉ tự nhập (vd: Hồ Thị Kỷ, Chợ Bến Thành...)" class="bg-dark-950 text-[10px] text-slate-300 rounded px-2 py-1 border border-slate-700 flex-1 truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchAddressForFriend(f, f.customAddress)" />
-                                    <button @click="searchAddressForFriend(f, f.customAddress)" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded text-[10px] shrink-0" title="Định vị địa chỉ">
-                                        <i class="fa-solid fa-magnifying-glass"></i>
-                                    </button>
+            <!-- Scrollable Body -->
+            <div class="overflow-y-auto custom-scroll pr-1 space-y-3 flex-1">
+                <!-- Group Members List -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-slate-200 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-user-group text-amber-400"></i>
+                            <span>Thành viên trong nhóm (<span x-text="friends.length"></span> bạn):</span>
+                        </span>
+                        <button @click="addFriendAtCenter()" class="text-[11px] text-amber-400 hover:text-amber-300 font-bold flex items-center space-x-1">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>+ Thêm bạn</span>
+                        </button>
+                    </div>
+
+                    <template x-for="(f, idx) in friends" :key="f.id">
+                        <div class="p-2.5 sm:p-3 rounded-xl bg-dark-850 border border-slate-800 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2 flex-1 min-w-0">
+                                    <span :class="f.color" class="w-6 h-6 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0" x-text="f.name.charAt(0)"></span>
+                                    <input type="text" x-model="f.name" placeholder="Tên bạn" class="bg-transparent font-bold text-xs text-white border-b border-transparent focus:border-amber-400 focus:outline-none w-36 truncate" />
+                                </div>
+                                <button x-show="friends.length > 2" @click="removeFriend(idx)" class="text-slate-500 hover:text-rose-400 p-1 text-xs" title="Xóa bạn này">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <!-- Location Input -->
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block mb-0.5">📍 Điểm xuất phát:</span>
+                                    <div class="flex items-center space-x-1">
+                                        <input type="text" x-model="f.customAddress" placeholder="vd: UEH Nguyễn Tri Phương, Hồ Thị Kỷ..." class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchAddressForFriend(f, f.customAddress)" />
+                                        <button @click="searchAddressForFriend(f, f.customAddress)" class="px-2 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded text-xs shrink-0" title="Định vị địa chỉ">
+                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Wish Input -->
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block mb-0.5">🍽️ Mong muốn cá nhân:</span>
+                                    <input type="text" x-model="f.wish" placeholder="vd: matcha, ăn chay, quán yên tĩnh..." class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" />
                                 </div>
                             </div>
                         </div>
-                        <button x-show="friends.length > 2" @click="removeFriend(idx)" class="text-slate-500 hover:text-rose-400 p-1 text-xs">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
+                    </template>
+                </div>
+
+                <!-- Quick Group Chat Paste (Optional) -->
+                <div class="bg-dark-850 p-2.5 sm:p-3 rounded-xl border border-slate-800 space-y-1.5">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="font-bold text-slate-300 flex items-center space-x-1">
+                            <i class="fa-solid fa-comments text-indigo-400"></i>
+                            <span>Dán tin nhắn nhóm chat (nếu có):</span>
+                        </span>
+                        <span class="text-[10px] text-slate-500">Zalo, Messenger</span>
                     </div>
-                </template>
+                    <textarea x-model="discussionText" rows="2" class="w-full bg-dark-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400 resize-none placeholder-slate-500" placeholder="vd: Nhóm mình đứa ăn chay đứa thích matcha, kiếm quán mát mẻ dưới 70k nha..."></textarea>
+                </div>
+
+                <!-- Hard Required Constraints Checkboxes -->
+                <div class="space-y-2 bg-dark-850 p-2.5 sm:p-3 rounded-xl border border-slate-800">
+                    <span class="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">Bộ lọc Bắt buộc (Hard Constraints):</span>
+                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-300">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" x-model="confirmedConstraints.vegetarian" class="accent-amber-500 rounded" />
+                            <span>🌿 Ăn chay</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" x-model="confirmedConstraints.no_alcohol" class="accent-amber-500 rounded" />
+                            <span>🚫 Không cồn/bia</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" x-model="confirmedConstraints.quiet_only" class="accent-amber-500 rounded" />
+                            <span>🤫 Yên tĩnh</span>
+                        </label>
+                        <div class="flex items-center space-x-1">
+                            <span class="text-[10px] text-slate-400">💸 Tối đa:</span>
+                            <input type="number" step="10000" x-model.number="confirmedConstraints.max_price_vnd" class="bg-dark-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-400 w-20 text-xs font-bold" />
+                            <span class="text-[10px]">đ</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="pt-2 flex items-center space-x-2">
-                <button @click="addFriendAtCenter()" class="py-2.5 px-3 rounded-xl bg-dark-800 hover:bg-slate-700 text-amber-400 font-bold text-xs flex-1 transition">
-                    + Add Member
-                </button>
-                <button @click="closeFriendsModal()" class="py-2.5 px-3 rounded-xl bg-dark-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex-1 transition">
+            <!-- Footer Action Buttons -->
+            <div class="pt-3 border-t border-slate-800 flex items-center space-x-2 shrink-0">
+                <button @click="closeGroupModal()" class="py-2.5 px-4 rounded-xl bg-dark-800 hover:bg-slate-750 text-slate-300 font-bold text-xs transition">
                     Đóng
                 </button>
-                <button @click="updateAndCloseFriendsModal()" class="py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold text-xs flex-1 transition shadow-lg shadow-amber-500/20">
-                    Lưu & Tính lại
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: FREESTYLE WISHES & AI INTERPRETATION -->
-    <div x-show="showWishModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md" x-cloak>
-        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl" @click.away="closeWishModal()">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
-                    <h3 class="font-bold text-base text-white">Dining Wishes & Gemini AI Parser</h3>
-                </div>
-                <button @click="closeWishModal()" class="text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <div>
-                <label class="text-xs font-bold text-slate-300 mb-1 block">Paste group chat or type freeform preferences:</label>
-                <textarea x-model="discussionText" rows="3" class="w-full bg-dark-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-amber-400 resize-none placeholder-slate-500" placeholder="e.g. Alice wants quiet study, Bob wants matcha and photos, Charlie is vegetarian with no alcohol, budget under 70k..."></textarea>
-            </div>
-
-            <!-- Hard Constraints Checkboxes -->
-            <div class="space-y-2 bg-dark-850 p-3 rounded-xl border border-slate-800">
-                <span class="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">Hard Required Constraints:</span>
-                <div class="grid grid-cols-2 gap-2 text-xs text-slate-300">
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" x-model="confirmedConstraints.vegetarian" class="accent-amber-500 rounded" />
-                        <span>Vegetarian Only</span>
-                    </label>
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" x-model="confirmedConstraints.no_alcohol" class="accent-amber-500 rounded" />
-                        <span>No Alcohol / Beer</span>
-                    </label>
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" x-model="confirmedConstraints.quiet_only" class="accent-amber-500 rounded" />
-                        <span>Quiet Only</span>
-                    </label>
-                    <div class="flex items-center space-x-1">
-                        <span class="text-[11px] text-slate-400">Budget &le;:</span>
-                        <input type="number" step="10000" x-model.number="confirmedConstraints.max_price_vnd" class="bg-dark-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-400 w-24 text-xs" />
-                        <span class="text-[11px]">VND</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center space-x-2 pt-2">
-                <button @click="closeWishModal()" class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex-1">
-                    Cancel
-                </button>
-                <button @click="parseWithGeminiAndExecute()" :disabled="parsing" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-dark-950 font-bold text-xs flex-2 transition shadow-lg shadow-amber-500/20 disabled:opacity-50">
-                    <span x-show="!parsing">Parse with AI & Match Spots</span>
-                    <span x-show="parsing"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Gemini Extracting...</span>
+                <button @click="saveAndParseGroup()" :disabled="parsing" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-dark-950 font-black text-xs flex-1 transition shadow-lg shadow-amber-500/20 disabled:opacity-50 flex items-center justify-center space-x-2">
+                    <span x-show="!parsing" class="flex items-center space-x-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Phân tích bằng Gemini AI & Tìm quán</span>
+                    </span>
+                    <span x-show="parsing" class="flex items-center space-x-1.5">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <span>Gemini đang phân tích & Weiszfeld tính tâm...</span>
+                    </span>
                 </button>
             </div>
         </div>
@@ -723,6 +748,7 @@
                 ranking: false,
                 parsing: false,
                 locating: false,
+                showGroupModal: false,
                 showFriendsModal: false,
                 showWishModal: false,
                 showReviewersModal: false,
@@ -741,33 +767,77 @@
                         });
                     }
                 },
+                openGroupModal() {
+                    this.showGroupModal = true;
+                },
+                closeGroupModal() {
+                    this.showGroupModal = false;
+                    this.$nextTick(() => {
+                        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 80);
+                    });
+                },
                 openFriendsModal() {
-                    this.showFriendsModal = true;
+                    this.showGroupModal = true;
                 },
                 closeFriendsModal() {
-                    this.showFriendsModal = false;
-                    this.$nextTick(() => {
-                        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 80);
-                    });
+                    this.closeGroupModal();
                 },
                 updateAndCloseFriendsModal() {
-                    this.showFriendsModal = false;
-                    this.calculateCenter().then(() => this.executeSearchAndRank());
-                    this.$nextTick(() => {
-                        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 80);
-                    });
+                    this.saveAndParseGroup();
                 },
                 closeWishModal() {
-                    this.showWishModal = false;
-                    this.$nextTick(() => {
-                        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 80);
-                    });
+                    this.closeGroupModal();
                 },
                 closeReviewersModal() {
                     this.showReviewersModal = false;
                     this.$nextTick(() => {
                         setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 80);
                     });
+                },
+
+                async saveAndParseGroup() {
+                    this.parsing = true;
+                    try {
+                        // 1. Recalculate Weiszfeld center
+                        await this.calculateCenter();
+
+                        // 2. Prepare text for Gemini
+                        let textToSend = this.discussionText ? this.discussionText.trim() : '';
+                        if (!textToSend) {
+                            textToSend = this.friends.map(f => `${f.name}: ${f.wish || 'ăn uống thoải mái'}`).join('. ');
+                        }
+
+                        // 3. Call Gemini preferences parser
+                        const res = await fetch('/api/preferences/parse', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                discussionText: textToSend,
+                                friends: this.friends
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.requiredConstraints) {
+                            if (Array.isArray(data.requiredConstraints)) {
+                                this.confirmedConstraints.vegetarian = data.requiredConstraints.some(r => r.criterion === 'vegetarian');
+                                this.confirmedConstraints.no_alcohol = data.requiredConstraints.some(r => r.criterion === 'no_alcohol');
+                            } else {
+                                this.confirmedConstraints = { ...this.confirmedConstraints, ...data.requiredConstraints };
+                            }
+                        }
+                        if (data.softPreferences && Array.isArray(data.softPreferences)) {
+                            this.confirmedSoftPreferences = data.softPreferences;
+                        }
+
+                        // 4. Execute search and rank
+                        await this.executeSearchAndRank();
+                    } catch (e) {
+                        console.error('saveAndParseGroup error:', e);
+                        await this.executeSearchAndRank();
+                    } finally {
+                        this.parsing = false;
+                        this.closeGroupModal();
+                    }
                 },
 
                 backendConfig: {
@@ -791,7 +861,7 @@
                     { id: 3, name: 'Charlie', lat: 10.7827, lng: 106.6958, color: 'bg-indigo-500', wish: 'vegetarian comfort' }
                 ],
 
-                discussionText: 'Alice needs quiet space to study. Bob wants ceremonial matcha and photos. Charlie eats vegetarian with no alcohol.',
+                discussionText: '',
 
                 confirmedConstraints: {
                     vegetarian: false,
