@@ -306,40 +306,73 @@
                 <div class="flex items-center justify-between text-xs text-slate-400">
                     <span class="font-bold text-slate-200 flex items-center space-x-1.5">
                         <i class="fa-solid fa-award text-amber-400"></i>
-                        <span>Top <span x-text="shortlist.length"></span> Recommended Eateries</span>
+                        <span>Top <span x-text="filteredShortlist.length"></span> Gợi ý Quán Ăn</span>
                     </span>
                     <span class="text-[11px] text-amber-400/80 font-mono">Fairness: 65% Avg + 35% Min</span>
                 </div>
 
+                <!-- QUICK FILTER CHIPS (1-TOUCH FILTERS) -->
+                <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 custom-scroll text-[11px] no-scrollbar">
+                    <button @click="setQuickFilter('all')" :class="activeQuickFilter === 'all' ? 'bg-amber-500 text-dark-950 font-extrabold shadow-sm' : 'bg-dark-900 text-slate-400 hover:text-white border border-slate-800'" class="px-2.5 py-1 rounded-full whitespace-nowrap transition flex items-center space-x-1 shrink-0">
+                        <span>🌟 Tất cả</span>
+                        <span class="opacity-80 text-[10px]" x-text="'(' + shortlist.length + ')'"></span>
+                    </button>
+                    <button @click="setQuickFilter('car')" :class="activeQuickFilter === 'car' ? 'bg-amber-500 text-dark-950 font-extrabold shadow-sm' : 'bg-dark-900 text-slate-400 hover:text-white border border-slate-800'" class="px-2.5 py-1 rounded-full whitespace-nowrap transition flex items-center space-x-1 shrink-0">
+                        <i class="fa-solid fa-car text-xs"></i>
+                        <span>Đỗ ô tô</span>
+                    </button>
+                    <button @click="setQuickFilter('late_night')" :class="activeQuickFilter === 'late_night' ? 'bg-amber-500 text-dark-950 font-extrabold shadow-sm' : 'bg-dark-900 text-slate-400 hover:text-white border border-slate-800'" class="px-2.5 py-1 rounded-full whitespace-nowrap transition flex items-center space-x-1 shrink-0">
+                        <i class="fa-solid fa-moon text-xs"></i>
+                        <span>Mở khuya/24h</span>
+                    </button>
+                    <button @click="setQuickFilter('budget')" :class="activeQuickFilter === 'budget' ? 'bg-amber-500 text-dark-950 font-extrabold shadow-sm' : 'bg-dark-900 text-slate-400 hover:text-white border border-slate-800'" class="px-2.5 py-1 rounded-full whitespace-nowrap transition flex items-center space-x-1 shrink-0">
+                        <i class="fa-solid fa-wallet text-xs"></i>
+                        <span>Dưới 100k</span>
+                    </button>
+                    <button @click="setQuickFilter('quiet')" :class="activeQuickFilter === 'quiet' ? 'bg-amber-500 text-dark-950 font-extrabold shadow-sm' : 'bg-dark-900 text-slate-400 hover:text-white border border-slate-800'" class="px-2.5 py-1 rounded-full whitespace-nowrap transition flex items-center space-x-1 shrink-0">
+                        <i class="fa-solid fa-volume-xmark text-xs"></i>
+                        <span>Yên tĩnh</span>
+                    </button>
+                    <button @click="setQuickFilter('view')" :class="activeQuickFilter === 'view' ? 'bg-amber-500 text-dark-950 font-extrabold shadow-sm' : 'bg-dark-900 text-slate-400 hover:text-white border border-slate-800'" class="px-2.5 py-1 rounded-full whitespace-nowrap transition flex items-center space-x-1 shrink-0">
+                        <i class="fa-solid fa-city text-xs"></i>
+                        <span>View đẹp/Rooftop</span>
+                    </button>
+                </div>
+
                 <!-- Empty State -->
-                <template x-if="shortlist.length === 0">
+                <template x-if="filteredShortlist.length === 0">
                     <div class="p-8 text-center bg-dark-850 rounded-2xl border border-slate-800 space-y-3">
                         <i class="fa-solid fa-store-slash text-3xl text-slate-600"></i>
-                        <p class="text-sm font-semibold text-slate-300">No matching eateries found</p>
-                        <p class="text-xs text-slate-500" x-text="searchMessage || 'Try expanding your search radius or relaxing strict filters.'"></p>
-                        <button @click="setRadius(5000)" class="px-4 py-2 rounded-lg bg-amber-500 text-dark-950 font-bold text-xs">
-                            Expand to 5km Radius
+                        <p class="text-sm font-semibold text-slate-300">Không có quán nào khớp với bộ lọc</p>
+                        <p class="text-xs text-slate-500">Thử chọn bộ lọc "🌟 Tất cả" hoặc nới rộng bán kính tìm kiếm.</p>
+                        <button @click="setQuickFilter('all')" class="px-4 py-2 rounded-lg bg-amber-500 text-dark-950 font-bold text-xs">
+                            Hiện tất cả các quán
                         </button>
                     </div>
                 </template>
 
                 <!-- Cards List with Visual Thumbnails & Route Lines -->
-                <template x-for="(venue, index) in shortlist" :key="venue.id">
+                <template x-for="(venue, index) in filteredShortlist" :key="venue.id">
                     <div :class="selectedVenue?.id === venue.id ? 'ring-2 ring-amber-400 bg-dark-850 shadow-2xl scale-[1.01]' : 'bg-dark-850/80 hover:bg-dark-850 border-slate-800'" class="rounded-2xl border overflow-hidden transition-all duration-150 space-y-0 cursor-pointer group" @click="selectVenue(venue)">
                         
                         <!-- Visual Image Banner with Badges -->
-                        <div class="relative h-28 w-full bg-dark-950 overflow-hidden">
-                            <img :src="getVenueImage(venue)" :alt="venue.name" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 brightness-90" />
+                        <div class="relative h-32 w-full bg-dark-950 overflow-hidden">
+                            <img :src="getVenueImage(venue)" :alt="venue.name" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 brightness-90" onerror="this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80'" />
                             <div class="absolute inset-0 bg-gradient-to-t from-dark-850 via-dark-850/40 to-transparent"></div>
                             
-                            <!-- Rank Badge -->
-                            <div class="absolute top-2.5 left-2.5 flex items-center space-x-1.5">
+                            <!-- Top Left Badges: Rank, Opening Status & Alley -->
+                            <div class="absolute top-2.5 left-2.5 flex items-center space-x-1.5 flex-wrap gap-y-1">
                                 <span :class="index === 0 ? 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-dark-950 shadow-amber-500/40' : 'bg-slate-900/90 text-slate-200 border border-slate-700'" class="h-6 px-2 rounded-md font-black text-xs flex items-center justify-center shadow-md">
                                     <span x-text="'#' + (index + 1)"></span>
                                 </span>
+                                <!-- Opening Hours Badge -->
+                                <span :class="getOpeningBadge(venue).colorClass" class="text-[10px] font-extrabold px-2 py-0.5 rounded shadow flex items-center space-x-1 backdrop-blur-md border">
+                                    <i class="fa-solid" :class="getOpeningBadge(venue).icon"></i>
+                                    <span x-text="getOpeningBadge(venue).label"></span>
+                                </span>
                                 <template x-if="venue.isAlley">
                                     <span class="bg-indigo-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
-                                        <i class="fa-solid fa-signs-post mr-0.5"></i> Alley Spot
+                                        <i class="fa-solid fa-signs-post mr-0.5"></i> Hẻm
                                     </span>
                                 </template>
                             </div>
@@ -392,7 +425,7 @@
                                 <div class="space-y-1">
                                     <template x-for="mb in venue.memberBreakdowns" :key="mb.friendName">
                                         <div class="flex items-center justify-between text-[11px]">
-                                            <span class="text-slate-300 w-20 truncate font-medium" x-text="mb.friendName"></span>
+                                             <span class="text-slate-300 w-20 truncate font-medium" x-text="mb.friendName"></span>
                                             <div class="flex-1 mx-2 bg-slate-800 h-2 rounded-full overflow-hidden">
                                                 <div :style="'width: ' + mb.score + '%'" :class="mb.score >= 80 ? 'bg-emerald-400' : (mb.score >= 65 ? 'bg-amber-400' : 'bg-rose-400')" class="h-full rounded-full transition-all"></div>
                                             </div>
@@ -422,45 +455,35 @@
                             </div>
 
                             <!-- Opening Hours Real Badge & Notice -->
-                            <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] flex items-center justify-between">
+                            <div class="p-2 rounded-xl border text-[11px] flex items-center justify-between transition" :class="getOpeningBadge(venue).boxClass">
                                 <div class="flex items-center space-x-1.5 min-w-0">
-                                    <template x-if="venue.openingHours && venue.openingHours.is24_7">
-                                        <span class="bg-indigo-500/20 text-indigo-300 font-extrabold px-1.5 py-0.5 rounded text-[10px] border border-indigo-500/30 flex items-center space-x-1">
-                                            <i class="fa-solid fa-bolt text-amber-400"></i>
-                                            <span>Mở 24/7</span>
-                                        </span>
-                                    </template>
-                                    <template x-if="venue.openingHours && !venue.openingHours.is24_7">
-                                        <span class="bg-emerald-500/20 text-emerald-300 font-extrabold px-1.5 py-0.5 rounded text-[10px] border border-emerald-500/30 flex items-center space-x-1">
-                                            <i class="fa-regular fa-clock text-emerald-400"></i>
-                                            <span x-text="venue.openingHours.displayText || '09:00 - 22:00'"></span>
-                                        </span>
-                                    </template>
-                                    <span class="text-slate-400 truncate text-[10px]" x-text="venue.openingHours?.openDays || 'Mỗi ngày'"></span>
+                                    <i class="fa-regular fa-clock shrink-0 text-xs"></i>
+                                    <span class="truncate font-medium" x-text="getOpeningHoursDetail(venue)"></span>
                                 </div>
-                                <a :href="venue.mapsUrl || venue.directionsUrl" target="_blank" class="text-amber-400 hover:text-amber-300 font-bold underline shrink-0 ml-2 text-[10px]">Google Maps</a>
+                                <a :href="venue.mapsUrl || venue.directionsUrl" target="_blank" class="hover:underline font-bold shrink-0 ml-2 text-[10px]">Google Maps</a>
                             </div>
 
                             <!-- Bottom Action Bar: Vote, Reviewer Drawer & Google Maps Navigation -->
                             <div class="pt-2.5 border-t border-slate-800 flex items-center justify-between gap-1.5 flex-wrap">
 
-                                    <!-- NÚT SAO CHÉP KẾ HOẠCH RỦ BẠN (ZALO / MESSENGER) -->
-                                    <button @click.stop="shareVenuePlan(venue)" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/35 text-xs font-bold flex items-center space-x-1 transition shadow-sm active:scale-95" title="Sao chép tin nhắn rủ bạn bè (Zalo/Messenger)">
-                                        <i class="fa-solid fa-paper-plane text-emerald-400 text-xs"></i>
-                                        <span>Rủ bạn</span>
-                                    </button>
+                                <!-- NÚT SAO CHÉP KẾ HOẠCH RỦ BẠN (ZALO / MESSENGER) -->
+                                <button @click.stop="shareVenuePlan(venue)" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/35 text-xs font-bold flex items-center space-x-1 transition shadow-sm active:scale-95" title="Sao chép tin nhắn rủ bạn bè (Zalo/Messenger)">
+                                    <i class="fa-solid fa-paper-plane text-emerald-400 text-xs"></i>
+                                    <span>Rủ bạn</span>
+                                </button>
 
                                 <div class="flex items-center space-x-1.5">
-                                    <button @click.stop="voteForVenue(venue)" class="px-2.5 py-1.5 rounded-lg bg-dark-950 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 transition flex items-center space-x-1 shadow-sm active:scale-95" title="Bình chọn">
-                                        <i class="fa-solid fa-thumbs-up text-amber-400 text-xs"></i>
+                                    <!-- NÚT BÌNH CHỌN VỚI POP ANIMATION -->
+                                    <button @click.stop="voteForVenue(venue)" :class="votedVenueId === venue.id ? 'scale-125 bg-amber-500 text-dark-950 font-black ring-2 ring-white' : 'bg-dark-950 hover:bg-slate-800 text-slate-200 border border-slate-700'" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center space-x-1 shadow-sm active:scale-95" title="Bình chọn cho quán này">
+                                        <i class="fa-solid fa-thumbs-up text-xs" :class="votedVenueId === venue.id ? 'text-dark-950' : 'text-amber-400'"></i>
                                         <span>Vote</span>
-                                        <span class="bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded text-[10px]" x-text="venue.votes"></span>
+                                        <span class="px-1.5 py-0.2 rounded text-[10px]" :class="votedVenueId === venue.id ? 'bg-dark-950 text-white font-black' : 'bg-amber-500/20 text-amber-400'" x-text="venue.votes || 0"></span>
                                     </button>
 
                                     <!-- NÚT XEM CÁC REVIEWER TRƯỚC (BOTTOMLINE) -->
                                     <button @click.stop="openReviewersDrawer(venue)" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/35 text-xs font-bold flex items-center space-x-1.5 transition shadow-sm active:scale-95" title="Xem đánh giá từ các reviewer trước">
                                         <i class="fa-solid fa-comments text-indigo-400 text-xs"></i>
-                                        <span>Xem các reviewer trước</span>
+                                        <span>Reviewer</span>
                                         <span class="bg-indigo-400/20 text-indigo-300 px-1.5 py-0.2 rounded text-[10px]" x-text="venue.reviewerCount || 3"></span>
                                     </button>
                                 </div>
@@ -478,7 +501,7 @@
         </aside>
 
         <!-- MAP CONTAINER (RIGHT COLUMN) -->
-        <div id="map-container" class="flex-1 relative h-full w-full bg-dark-950 flex flex-col" :class="(showGroupModal || showReviewersModal) ? 'hidden' : (mobileView === 'list' ? 'hidden lg:flex' : 'flex')">
+        <div id="map-container" class="flex-1 relative h-full w-full bg-dark-950 flex flex-col" :class="(showGroupModal || showReviewersModal || showShareModal) ? 'hidden' : (mobileView === 'list' ? 'hidden lg:flex' : 'flex')">
             <div id="map"></div>
 
             <!-- Floating Map Legend & Guide -->
@@ -558,14 +581,24 @@
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                <!-- Location Input -->
+                                <!-- Location Input with Natural Language Autocomplete Chips -->
                                 <div>
-                                    <span class="text-[10px] text-slate-400 block mb-0.5">📍 Điểm xuất phát:</span>
+                                    <span class="text-[10px] text-slate-400 block mb-0.5">📍 Điểm xuất phát (Tên địa danh / Viết tắt):</span>
                                     <div class="flex items-center space-x-1">
-                                        <input type="text" x-model="f.customAddress" placeholder="vd: UEH Nguyễn Tri Phương, Hồ Thị Kỷ..." class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchAddressForFriend(f, f.customAddress)" />
-                                        <button @click="searchAddressForFriend(f, f.customAddress)" class="px-2 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded text-xs shrink-0" title="Định vị địa chỉ">
-                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                        <input type="text" x-model="f.customAddress" placeholder="vd: UEH B, Hồ Thị Kỷ, Landmark 81..." class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchAddressForFriend(f, f.customAddress)" />
+                                        <button @click="searchAddressForFriend(f, f.customAddress)" :disabled="f.locating" class="px-2 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded text-xs shrink-0 transition disabled:opacity-50" title="Định vị bằng AI">
+                                            <i x-show="!f.locating" class="fa-solid fa-magnifying-glass"></i>
+                                            <i x-show="f.locating" class="fa-solid fa-spinner fa-spin"></i>
                                         </button>
+                                    </div>
+                                    <!-- Quick Landmark Chips -->
+                                    <div class="flex items-center space-x-1 overflow-x-auto no-scrollbar pt-1.5">
+                                        <span class="text-[9px] text-slate-500 font-bold shrink-0">Nhanh:</span>
+                                        <button type="button" @click="pickLandmark(f, 'UEH B')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-amber-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🏫 UEH B</button>
+                                        <button type="button" @click="pickLandmark(f, 'Chợ Hồ Thị Kỷ')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-slate-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🌸 Hồ Thị Kỷ</button>
+                                        <button type="button" @click="pickLandmark(f, 'Landmark 81')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-slate-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🏢 L81</button>
+                                        <button type="button" @click="pickLandmark(f, 'Chợ Bến Thành')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-slate-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🏛️ Bến Thành</button>
+                                        <button type="button" @click="pickLandmark(f, 'ĐH Bách Khoa CS2')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-slate-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🎓 BK CS2</button>
                                     </div>
                                 </div>
 
@@ -652,6 +685,30 @@
                 <button @click="closeReviewersModal()" class="text-slate-400 hover:text-white shrink-0 p-1">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
+            </div>
+
+            <!-- Hero Image & Food Gallery in Drawer -->
+            <div class="relative h-44 sm:h-52 w-full rounded-xl overflow-hidden bg-dark-950 shrink-0 border border-slate-800">
+                <img :src="getVenueImage(activeReviewerVenue)" :alt="activeReviewerVenue?.name" class="w-full h-full object-cover brightness-90" onerror="this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80'" />
+                <div class="absolute inset-0 bg-gradient-to-t from-dark-900 via-dark-900/30 to-transparent"></div>
+                
+                <!-- Floating Badges on Drawer Hero -->
+                <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
+                    <span :class="getOpeningBadge(activeReviewerVenue).colorClass" class="text-xs font-extrabold px-2.5 py-1 rounded-lg shadow-md border backdrop-blur-md flex items-center space-x-1.5">
+                        <i class="fa-solid" :class="getOpeningBadge(activeReviewerVenue).icon"></i>
+                        <span x-text="getOpeningBadge(activeReviewerVenue).label"></span>
+                    </span>
+                    <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-dark-950/90 text-amber-300 border border-amber-500/30 shadow-md backdrop-blur-md" x-text="activeReviewerVenue?.avgPrice || 'Bình dân'"></span>
+                </div>
+
+                <!-- Food Gallery Thumbnails -->
+                <template x-if="activeReviewerVenue?.photos && activeReviewerVenue.photos.length > 1">
+                    <div class="absolute bottom-2 left-3 right-3 flex items-center space-x-2 overflow-x-auto no-scrollbar py-1">
+                        <template x-for="(pic, pIdx) in activeReviewerVenue.photos" :key="pIdx">
+                            <img :src="pic" class="w-12 h-12 rounded-lg object-cover border-2 border-slate-700 shadow-md hover:scale-105 hover:border-amber-400 transition cursor-pointer shrink-0" onerror="this.style.display='none'" />
+                        </template>
+                    </div>
+                </template>
             </div>
 
             <!-- Tóm tắt Tinh chế (Distilled Insights) -->
@@ -747,6 +804,70 @@
         </div>
     </div>
 
+    <!-- MODAL: CHIA SẺ KÈO HẸN & RỦ BẠN BÈ -->
+    <div x-show="showShareModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md" x-cloak>
+        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] flex flex-col" @click.away="showShareModal = false">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-white">Rủ Bạn Bè & Chia Sẻ Kèo Hẹn</h3>
+                        <p class="text-xs text-slate-400" x-text="'Quán: ' + shareModalData.venueName"></p>
+                    </div>
+                </div>
+                <button @click="showShareModal = false" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Content Area: QR Code & Text Preview -->
+            <div class="space-y-3 overflow-y-auto custom-scroll pr-1 flex-1">
+                <!-- QR Code & Quick Scan -->
+                <div class="p-3 bg-dark-850 rounded-xl border border-slate-800 flex items-center space-x-4">
+                    <div class="w-24 h-24 bg-white p-1.5 rounded-lg shrink-0 flex items-center justify-center shadow-md">
+                        <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(shareModalData.appUrl || window.location.href)" alt="QR Kèo Ăn" class="w-full h-full object-contain" />
+                    </div>
+                    <div class="space-y-1 text-xs">
+                        <span class="font-extrabold text-amber-400 text-sm block">📱 Quét mã vào kèo ngay</span>
+                        <p class="text-slate-300 leading-relaxed">Bạn bè quét camera để xem bản đồ, kiểm tra khoảng cách và cùng bấm Vote trực tiếp!</p>
+                        <span class="text-[11px] text-slate-500 font-mono" x-text="'Mã kèo: #' + outingCode"></span>
+                    </div>
+                </div>
+
+                <!-- Preview text box -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-slate-300">Nội dung tin nhắn gửi Zalo / Messenger:</span>
+                        <button @click="copyShareMessage()" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center space-x-1 text-xs">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Sao chép</span>
+                        </button>
+                    </div>
+                    <div class="p-3 bg-dark-950 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed select-all" x-text="shareModalData.message"></div>
+                </div>
+            </div>
+
+            <!-- Footer Action Buttons -->
+            <div class="pt-3 border-t border-slate-800 flex items-center space-x-2 shrink-0">
+                <button @click="showShareModal = false" class="py-2.5 px-4 rounded-xl bg-dark-800 hover:bg-slate-750 text-slate-300 font-bold text-xs transition">
+                    Đóng
+                </button>
+                <button @click="copyShareMessage()" class="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-dark-950 font-black text-xs flex-1 transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2 active:scale-95">
+                    <i class="fa-regular fa-copy text-sm"></i>
+                    <span>Sao chép tin nhắn (Zalo/Messenger)</span>
+                </button>
+                <a :href="shareModalData.shareUrl" target="_blank" class="py-2.5 px-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-dark-950 font-black text-xs transition flex items-center justify-center space-x-1.5" title="Mở Google Maps">
+                    <i class="fa-solid fa-diamond-turn-right text-xs"></i>
+                    <span>Maps</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT APPLICATION CORE -->
     <script>
         function gatherApp() {
@@ -754,21 +875,81 @@
                 outingCode: 'EAT-2026',
                 searchRadiusMeters: 3000,
                 activeScenario: 'all',
+                activeQuickFilter: 'all',
                 mobileView: 'list',
                 copied: false,
                 ranking: false,
                 parsing: false,
                 locating: false,
+                votedVenueId: null,
                 showGroupModal: false,
                 showFriendsModal: false,
                 showWishModal: false,
                 showReviewersModal: false,
+                showShareModal: false,
+                shareModalData: {
+                    message: '',
+                    shareUrl: '',
+                    venueName: '',
+                    appUrl: ''
+                },
                 activeReviewerVenue: null,
                 drawerNewReview: {
                     content: '',
                     rating: 5
                 },
                 searchMessage: '',
+
+                get filteredShortlist() {
+                    if (this.activeQuickFilter === 'all') return this.shortlist;
+                    return this.shortlist.filter(venue => {
+                        if (this.activeQuickFilter === 'car') {
+                            const ease = venue.attributes?.parking?.ease;
+                            const note = (venue.attributes?.parking?.note || '').toLowerCase();
+                            const unknowns = (venue.unknowns || []).join(' ').toLowerCase();
+                            return ease === 'easy' || note.includes('ô tô') || note.includes('oto') || note.includes('car') || unknowns.includes('ô tô');
+                        }
+                        if (this.activeQuickFilter === 'late_night') {
+                            const badge = this.getOpeningBadge(venue);
+                            const oh = venue.openingHours;
+                            return badge.type === '24_7' || (oh && oh.close && (oh.close >= '23:00' || oh.close <= '04:00')) || (venue.tags || []).some(t => String(t).toLowerCase().includes('night') || String(t).toLowerCase().includes('24h') || String(t).toLowerCase().includes('24/7'));
+                        }
+                        if (this.activeQuickFilter === 'budget') {
+                            const price = venue.pricePerPersonVnd || 0;
+                            return price > 0 && price <= 100000;
+                        }
+                        if (this.activeQuickFilter === 'quiet') {
+                            const noise = venue.attributes?.noiseLevel?.value;
+                            return noise === 'quiet' || (venue.tags || []).some(t => String(t).toLowerCase().includes('quiet') || String(t).toLowerCase().includes('yên tĩnh'));
+                        }
+                        if (this.activeQuickFilter === 'view') {
+                            const name = (venue.name || '').toLowerCase();
+                            const cat = (venue.category || '').toLowerCase();
+                            const tags = (venue.tags || []).map(t => String(t).toLowerCase());
+                            return tags.some(t => t.includes('view') || t.includes('aesthetic') || t.includes('rooftop')) || name.includes('rooftop') || cat.includes('lounge');
+                        }
+                        return true;
+                    });
+                },
+
+                setQuickFilter(filterKey) {
+                    this.activeQuickFilter = filterKey;
+                    if (this.filteredShortlist.length > 0) {
+                        this.selectVenue(this.filteredShortlist[0]);
+                    }
+                },
+
+                pickLandmark(friend, landmarkName) {
+                    friend.customAddress = landmarkName;
+                    this.searchAddressForFriend(friend, landmarkName);
+                },
+
+                copyShareMessage() {
+                    if (this.shareModalData.message) {
+                        navigator.clipboard.writeText(this.shareModalData.message);
+                        this.showToast('📋 Đã sao chép tin nhắn vào clipboard!');
+                    }
+                },
 
                 switchMobileView(v) {
                     this.mobileView = v;
@@ -983,12 +1164,19 @@
                         });
                         const data = await res.json();
                         if (data && data.message) {
-                            await navigator.clipboard.writeText(data.message);
-                            this.showToast('🎉 Đã copy tin nhắn rủ bạn! Dán ngay vào Zalo / Messenger');
+                            this.shareModalData = {
+                                message: data.message,
+                                shareUrl: data.shareUrl || ('https://www.google.com/maps/dir/?api=1&destination=' + venue.lat + ',' + venue.lng),
+                                venueName: data.venueName || venue.name,
+                                appUrl: data.appUrl || window.location.origin
+                            };
+                            await navigator.clipboard.writeText(data.message).catch(() => {});
+                            this.showShareModal = true;
+                            this.showToast('🎉 Đã tạo & copy tin nhắn rủ bạn! Đã mở hộp thoại chia sẻ');
                         }
                     } catch(e) {
                         console.error('Share plan error:', e);
-                        this.showToast('Đã có lỗi khi tạo tin nhắn chia sẻ.');
+                        this.showToast('⚠️ Đã có lỗi khi tạo tin nhắn chia sẻ.');
                     }
                 },
 
@@ -1006,6 +1194,11 @@
                             this.executeSearchAndRank();
                         });
                     });
+
+                    // Realtime Live Group Vote Polling (every 4 seconds)
+                    setInterval(() => {
+                        this.syncLiveVotes();
+                    }, 4000);
 
                     window.addEventListener('resize', () => {
                         if (this.map) this.map.invalidateSize();
@@ -1397,7 +1590,11 @@
                 },
 
                 async voteForVenue(venue) {
-                    venue.votes++;
+                    venue.votes = (venue.votes || 0) + 1;
+                    this.votedVenueId = venue.id;
+                    setTimeout(() => { this.votedVenueId = null; }, 500);
+                    this.showToast(`🗳️ +1 phiếu cho "${venue.name}"! (Tổng: ${venue.votes})`);
+
                     try {
                         await fetch('/api/outings/' + this.outingCode + '/vote', {
                             method: 'POST',
@@ -1409,12 +1606,115 @@
                     }
                 },
 
-                getVenueImage(venue) {
-                    if (venue && venue.heroImage) return venue.heroImage;
-                    if (venue && venue.photos && venue.photos.length > 0) return venue.photos[0];
+                async syncLiveVotes() {
+                    if (!this.outingCode || !this.shortlist || this.shortlist.length === 0) return;
+                    try {
+                        const res = await fetch('/api/outings/' + this.outingCode);
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && Array.isArray(data.votes)) {
+                                this.shortlist.forEach(v => {
+                                    const count = data.votes.filter(vote => (vote.venue_id === v.id || vote.venueId === v.id)).length;
+                                    if (count > (v.votes || 0)) {
+                                        v.votes = count;
+                                        this.votedVenueId = v.id;
+                                        setTimeout(() => { this.votedVenueId = null; }, 500);
+                                    }
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        // silent polling fail
+                    }
+                },
 
-                    const name = (venue.name || '').toLowerCase();
-                    const cat = (venue.category || '').toLowerCase();
+                getOpeningBadge(venue) {
+                    if (!venue) return { label: 'Đang mở cửa', colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', boxClass: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200/90', icon: 'fa-circle', type: 'open' };
+                    
+                    const oh = venue.openingHours;
+                    const tags = Array.isArray(venue.tags) ? venue.tags : [];
+                    const is24_7 = (oh && (oh.is24_7 || oh.is24h)) || tags.some(t => String(t).toLowerCase().includes('24/7') || String(t).toLowerCase().includes('24h') || String(t).toLowerCase().includes('xuyên đêm'));
+                    
+                    if (is24_7) {
+                        return {
+                            type: '24_7',
+                            label: '⚡ Mở 24/7',
+                            colorClass: 'bg-purple-500/25 text-purple-300 border-purple-500/40',
+                            boxClass: 'bg-purple-500/10 border-purple-500/25 text-purple-200',
+                            icon: 'fa-bolt'
+                        };
+                    }
+
+                    // Vietnam timezone GMT+7
+                    const now = new Date();
+                    const vnTimeStr = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false, hour: '2-digit', minute: '2-digit' });
+                    const [currentHour, currentMin] = vnTimeStr.split(':').map(Number);
+                    const currentTotalMin = (currentHour || 0) * 60 + (currentMin || 0);
+
+                    let openMin = 9 * 60;
+                    let closeMin = 22 * 60;
+                    let openStr = '09:00';
+                    let closeStr = '22:00';
+
+                    if (oh && typeof oh === 'object') {
+                        if (oh.open) {
+                            openStr = oh.open;
+                            const [ohH, ohM] = oh.open.split(':').map(Number);
+                            openMin = (ohH || 0) * 60 + (ohM || 0);
+                        }
+                        if (oh.close) {
+                            closeStr = oh.close;
+                            const [chH, chM] = oh.close.split(':').map(Number);
+                            closeMin = (chH || 0) * 60 + (chM || 0);
+                        }
+                    }
+
+                    let isOpen = true;
+                    if (closeMin > openMin) {
+                        isOpen = currentTotalMin >= openMin && currentTotalMin < closeMin;
+                    } else {
+                        isOpen = currentTotalMin >= openMin || currentTotalMin < closeMin;
+                    }
+
+                    if (isOpen) {
+                        return {
+                            type: 'open',
+                            label: '🟢 Đang mở · Đến ' + closeStr,
+                            colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+                            boxClass: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200/90',
+                            icon: 'fa-circle'
+                        };
+                    } else {
+                        return {
+                            type: 'closed',
+                            label: '🔴 Đã đóng · Mở ' + openStr,
+                            colorClass: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+                            boxClass: 'bg-rose-500/10 border-rose-500/20 text-rose-200/90',
+                            icon: 'fa-circle-xmark'
+                        };
+                    }
+                },
+
+                getOpeningHoursDetail(venue) {
+                    const badge = this.getOpeningBadge(venue);
+                    if (badge.type === '24_7') {
+                        return 'Quán mở cửa liên tục 24/7 (Phục vụ xuyên đêm)';
+                    }
+                    const oh = venue.openingHours;
+                    const text = (oh && oh.displayText) ? oh.displayText : '09:00 - 22:00';
+                    return (badge.type === 'open' ? 'Đang mở cửa: ' : 'Đã đóng cửa: ') + text + (oh && oh.openDays ? ' (' + oh.openDays + ')' : '');
+                },
+
+                getVenueImage(venue) {
+                    if (venue && venue.heroImage && typeof venue.heroImage === 'string' && venue.heroImage.startsWith('http')) {
+                        return venue.heroImage;
+                    }
+                    if (venue && venue.photos && Array.isArray(venue.photos) && venue.photos.length > 0 && typeof venue.photos[0] === 'string' && venue.photos[0].startsWith('http')) {
+                        return venue.photos[0];
+                    }
+
+                    const name = (venue?.name || '').toLowerCase();
+                    const cat = (venue?.category || '').toLowerCase();
 
                     if (cat.includes('vegetarian') || cat.includes('chay')) {
                         return 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80';
@@ -1422,7 +1722,7 @@
                     if (name.includes('matcha') || cat.includes('matcha')) {
                         return 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80';
                     }
-                    if (venue.isAlley || cat.includes('alley') || cat.includes('hẻm') || cat.includes('street food')) {
+                    if (venue?.isAlley || cat.includes('alley') || cat.includes('hẻm') || cat.includes('street food')) {
                         return 'https://images.unsplash.com/photo-1503764654157-72d979d9af2f?w=600&auto=format&fit=crop&q=80';
                     }
                     if (cat.includes('music') || cat.includes('pub') || cat.includes('bar')) {
