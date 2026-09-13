@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GatherMap — Equal-Weight Geometric Group Eatery Matchmaker</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a',
+                            500: '#f59e0b', 600: '#d97706', 700: '#b45309',
+                            DEFAULT: '#f59e0b'
+                        },
+                        dark: {
+                            950: '#070a11', 900: '#0b0f19', 850: '#0f172a',
+                            800: '#111827', 750: '#1a2234', 700: '#1f2937', 600: '#374151'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #070a11;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            min-height: 100%;
+            background-color: #0b0f19;
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #0b0f19; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
+        /* Fix Leaflet marker positioning and prevent zoom drift */
+        .leaflet-marker-icon, .leaflet-marker-shadow {
+            position: absolute !important;
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            user-select: none;
+            pointer-events: auto;
+        }
+        .leaflet-div-icon {
+            background: transparent !important;
+            border: none !important;
+        }
+
+        .friend-pin svg, .venue-pin svg {
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: 50% 100%;
+        }
+        .friend-pin:hover svg, .venue-pin:hover svg {
+            transform: scale(1.15);
+        }
+
+        @keyframes radar-pulse {
+            0% { transform: scale(0.6); opacity: 0.95; }
+            70%, 100% { transform: scale(2.4); opacity: 0; }
+        }
+        .center-beacon-outer {
+            width: 24px;
+            height: 24px;
+            pointer-events: auto;
+        }
+        .center-beacon-outer::before {
+            content: '';
+            position: absolute;
+            left: -12px; top: -12px;
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: rgba(245, 158, 11, 0.4);
+            animation: radar-pulse 2.2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-100 selection:bg-amber-500 selection:text-dark-900" x-data="gatherApp()" x-init="initApp()">
+
+    <!-- HEADER / APP BAR -->
+    <header class="h-14 border-b border-slate-800 bg-dark-900/95 backdrop-blur px-4 flex items-center justify-between shrink-0 z-30 shadow-md">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 flex items-center justify-center shadow-lg shadow-amber-500/20 text-dark-950 font-black text-base">
+                <i class="fa-solid fa-utensils"></i>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="font-extrabold text-base tracking-tight text-white">GATHER<span class="text-amber-400">MAP</span></span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-amber-500/15 text-amber-400 border border-amber-500/30">Pro UX</span>
+                </div>
+                <p class="text-[10px] text-slate-400 hidden sm:block">Equal-Weight Geometric Center & Fair Group Eatery Matchmaker</p>
+            </div>
+        </div>
+
+        <!-- Center Controls: One-Tap Quick Filter Chips -->
+        <div class="hidden md:flex items-center space-x-1.5 bg-dark-950/80 border border-slate-800 rounded-lg p-1 text-xs">
+            <button @click="applyFastScenario('all')" :class="activeScenario === 'all' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition">
+                All Eateries
+            </button>
+            <button @click="applyFastScenario('chay')" :class="activeScenario === 'chay' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition flex items-center space-x-1">
+                <span>🌿 Vegetarian</span>
+            </button>
+            <button @click="applyFastScenario('matcha')" :class="activeScenario === 'matcha' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition flex items-center space-x-1">
+                <span>🍵 Matcha & Photo</span>
+            </button>
+            <button @click="applyFastScenario('hem')" :class="activeScenario === 'hem' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition flex items-center space-x-1">
+                <span>🍜 Alley &lt;50k</span>
+            </button>
+            <button @click="applyFastScenario('chill')" :class="activeScenario === 'chill' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition flex items-center space-x-1">
+                <span>🎸 Live Music Pub</span>
+            </button>
+        </div>
+
+        <!-- Right Side: GPS Button, Engine Status & Share -->
+        <div class="flex items-center space-x-2">
+            <!-- One-tap GPS Button -->
+            <button @click="useCurrentLocation()" :disabled="locating" class="px-2.5 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-xs font-semibold text-blue-300 transition flex items-center space-x-1.5 shadow-sm" title="Pin your real coordinates">
+                <i class="fa-solid fa-crosshairs text-blue-400" :class="locating ? 'fa-spin' : ''"></i>
+                <span class="hidden sm:inline" x-text="locating ? 'Locating...' : 'My GPS'"></span>
+            </button>
+
+            <!-- AI Engine Indicator -->
+            <div class="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300" title="Connected to Google Gemini Live API">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="font-semibold" x-text="backendConfig.aiModel || 'Gemini Flash'"></span>
+            </div>
+
+            <!-- Database Status Indicator -->
+            <div class="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/25 text-xs text-indigo-300" :title="backendConfig.databaseType">
+                <i class="fa-solid fa-database text-indigo-400 text-[10px]"></i>
+                <span class="font-semibold" x-text="backendConfig.isSupabaseConfigured ? 'Supabase' : 'SQLite DB'"></span>
+            </div>
+
+            <!-- Outing Code / Share Button -->
+            <button @click="copyShareLink()" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-750 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center space-x-1.5 shadow-sm">
+                <i class="fa-solid fa-share-nodes text-amber-400"></i>
+                <span x-text="copied ? 'Copied!' : outingCode"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- WORKSPACE BODY -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- SIDEBAR PANEL (CONTROLS & SHORTLIST) -->
+        <aside class="w-full lg:w-[490px] xl:w-[530px] bg-dark-900 border-r border-slate-800 flex flex-col shrink-0 z-10 overflow-hidden shadow-2xl">
+            
+            <!-- CONTROLS & STATUS BAR -->
+            <div class="p-3.5 bg-dark-850 border-b border-slate-800 space-y-3 shrink-0">
+
+                <!-- 1-CLICK WINNING PRESETS BAR (IN-DEPTH DEMO) -->
+                <div class="bg-dark-950/80 p-2.5 rounded-xl border border-amber-500/30 space-y-2 shadow-inner">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="font-black text-amber-400 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-bolt text-amber-400"></i>
+                            <span>KỊCH BẢN MẪU 1-CLICK (Presets):</span>
+                        </span>
+                        <span class="text-[10px] text-slate-400">Bấm là chạy tức thì</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5 text-[11px]">
+                        <button @click="loadPreset('preset_cuoituan_3nguoi')" 
+                                :class="activePresetId === 'preset_cuoituan_3nguoi' ? 'bg-amber-500 text-dark-950 font-black shadow-md shadow-amber-500/20' : 'bg-dark-800 hover:bg-slate-750 text-slate-300'" 
+                                class="p-1.5 rounded-lg border border-slate-700/60 flex flex-col items-center justify-center text-center transition">
+                            <span class="text-xs font-bold">🍕 Cuối tuần</span>
+                            <span class="text-[9px] opacity-80">3 bạn (Q1-Q3-BT)</span>
+                        </button>
+                        <button @click="loadPreset('preset_deadline_4nguoi')" 
+                                :class="activePresetId === 'preset_deadline_4nguoi' ? 'bg-amber-500 text-dark-950 font-black shadow-md shadow-amber-500/20' : 'bg-dark-800 hover:bg-slate-750 text-slate-300'" 
+                                class="p-1.5 rounded-lg border border-slate-700/60 flex flex-col items-center justify-center text-center transition">
+                            <span class="text-xs font-bold">💻 Deadline</span>
+                            <span class="text-[9px] opacity-80">4 bạn (Q10-PN-TB)</span>
+                        </button>
+                        <button @click="loadPreset('preset_launuong_cholon_4nguoi')" 
+                                :class="activePresetId === 'preset_launuong_cholon_4nguoi' ? 'bg-amber-500 text-dark-950 font-black shadow-md shadow-amber-500/20' : 'bg-dark-800 hover:bg-slate-750 text-slate-300'" 
+                                class="p-1.5 rounded-lg border border-slate-700/60 flex flex-col items-center justify-center text-center transition">
+                            <span class="text-xs font-bold">🍲 Lẩu nướng</span>
+                            <span class="text-[9px] opacity-80">4 bạn (Q5-Q4-Q1)</span>
+                        </button>
+                    </div>
+                </div>
+
+                
+                <!-- Group Members & Click Map Reminder -->
+                <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold text-slate-200">Group Members (<span x-text="friends.length"></span>):</span>
+                        <div class="flex -space-x-1.5 overflow-hidden">
+                            <template x-for="f in friends" :key="f.id">
+                                <span :class="f.color" class="inline-block h-6 w-6 rounded-full text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-dark-900 cursor-pointer" :title="f.name + ': ' + (f.wish || 'No wish')" @click="selectFriend(f)" x-text="f.name.charAt(0)"></span>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button @click="addFriendAtCenter()" class="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center space-x-1">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Add</span>
+                        </button>
+                        <span class="text-slate-600">|</span>
+                        <button @click="showFriendsModal = true" class="text-xs text-slate-400 hover:text-white font-medium">
+                            Edit
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Radius Slider & Draggable Center Reminder -->
+                <div class="flex items-center justify-between space-x-3 text-xs bg-dark-950 p-2.5 rounded-xl border border-slate-800/80">
+                    <div class="flex items-center space-x-2 flex-1 min-w-0">
+                        <i class="fa-solid fa-location-crosshairs text-amber-400 text-sm shrink-0"></i>
+                        <div class="truncate">
+                            <span class="text-slate-400 block text-[10px]">Geometric Center & Search Radius:</span>
+                            <span class="font-bold text-amber-300" x-text="(searchRadiusMeters/1000).toFixed(1) + ' km'"></span>
+                            <span class="text-slate-400 text-[11px] ml-1">(Drag gold pin on map to re-center)</span>
+                        </div>
+                    </div>
+
+                    <!-- Radius Quick Buttons -->
+                    <div class="flex items-center space-x-1 shrink-0">
+                        <button @click="setRadius(1000)" :class="searchRadiusMeters === 1000 ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-800 text-slate-400 hover:text-white'" class="px-2 py-1 rounded text-[11px] transition">1km</button>
+                        <button @click="setRadius(2000)" :class="searchRadiusMeters === 2000 ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-800 text-slate-400 hover:text-white'" class="px-2 py-1 rounded text-[11px] transition">2km</button>
+                        <button @click="setRadius(3000)" :class="searchRadiusMeters === 3000 ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-800 text-slate-400 hover:text-white'" class="px-2 py-1 rounded text-[11px] transition">3km</button>
+                        <button @click="setRadius(5000)" :class="searchRadiusMeters === 5000 ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-800 text-slate-400 hover:text-white'" class="px-2 py-1 rounded text-[11px] transition">5km</button>
+                    </div>
+                </div>
+
+                <!-- One-Touch Preference Chips -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between text-[11px] text-slate-400">
+                        <span class="font-semibold">Quick Preference Chips (Tap to toggle):</span>
+                        <button @click="showWishModal = true" class="text-amber-400 hover:underline">Custom Prompt</button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button @click="toggleConstraint('vegetarian')" :class="confirmedConstraints.vegetarian ? 'bg-emerald-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-300 border border-slate-700'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
+                            <span>🌿 Vegetarian</span>
+                        </button>
+                        <button @click="toggleConstraint('no_alcohol')" :class="confirmedConstraints.no_alcohol ? 'bg-emerald-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-300 border border-slate-700'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
+                            <span>🚫 No Alcohol</span>
+                        </button>
+                        <button @click="toggleConstraint('quiet_only')" :class="confirmedConstraints.quiet_only ? 'bg-emerald-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-300 border border-slate-700'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
+                            <span>🤫 Quiet Only</span>
+                        </button>
+                        <button @click="toggleBudget()" :class="confirmedConstraints.max_price_vnd <= 65000 ? 'bg-emerald-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-300 border border-slate-700'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
+                            <span>💸 &lt;50k Budget</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SHORTLIST RESULTS -->
+            <div class="flex-1 overflow-y-auto custom-scroll p-3.5 space-y-3.5">
+                
+                <!-- Header with Fairness Index Gauge -->
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="font-bold text-slate-200 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-award text-amber-400"></i>
+                        <span>Top <span x-text="shortlist.length"></span> Recommended Eateries</span>
+                    </span>
+                    <span class="text-[11px] text-amber-400/80 font-mono">Fairness: 65% Avg + 35% Min</span>
+                </div>
+
+                <!-- Empty State -->
+                <template x-if="shortlist.length === 0">
+                    <div class="p-8 text-center bg-dark-850 rounded-2xl border border-slate-800 space-y-3">
+                        <i class="fa-solid fa-store-slash text-3xl text-slate-600"></i>
+                        <p class="text-sm font-semibold text-slate-300">No matching eateries found</p>
+                        <p class="text-xs text-slate-500" x-text="searchMessage || 'Try expanding your search radius or relaxing strict filters.'"></p>
+                        <button @click="setRadius(5000)" class="px-4 py-2 rounded-lg bg-amber-500 text-dark-950 font-bold text-xs">
+                            Expand to 5km Radius
+                        </button>
+                    </div>
+                </template>
+
+                <!-- Cards List with Visual Thumbnails & Route Lines -->
+                <template x-for="(venue, index) in shortlist" :key="venue.id">
+                    <div :class="selectedVenue?.id === venue.id ? 'ring-2 ring-amber-400 bg-dark-850 shadow-2xl scale-[1.01]' : 'bg-dark-850/80 hover:bg-dark-850 border-slate-800'" class="rounded-2xl border overflow-hidden transition-all duration-150 space-y-0 cursor-pointer group" @click="selectVenue(venue)">
+                        
+                        <!-- Visual Image Banner with Badges -->
+                        <div class="relative h-28 w-full bg-dark-950 overflow-hidden">
+                            <img :src="getVenueImage(venue)" :alt="venue.name" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 brightness-90" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-dark-850 via-dark-850/40 to-transparent"></div>
+                            
+                            <!-- Rank Badge -->
+                            <div class="absolute top-2.5 left-2.5 flex items-center space-x-1.5">
+                                <span :class="index === 0 ? 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-dark-950 shadow-amber-500/40' : 'bg-slate-900/90 text-slate-200 border border-slate-700'" class="h-6 px-2 rounded-md font-black text-xs flex items-center justify-center shadow-md">
+                                    <span x-text="'#' + (index + 1)"></span>
+                                </span>
+                                <template x-if="venue.isAlley">
+                                    <span class="bg-indigo-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                                        <i class="fa-solid fa-signs-post mr-0.5"></i> Alley Spot
+                                    </span>
+                                </template>
+                            </div>
+
+                            <!-- Group Score Badge -->
+                            <div class="absolute top-2.5 right-2.5 text-right">
+                                <div class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-dark-950/90 border border-amber-500/40 backdrop-blur shadow-lg">
+                                    <i class="fa-solid fa-star text-amber-400 text-xs"></i>
+                                    <span class="font-extrabold text-sm text-amber-400" x-text="venue.groupScore"></span>
+                                    <span class="text-[10px] text-slate-400">/100</span>
+                                </div>
+                            </div>
+
+                            <!-- Venue Name & Category Overlay -->
+                            <div class="absolute bottom-2 left-3 right-3 flex items-end justify-between">
+                                <div class="truncate pr-2">
+                                    <h4 class="font-extrabold text-sm text-white drop-shadow truncate group-hover:text-amber-300 transition" x-text="venue.name"></h4>
+                                    <p class="text-[11px] text-slate-300 drop-shadow truncate" x-text="venue.category"></p>
+                                </div>
+                                <span class="text-xs font-bold text-amber-300 drop-shadow shrink-0" x-text="venue.avgPrice"></span>
+                            </div>
+                        </div>
+
+                        <!-- Card Content Body -->
+                        <div class="p-3.5 space-y-2.5">
+                            
+                            <!-- Address & Travel Preview -->
+                            <div class="flex items-center justify-between text-[11px] text-slate-400">
+                                <span class="truncate flex-1 pr-2" x-text="venue.address"></span>
+                                <span class="text-slate-300 font-semibold shrink-0" x-text="venue.distFromCenterKm + ' km from center'"></span>
+                            </div>
+
+                            <!-- Live Gemini Concierge Rationale -->
+                            <template x-if="venue.aiRationale">
+                                <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200 flex items-start space-x-2">
+                                    <i class="fa-solid fa-wand-magic-sparkles mt-0.5 text-amber-400 shrink-0 text-sm"></i>
+                                    <div>
+                                        <strong class="text-amber-300 block mb-0.5">Gemini AI Concierge:</strong>
+                                        <span class="leading-relaxed" x-text="venue.aiRationale"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Individual Member Satisfaction Breakdown -->
+                            <div class="space-y-1.5 bg-dark-950/70 p-2.5 rounded-xl border border-slate-800">
+                                <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                                    <span>Member Satisfaction & Travel:</span>
+                                    <span class="text-[10px] text-emerald-400">Fairness: <strong x-text="venue.fairnessIndex"></strong></span>
+                                </div>
+                                <div class="space-y-1">
+                                    <template x-for="mb in venue.memberBreakdowns" :key="mb.friendName">
+                                        <div class="flex items-center justify-between text-[11px]">
+                                            <span class="text-slate-300 w-20 truncate font-medium" x-text="mb.friendName"></span>
+                                            <div class="flex-1 mx-2 bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                <div :style="'width: ' + mb.score + '%'" :class="mb.score >= 80 ? 'bg-emerald-400' : (mb.score >= 65 ? 'bg-amber-400' : 'bg-rose-400')" class="h-full rounded-full transition-all"></div>
+                                            </div>
+                                            <div class="text-right w-24 text-[10px] text-slate-400">
+                                                <span class="font-extrabold text-slate-200" x-text="mb.score + '%'"></span>
+                                                <span class="ml-1 text-amber-400 font-semibold" x-text="'(~' + mb.travelMins + 'm)'"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Highlights & Trade-offs -->
+                            <div class="text-xs space-y-1">
+                                <template x-for="reason in venue.principalReasons" :key="reason">
+                                    <div class="flex items-start space-x-1.5 text-emerald-400">
+                                        <i class="fa-solid fa-circle-check text-[11px] mt-0.5 shrink-0"></i>
+                                        <span class="text-slate-300 text-[11px]" x-text="reason"></span>
+                                    </div>
+                                </template>
+                                <template x-for="comp in venue.principalCompromises" :key="comp">
+                                    <div class="flex items-start space-x-1.5 text-amber-400">
+                                        <i class="fa-solid fa-triangle-exclamation text-[11px] mt-0.5 shrink-0"></i>
+                                        <span class="text-slate-400 text-[11px]" x-text="comp"></span>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Spec Section 2.2: Opening Hours Advisory Notice -->
+                            <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200/90 flex items-center justify-between">
+                                <div class="flex items-center space-x-1.5 min-w-0">
+                                    <i class="fa-regular fa-clock text-amber-400 shrink-0"></i>
+                                    <span class="truncate">Kiểm tra giờ mở cửa thực tế trên Google Maps trước khi xuất phát</span>
+                                </div>
+                                <a :href="venue.mapsUrl || venue.directionsUrl" target="_blank" class="text-amber-400 hover:text-amber-300 font-bold underline shrink-0 ml-2 text-[10px]">Xem giờ</a>
+                            </div>
+
+                            <!-- Bottom Action Bar: Vote, Reviewer Drawer & Google Maps Navigation -->
+                            <div class="pt-2.5 border-t border-slate-800 flex items-center justify-between gap-1.5 flex-wrap">
+
+                                    <!-- NÚT SAO CHÉP KẾ HOẠCH RỦ BẠN (ZALO / MESSENGER) -->
+                                    <button @click.stop="shareVenuePlan(venue)" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/35 text-xs font-bold flex items-center space-x-1 transition shadow-sm active:scale-95" title="Sao chép tin nhắn rủ bạn bè (Zalo/Messenger)">
+                                        <i class="fa-solid fa-paper-plane text-emerald-400 text-xs"></i>
+                                        <span>Rủ bạn</span>
+                                    </button>
+
+                                <div class="flex items-center space-x-1.5">
+                                    <button @click.stop="voteForVenue(venue)" class="px-2.5 py-1.5 rounded-lg bg-dark-950 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 transition flex items-center space-x-1 shadow-sm active:scale-95" title="Bình chọn">
+                                        <i class="fa-solid fa-thumbs-up text-amber-400 text-xs"></i>
+                                        <span>Vote</span>
+                                        <span class="bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded text-[10px]" x-text="venue.votes"></span>
+                                    </button>
+
+                                    <!-- NÚT XEM CÁC REVIEWER TRƯỚC (BOTTOMLINE) -->
+                                    <button @click.stop="openReviewersDrawer(venue)" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/35 text-xs font-bold flex items-center space-x-1.5 transition shadow-sm active:scale-95" title="Xem đánh giá từ các reviewer trước">
+                                        <i class="fa-solid fa-comments text-indigo-400 text-xs"></i>
+                                        <span>Xem các reviewer trước</span>
+                                        <span class="bg-indigo-400/20 text-indigo-300 px-1.5 py-0.2 rounded text-[10px]" x-text="venue.reviewerCount || 3"></span>
+                                    </button>
+                                </div>
+
+                                <!-- Direct Google Maps Navigation -->
+                                <a :href="venue.directionsUrl" target="_blank" @click.stop class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-dark-950 font-extrabold text-xs transition flex items-center space-x-1 shadow-md shadow-amber-500/20 active:scale-95" title="Chỉ đường Google Maps">
+                                    <i class="fa-solid fa-diamond-turn-right text-xs"></i>
+                                    <span>Chỉ đường</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </aside>
+
+        <!-- MAP CONTAINER (RIGHT COLUMN) -->
+        <div class="flex-1 relative h-full w-full bg-dark-950 flex flex-col">
+            <div id="map"></div>
+
+            <!-- Floating Map Legend & Guide -->
+            <div class="absolute top-4 right-4 z-[400] bg-dark-900/90 backdrop-blur border border-slate-800 rounded-xl p-3 shadow-2xl text-xs space-y-1.5 max-w-xs">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                    <span class="font-bold text-slate-200">Map Controls</span>
+                    <span class="text-[10px] text-amber-400 font-mono" x-text="centerCoords.lat.toFixed(4) + ', ' + centerCoords.lng.toFixed(4)"></span>
+                </div>
+                <div class="flex items-center space-x-2 text-[11px]">
+                    <span class="w-3 h-3 rounded-full bg-amber-400 shrink-0 shadow-sm shadow-amber-400"></span>
+                    <span class="text-slate-300">Geometric Center (Drag to move)</span>
+                </div>
+                <div class="flex items-center space-x-2 text-[11px]">
+                    <span class="w-3 h-3 rounded-full bg-blue-500 shrink-0"></span>
+                    <span class="text-slate-300">Friends (Drag pin to update location)</span>
+                </div>
+                <!-- Clean Map Style Switcher -->
+                <div class="pt-1.5 border-t border-slate-800 flex items-center space-x-1">
+                    <span class="text-[10px] text-slate-400 font-semibold mr-1">Style:</span>
+                    <button @click="switchMapStyle('osm')" :class="currentMapStyle === 'osm' ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded text-[10px] border border-slate-700 transition">OSM</button>
+                    <button @click="switchMapStyle('dark')" :class="currentMapStyle === 'dark' ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded text-[10px] border border-slate-700 transition">Dark</button>
+                    <button @click="switchMapStyle('street')" :class="currentMapStyle === 'street' ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded text-[10px] border border-slate-700 transition">Esri</button>
+                </div>
+
+                <div class="pt-1 text-[10px] text-slate-400 italic">
+                    💡 Tip: Click anywhere on map to add a new friend pin!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT FRIENDS & LOCATIONS -->
+    <div x-show="showFriendsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" x-cloak>
+        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl" @click.away="showFriendsModal = false">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-users text-amber-400"></i>
+                    <h3 class="font-bold text-base text-white">Manage Group Members</h3>
+                </div>
+                <button @click="showFriendsModal = false" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-2.5 max-h-72 overflow-y-auto custom-scroll pr-1">
+                <template x-for="(f, idx) in friends" :key="f.id">
+                    <div class="p-3 rounded-xl bg-dark-850 border border-slate-800 flex items-center justify-between space-x-2">
+                        <div class="flex items-center space-x-2 flex-1 min-w-0">
+                            <span :class="f.color" class="w-7 h-7 rounded-full text-white font-bold text-xs flex items-center justify-center shrink-0" x-text="f.name.charAt(0)"></span>
+                            <div class="flex-1 min-w-0">
+                                <input type="text" x-model="f.name" class="bg-transparent font-bold text-xs text-white border-b border-transparent focus:border-amber-400 focus:outline-none w-28 truncate" />
+                                <input type="text" x-model="f.wish" placeholder="e.g. matcha, vegetarian..." class="bg-dark-950 text-[11px] text-slate-300 rounded mt-1 px-2 py-1 border border-slate-700 w-full truncate focus:outline-none" />
+                                <div class="flex items-center space-x-1 mt-1">
+                                    <input type="text" x-model="f.customAddress" placeholder="Địa chỉ tự nhập (vd: Hồ Thị Kỷ, Chợ Bến Thành...)" class="bg-dark-950 text-[10px] text-slate-300 rounded px-2 py-1 border border-slate-700 flex-1 truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchAddressForFriend(f, f.customAddress)" />
+                                    <button @click="searchAddressForFriend(f, f.customAddress)" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded text-[10px] shrink-0" title="Định vị địa chỉ">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button x-show="friends.length > 2" @click="removeFriend(idx)" class="text-slate-500 hover:text-rose-400 p-1 text-xs">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <div class="pt-2 flex items-center space-x-2">
+                <button @click="addFriendAtCenter()" class="py-2.5 px-3 rounded-xl bg-dark-800 hover:bg-slate-700 text-amber-400 font-bold text-xs flex-1 transition">
+                    + Add Member
+                </button>
+                <button @click="showFriendsModal = false; calculateCenter().then(() => executeSearchAndRank())" class="py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold text-xs flex-1 transition shadow-lg shadow-amber-500/20">
+                    Update & Re-calculate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: FREESTYLE WISHES & AI INTERPRETATION -->
+    <div x-show="showWishModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" x-cloak>
+        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl" @click.away="showWishModal = false">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+                    <h3 class="font-bold text-base text-white">Dining Wishes & Gemini AI Parser</h3>
+                </div>
+                <button @click="showWishModal = false" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div>
+                <label class="text-xs font-bold text-slate-300 mb-1 block">Paste group chat or type freeform preferences:</label>
+                <textarea x-model="discussionText" rows="3" class="w-full bg-dark-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-amber-400 resize-none placeholder-slate-500" placeholder="e.g. Alice wants quiet study, Bob wants matcha and photos, Charlie is vegetarian with no alcohol, budget under 70k..."></textarea>
+            </div>
+
+            <!-- Hard Constraints Checkboxes -->
+            <div class="space-y-2 bg-dark-850 p-3 rounded-xl border border-slate-800">
+                <span class="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">Hard Required Constraints:</span>
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-300">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" x-model="confirmedConstraints.vegetarian" class="accent-amber-500 rounded" />
+                        <span>Vegetarian Only</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" x-model="confirmedConstraints.no_alcohol" class="accent-amber-500 rounded" />
+                        <span>No Alcohol / Beer</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" x-model="confirmedConstraints.quiet_only" class="accent-amber-500 rounded" />
+                        <span>Quiet Only</span>
+                    </label>
+                    <div class="flex items-center space-x-1">
+                        <span class="text-[11px] text-slate-400">Budget &le;:</span>
+                        <input type="number" step="10000" x-model.number="confirmedConstraints.max_price_vnd" class="bg-dark-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-400 w-24 text-xs" />
+                        <span class="text-[11px]">VND</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 pt-2">
+                <button @click="showWishModal = false" class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex-1">
+                    Cancel
+                </button>
+                <button @click="parseWithGeminiAndExecute()" :disabled="parsing" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-dark-950 font-bold text-xs flex-2 transition shadow-lg shadow-amber-500/20 disabled:opacity-50">
+                    <span x-show="!parsing">Parse with AI & Match Spots</span>
+                    <span x-show="parsing"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Gemini Extracting...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- MODAL: CÁC REVIEWER TRƯỚC & HỒ SƠ TINH CHẾ -->
+    <div x-show="showReviewersModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" x-cloak>
+        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-2xl max-h-[90vh] flex flex-col" @click.away="showReviewersModal = false">
+            
+            <!-- Header -->
+            <div class="flex items-start justify-between border-b border-slate-800 pb-3 shrink-0">
+                <div class="min-w-0 pr-2">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-comments text-indigo-400 text-lg"></i>
+                        <h3 class="font-bold text-base text-white truncate" x-text="activeReviewerVenue?.name || 'Đánh giá & Review'"></h3>
+                    </div>
+                    <p class="text-xs text-slate-400 truncate mt-0.5" x-text="activeReviewerVenue?.address"></p>
+                </div>
+                <button @click="showReviewersModal = false" class="text-slate-400 hover:text-white shrink-0 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Tóm tắt Tinh chế (Distilled Insights) -->
+            <div class="bg-dark-850 p-3.5 rounded-xl border border-slate-800 space-y-2.5 shrink-0">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-amber-400 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Tổng hợp nhanh từ các Reviewer:</span>
+                    </span>
+                    <span class="text-[11px] text-emerald-400 font-bold" x-text="'⭐ ' + (activeReviewerVenue?.rating || 4.5) + ' trên Google Maps'"></span>
+                </div>
+
+                <!-- Món ruột nên thử -->
+                <template x-if="activeReviewerVenue?.socialHighlights?.signatureDishes?.length > 0">
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="text-slate-400 font-medium shrink-0">🍜 Món ruột:</span>
+                        <div class="flex flex-wrap gap-1">
+                            <template x-for="dish in activeReviewerVenue.socialHighlights.signatureDishes" :key="dish">
+                                <span class="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-bold" x-text="dish"></span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Ưu điểm & Lưu ý thực tế -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                    <div class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 space-y-1">
+                        <span class="font-bold block text-emerald-400">👍 Khen nhiều nhất:</span>
+                        <template x-for="pro in (activeReviewerVenue?.socialHighlights?.socialPros || [])" :key="pro">
+                            <div class="flex items-start space-x-1">
+                                <span class="text-emerald-400">•</span>
+                                <span class="text-slate-300 leading-tight" x-text="pro"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 space-y-1">
+                        <span class="font-bold block text-amber-400">⚠️ Lưu ý thực tế:</span>
+                        <template x-for="con in (activeReviewerVenue?.socialHighlights?.socialCons || [])" :key="con">
+                            <div class="flex items-start space-x-1">
+                                <span class="text-amber-400">•</span>
+                                <span class="text-slate-300 leading-tight" x-text="con"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feed Reviewer Trước -->
+            <div class="space-y-2.5 overflow-y-auto custom-scroll pr-1 flex-1 min-h-[200px]">
+                <span class="text-xs font-bold text-slate-300 block">Đánh giá tiêu biểu từ Google, TikTok & Facebook:</span>
+                <template x-for="rev in (activeReviewerVenue?.reviewers || [])" :key="rev.id">
+                    <div class="p-3 rounded-xl bg-dark-850 border border-slate-800 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-[11px] flex items-center justify-center shrink-0" x-text="rev.authorName.charAt(0)"></span>
+                                <span class="font-bold text-xs text-slate-200" x-text="rev.authorName"></span>
+                                <span class="text-[10px] text-slate-500" x-text="rev.reviewDate"></span>
+                            </div>
+                            <!-- Source Badge -->
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                                :class="{
+                                    'bg-blue-500/15 text-blue-400 border border-blue-500/30': rev.source === 'google',
+                                    'bg-pink-500/15 text-pink-400 border border-pink-500/30': rev.source === 'tiktok',
+                                    'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30': rev.source === 'facebook',
+                                    'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30': rev.source === 'user',
+                                    'bg-amber-500/15 text-amber-400 border border-amber-500/30': rev.source === 'shopeefood'
+                                }" x-text="rev.source"></span>
+                        </div>
+
+                        <!-- Stars -->
+                        <div class="flex items-center space-x-1 text-amber-400 text-[10px]">
+                            <template x-for="i in 5">
+                                <i class="fa-solid fa-star" :class="i <= Math.round(rev.rating) ? 'text-amber-400' : 'text-slate-700'"></i>
+                            </template>
+                            <span class="text-slate-400 ml-1 font-bold" x-text="rev.rating + ' sao'"></span>
+                        </div>
+
+                        <p class="text-xs text-slate-300 leading-relaxed" x-text="rev.content"></p>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Quick Add Review Box -->
+            <div class="pt-3 border-t border-slate-800 shrink-0 space-y-2 bg-dark-850 p-3 rounded-xl">
+                <span class="text-[11px] font-bold text-amber-400 block">✍️ Đã từng ăn ở đây? Thêm nhận xét của bạn:</span>
+                <div class="flex items-center space-x-2">
+                    <input type="text" x-model="drawerNewReview.content" placeholder="Chia sẻ cảm nhận, món ngon nên thử..." class="flex-1 bg-dark-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-400" @keydown.enter="submitReviewFromDrawer()" />
+                    <button @click="submitReviewFromDrawer()" :disabled="!drawerNewReview.content || !drawerNewReview.content.trim()" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded-lg text-xs transition disabled:opacity-50">
+                        Gửi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION CORE -->
+    <script>
+        function gatherApp() {
+            return {
+                outingCode: 'EAT-2026',
+                searchRadiusMeters: 3000,
+                activeScenario: 'all',
+                copied: false,
+                ranking: false,
+                parsing: false,
+                locating: false,
+                showFriendsModal: false,
+                showWishModal: false,
+                showReviewersModal: false,
+                activeReviewerVenue: null,
+                drawerNewReview: {
+                    content: '',
+                    rating: 5
+                },
+                searchMessage: '',
+
+                backendConfig: {
+                    aiModel: 'Gemini Flash',
+                    databaseType: 'SQLite Persistent',
+                    isSupabaseConfigured: false
+                },
+
+                map: null,
+                centerMarker: null,
+                radiusCircle: null,
+                friendMarkers: [],
+                venueMarkers: [],
+                travelLines: [],
+
+                centerCoords: { lat: 10.7782, lng: 106.6912 },
+
+                friends: [
+                    { id: 1, name: 'You', lat: 10.7798, lng: 106.6990, color: 'bg-blue-500', wish: 'quiet work space' },
+                    { id: 2, name: 'Bob', lat: 10.7950, lng: 106.7218, color: 'bg-emerald-500', wish: 'matcha and photos' },
+                    { id: 3, name: 'Charlie', lat: 10.7827, lng: 106.6958, color: 'bg-indigo-500', wish: 'vegetarian comfort' }
+                ],
+
+                discussionText: 'Alice needs quiet space to study. Bob wants ceremonial matcha and photos. Charlie eats vegetarian with no alcohol.',
+
+                confirmedConstraints: {
+                    vegetarian: false,
+                    no_alcohol: false,
+                    quiet_only: false,
+                    max_price_vnd: 150000
+                },
+                confirmedSoftPreferences: [
+                    { preference: 'Quiet workspace', weight: 5 },
+                    { preference: 'Matcha & Aesthetic', weight: 5 },
+                    { preference: 'Authentic Vietnamese', weight: 4 }
+                ],
+
+                shortlist: [],
+                selectedVenue: null,
+
+                async searchAddressForFriend(friend, query) {
+                    if (!query || !query.trim()) return;
+                    try {
+                        const res = await fetch('/api/geocode?q=' + encodeURIComponent(query.trim()));
+                        const data = await res.json();
+                        if (data && data.lat && data.lng) {
+                            friend.lat = Number(data.lat);
+                            friend.lng = Number(data.lng);
+                            friend.customAddress = data.address || query;
+                            alert('Đã tìm thấy địa chỉ: ' + (data.address ? data.address.slice(0, 45) + '...' : query));
+                            this.renderFriendMarkers();
+                            this.calculateCenter().then(() => this.executeSearchAndRank());
+                        } else {
+                            alert('Không tìm thấy tọa độ cho địa chỉ này, vui lòng thử lại.');
+                        }
+                    } catch (e) {
+                        alert('Lỗi tìm địa chỉ: ' + e.message);
+                    }
+                },
+
+                
+                activePresetId: null,
+                presetsList: [],
+                toastMessage: '',
+                toastTimer: null,
+
+                showToast(msg) {
+                    this.toastMessage = msg;
+                    if (this.toastTimer) clearTimeout(this.toastTimer);
+                    this.toastTimer = setTimeout(() => {
+                        this.toastMessage = '';
+                    }, 3500);
+                },
+
+                async fetchPresets() {
+                    try {
+                        const res = await fetch('/api/presets');
+                        const data = await res.json();
+                        this.presetsList = data.presets || [];
+                    } catch(e) {
+                        console.warn('Fetch presets error:', e);
+                    }
+                },
+
+                async loadPreset(presetId) {
+                    this.activePresetId = presetId;
+                    let preset = this.presetsList.find(p => p.id === presetId);
+                    if (!preset) {
+                        await this.fetchPresets();
+                        preset = this.presetsList.find(p => p.id === presetId);
+                    }
+                    if (!preset) return;
+
+                    this.friends = JSON.parse(JSON.stringify(preset.friends));
+                    this.searchRadiusMeters = preset.radiusMeters || 3000;
+                    if (preset.constraints) {
+                        this.confirmedConstraints = { ...this.confirmedConstraints, ...preset.constraints };
+                    }
+                    if (preset.softPreferences) {
+                        this.confirmedSoftPreferences = preset.softPreferences;
+                    }
+
+                    this.renderFriendMarkers();
+                    await this.calculateCenter();
+                    if (this.map && this.friendMarkers.length > 0) {
+                        const group = new L.featureGroup(this.friendMarkers);
+                        this.map.fitBounds(group.getBounds().pad(0.2));
+                    }
+                    this.executeSearchAndRank();
+                    this.showToast('⚡ Đã nạp kịch bản: ' + preset.title);
+                },
+
+                async shareVenuePlan(venue) {
+                    try {
+                        const res = await fetch('/api/outings/generate-share-text', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                venue,
+                                friends: this.friends,
+                                groupScore: venue.groupScore || 90,
+                                outingCode: this.outingCode
+                            })
+                        });
+                        const data = await res.json();
+                        if (data && data.message) {
+                            await navigator.clipboard.writeText(data.message);
+                            this.showToast('🎉 Đã copy tin nhắn rủ bạn! Dán ngay vào Zalo / Messenger');
+                        }
+                    } catch(e) {
+                        console.error('Share plan error:', e);
+                        this.showToast('Đã có lỗi khi tạo tin nhắn chia sẻ.');
+                    }
+                },
+
+                initApp() {
+                    // Fetch backend capabilities
+                    fetch('/api/config')
+                        .then(r => r.json())
+                        .then(cfg => { this.backendConfig = cfg; })
+                        .catch(err => console.warn('Config fetch error:', err));
+
+                    this.$nextTick(() => {
+                        this.initMap();
+                        this.fetchPresets();
+                        this.calculateCenter().then(() => {
+                            this.executeSearchAndRank();
+                        });
+                    });
+
+                    window.addEventListener('resize', () => {
+                        if (this.map) this.map.invalidateSize();
+                    });
+                },
+
+                initMap() {
+                    const mapContainer = document.getElementById('map');
+                    if (!mapContainer) return;
+
+                    this.map = L.map('map', {
+                        center: [this.centerCoords.lat, this.centerCoords.lng],
+                        zoom: 14,
+                        zoomControl: false
+                    });
+
+                    L.control.zoom({ position: 'bottomleft' }).addTo(this.map);
+
+                    // Clean, 100% watermark-free OpenStreetMap & ESRI World Street tiles
+                    this.tileLayers = {
+                        osm: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            maxZoom: 19,
+                            attribution: '&copy; OpenStreetMap contributors'
+                        }),
+                        dark: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                            maxZoom: 16,
+                            attribution: '&copy; Esri, HERE, Garmin, FAO, NOAA, USGS'
+                        }),
+                        street: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                            maxZoom: 18,
+                            attribution: '&copy; Esri'
+                        })
+                    };
+
+                    this.currentMapStyle = 'osm';
+                    this.tileLayers.osm.addTo(this.map);
+
+                    setTimeout(() => {
+                        if (this.map) this.map.invalidateSize();
+                    }, 200);
+
+                    this.renderCenterMarker();
+                    this.renderFriendMarkers();
+
+                    // Automatically attempt to fetch current user GPS location smoothly
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                const lat = Number(pos.coords.latitude.toFixed(6));
+                                const lng = Number(pos.coords.longitude.toFixed(6));
+                                if (this.friends.length > 0) {
+                                    this.friends[0].name = 'You (GPS)';
+                                    this.friends[0].lat = lat;
+                                    this.friends[0].lng = lng;
+                                }
+                                this.calculateCenter().then(() => this.executeSearchAndRank());
+                            },
+                            () => { /* Silent fallback to default real location */ },
+                            { timeout: 4000 }
+                        );
+                    }
+                },
+
+                useCurrentLocation() {
+                    if (!navigator.geolocation) {
+                        alert('Geolocation is not supported by your browser.');
+                        return;
+                    }
+                    this.locating = true;
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            this.locating = false;
+                            const lat = Number(pos.coords.latitude.toFixed(6));
+                            const lng = Number(pos.coords.longitude.toFixed(6));
+                            if (this.friends.length > 0) {
+                                this.friends[0].name = 'You (GPS)';
+                                this.friends[0].lat = lat;
+                                this.friends[0].lng = lng;
+                            }
+                            this.calculateCenter().then(() => this.executeSearchAndRank());
+                        },
+                        (err) => {
+                            this.locating = false;
+                            console.warn('GPS location failed, using default HCMC location:', err.message);
+                            alert('Could not retrieve current GPS position. Using selected Saigon preset.');
+                        },
+                        { timeout: 7000 }
+                    );
+                },
+
+                switchMapStyle(style) {
+                    if (!this.map || !this.tileLayers || this.currentMapStyle === style) return;
+                    if (this.tileLayers[this.currentMapStyle]) {
+                        this.map.removeLayer(this.tileLayers[this.currentMapStyle]);
+                    }
+                    if (this.tileLayers[style]) {
+                        this.tileLayers[style].addTo(this.map);
+                        this.currentMapStyle = style;
+                    }
+                },
+
+                copyShareLink() {
+                    navigator.clipboard.writeText(window.location.href);
+                    this.copied = true;
+                    setTimeout(() => this.copied = false, 2500);
+                },
+
+                addFriendAtCenter() {
+                    const presets = [
+                        { name: 'David (D4)', lat: 10.7608, lng: 106.7050 },
+                        { name: 'Emma (Phu Nhuan)', lat: 10.7965, lng: 106.6890 },
+                        { name: 'Frank (D7)', lat: 10.7330, lng: 106.7055 }
+                    ];
+                    const p = presets[this.friends.length % presets.length];
+                    const colors = ['bg-purple-500', 'bg-cyan-500', 'bg-pink-500', 'bg-teal-500'];
+                    const color = colors[this.friends.length % colors.length];
+                    this.friends.push({
+                        id: Date.now(),
+                        name: p.name,
+                        lat: p.lat,
+                        lng: p.lng,
+                        color,
+                        wish: ''
+                    });
+                    this.calculateCenter().then(() => this.executeSearchAndRank());
+                },
+
+                removeFriend(idx) {
+                    this.friends.splice(idx, 1);
+                    this.calculateCenter().then(() => this.executeSearchAndRank());
+                },
+
+                toggleConstraint(k) {
+                    this.confirmedConstraints[k] = !this.confirmedConstraints[k];
+                    this.executeSearchAndRank();
+                },
+
+                toggleBudget() {
+                    if (this.confirmedConstraints.max_price_vnd <= 65000) {
+                        this.confirmedConstraints.max_price_vnd = 250000;
+                    } else {
+                        this.confirmedConstraints.max_price_vnd = 65000;
+                    }
+                    this.executeSearchAndRank();
+                },
+
+                async calculateCenter() {
+                    const points = this.friends.map(f => ({ name: f.name, lat: f.lat, lng: f.lng }));
+                    try {
+                        const res = await fetch('/api/center/geometric-median', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ points })
+                        });
+                        const data = await res.json();
+                        if (data.median) {
+                            this.centerCoords = data.median;
+                            this.renderCenterMarker();
+                            this.renderFriendMarkers();
+                        }
+                    } catch (e) {
+                        console.error('Calculate center error:', e);
+                    }
+                },
+
+                renderCenterMarker() {
+                    if (!this.map) return;
+                    if (this.centerMarker) this.map.removeLayer(this.centerMarker);
+
+                    const icon = L.divIcon({
+                        className: 'center-beacon-outer',
+                        html: '<div style="background:#f59e0b; width:24px; height:24px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 0 16px rgba(245,158,11,1); cursor:grab; display:flex; align-items:center; justify-content:center;"><div style="width:6px; height:6px; background:#ffffff; border-radius:50%;"></div></div>',
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    });
+
+                    this.centerMarker = L.marker([this.centerCoords.lat, this.centerCoords.lng], {
+                        icon,
+                        draggable: true,
+                        zIndexOffset: 1000
+                    }).addTo(this.map);
+
+                    this.centerMarker.bindTooltip('<strong>Geometric Center</strong><br>(Drag to re-center)', { permanent: false, direction: 'top', offset: [0, -14] });
+
+                    this.centerMarker.on('dragend', (e) => {
+                        const pos = e.target.getLatLng();
+                        this.centerCoords = { lat: Number(pos.lat.toFixed(6)), lng: Number(pos.lng.toFixed(6)) };
+                        this.updateRadiusCircle();
+                        this.executeSearchAndRank();
+                    });
+
+                    this.updateRadiusCircle();
+                },
+
+                updateRadiusCircle() {
+                    if (!this.map) return;
+                    if (this.radiusCircle) this.map.removeLayer(this.radiusCircle);
+                    this.radiusCircle = L.circle([this.centerCoords.lat, this.centerCoords.lng], {
+                        radius: this.searchRadiusMeters,
+                        color: '#f59e0b',
+                        weight: 2,
+                        dashArray: '5, 6',
+                        fillColor: '#f59e0b',
+                        fillOpacity: 0.08
+                    }).addTo(this.map);
+                },
+
+                setRadius(m) {
+                    this.searchRadiusMeters = m;
+                    this.updateRadiusCircle();
+                    this.executeSearchAndRank();
+                },
+
+                renderFriendMarkers() {
+                    if (!this.map) return;
+                    this.friendMarkers.forEach(m => this.map.removeLayer(m));
+                    this.friendMarkers = [];
+
+                    this.friends.forEach((f) => {
+                        const isMe = f.name.includes('You');
+                        const fillColor = isMe ? '#2563eb' : (f.color === 'bg-emerald-500' ? '#10b981' : '#6366f1');
+                        const icon = L.divIcon({
+                            className: 'friend-pin',
+                            html: `<svg width="30" height="38" viewBox="0 0 30 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15 37C15 37 2 24 2 14C2 6.82 7.82 1 15 1C22.18 1 28 6.82 28 14C28 24 15 37 15 37Z" fill="${fillColor}" stroke="#ffffff" stroke-width="2"/>
+                                <circle cx="15" cy="14" r="9.5" fill="#ffffff"/>
+                                <text x="15" y="18" text-anchor="middle" fill="#0b0f19" font-size="11" font-weight="900" font-family="sans-serif">${f.name.charAt(0)}</text>
+                            </svg>`,
+                            iconSize: [30, 38],
+                            iconAnchor: [15, 38],
+                            popupAnchor: [0, -38]
+                        });
+                        const m = L.marker([f.lat, f.lng], { icon, draggable: true }).addTo(this.map);
+                        m.bindTooltip('<strong>' + f.name + '</strong>' + (f.wish ? '<br><span style="font-size:10px; opacity:0.8">' + f.wish + '</span>' : ''), { direction: 'top', offset: [0, -35] });
+                        
+                        m.on('dragend', (e) => {
+                            const p = e.target.getLatLng();
+                            f.lat = Number(p.lat.toFixed(6));
+                            f.lng = Number(p.lng.toFixed(6));
+                            this.calculateCenter().then(() => this.executeSearchAndRank());
+                        });
+
+                        this.friendMarkers.push(m);
+                    });
+                },
+
+                applyFastScenario(sc) {
+                    this.activeScenario = sc;
+                    if (sc === 'all') {
+                        this.confirmedConstraints = { vegetarian: false, no_alcohol: false, quiet_only: false, max_price_vnd: 250000 };
+                        this.confirmedSoftPreferences = [{ preference: 'Diverse delicious food', weight: 4 }];
+                    } else if (sc === 'chay') {
+                        this.confirmedConstraints = { vegetarian: true, no_alcohol: false, quiet_only: false, max_price_vnd: 200000 };
+                        this.confirmedSoftPreferences = [{ preference: 'Vegetarian dining', weight: 5 }, { preference: 'Quiet atmosphere', weight: 4 }];
+                    } else if (sc === 'matcha') {
+                        this.confirmedConstraints = { vegetarian: false, no_alcohol: false, quiet_only: false, max_price_vnd: 100000 };
+                        this.confirmedSoftPreferences = [{ preference: 'Matcha & Aesthetic', weight: 5 }, { preference: 'Photogenic spaces', weight: 5 }];
+                    } else if (sc === 'hem') {
+                        this.confirmedConstraints = { vegetarian: false, no_alcohol: false, quiet_only: false, max_price_vnd: 65000 };
+                        this.confirmedSoftPreferences = [{ preference: 'Alley eatery hearty meal', weight: 5 }, { preference: 'Budget <50k', weight: 5 }];
+                    } else if (sc === 'chill') {
+                        this.confirmedConstraints = { vegetarian: false, no_alcohol: false, quiet_only: false, max_price_vnd: 180000 };
+                        this.confirmedSoftPreferences = [{ preference: 'Live acoustic music', weight: 5 }, { preference: 'Craft beer & late night', weight: 5 }];
+                    }
+                    this.executeSearchAndRank();
+                },
+
+                async parseWithGeminiAndExecute() {
+                    this.parsing = true;
+                    try {
+                        const res = await fetch('/api/preferences/parse', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                discussionText: this.discussionText,
+                                friends: this.friends
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.requiredConstraints) {
+                            if (Array.isArray(data.requiredConstraints)) {
+                                this.confirmedConstraints.vegetarian = data.requiredConstraints.some(r => r.criterion === 'vegetarian');
+                                this.confirmedConstraints.no_alcohol = data.requiredConstraints.some(r => r.criterion === 'no_alcohol');
+                            } else {
+                                this.confirmedConstraints = { ...this.confirmedConstraints, ...data.requiredConstraints };
+                            }
+                        }
+                        if (data.softPreferences && Array.isArray(data.softPreferences)) {
+                            this.confirmedSoftPreferences = data.softPreferences;
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        this.parsing = false;
+                        this.showWishModal = false;
+                        this.executeSearchAndRank();
+                    }
+                },
+
+                async executeSearchAndRank() {
+                    this.ranking = true;
+                    try {
+                        const res = await fetch('/api/venues/search-and-rank', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                center: this.centerCoords,
+                                radiusMeters: this.searchRadiusMeters,
+                                requiredConstraints: this.confirmedConstraints,
+                                softPreferences: this.confirmedSoftPreferences,
+                                friends: this.friends
+                            })
+                        });
+                        const data = await res.json();
+                        this.shortlist = data.shortlist || [];
+                        this.searchMessage = data.message || '';
+
+                        this.renderVenueMarkers();
+                        if (this.shortlist.length > 0) {
+                            this.selectVenue(this.shortlist[0]);
+                        } else {
+                            this.clearTravelLines();
+                        }
+                    } catch (e) {
+                        console.error('Execute ranking error:', e);
+                    } finally {
+                        this.ranking = false;
+                    }
+                },
+
+                renderVenueMarkers() {
+                    if (!this.map) return;
+                    this.venueMarkers.forEach(m => this.map.removeLayer(m));
+                    this.venueMarkers = [];
+
+                    this.shortlist.forEach((venue, idx) => {
+                        const isTop = idx === 0;
+                        const pinColor = isTop ? '#10b981' : '#f59e0b';
+                        const icon = L.divIcon({
+                            className: 'venue-pin',
+                            html: `<svg width="34" height="44" viewBox="0 0 34 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17 43C17 43 3 28.5 3 17C3 9.27 9.27 3 17 3C24.73 3 31 9.27 31 17C31 28.5 17 43 17 43Z" fill="${pinColor}" stroke="#ffffff" stroke-width="2.2"/>
+                                <circle cx="17" cy="17" r="9.5" fill="#ffffff"/>
+                                <text x="17" y="21" text-anchor="middle" fill="#0b0f19" font-size="11" font-weight="900" font-family="sans-serif">${idx + 1}</text>
+                            </svg>`,
+                            iconSize: [34, 44],
+                            iconAnchor: [17, 43],
+                            popupAnchor: [0, -43]
+                        });
+                        const m = L.marker([venue.lat, venue.lng], { icon }).addTo(this.map);
+                        m.bindTooltip('<strong>#' + (idx + 1) + ' ' + venue.name + '</strong><br>' + venue.category + ' (' + venue.groupScore + '/100)', { direction: 'top', offset: [0, -40] });
+                        m.on('click', () => {
+                            this.selectVenue(venue);
+                        });
+                        this.venueMarkers.push(m);
+                    });
+                },
+
+                selectVenue(venue) {
+                    this.selectedVenue = venue;
+                    this.drawTravelLines(venue);
+                    // Smooth, gentle pan only if venue is far away from center
+                    if (this.map && !this.map.getBounds().contains([venue.lat, venue.lng])) {
+                        this.map.panTo([venue.lat, venue.lng], { animate: true, duration: 0.5 });
+                    }
+                },
+
+                drawTravelLines(venue) {
+                    this.clearTravelLines();
+                    if (!this.map || !venue) return;
+
+                    this.friends.forEach((f) => {
+                        // Clean, elegant dashed line without cluttered midpoint badges
+                        const line = L.polyline([[f.lat, f.lng], [venue.lat, venue.lng]], {
+                            color: '#38bdf8',
+                            weight: 2.5,
+                            dashArray: '6, 8',
+                            opacity: 0.8
+                        }).addTo(this.map);
+
+                        this.travelLines.push(line);
+                    });
+                },
+
+                clearTravelLines() {
+                    if (!this.map) return;
+                    this.travelLines.forEach(l => this.map.removeLayer(l));
+                    this.travelLines = [];
+                },
+
+                async voteForVenue(venue) {
+                    venue.votes++;
+                    try {
+                        await fetch('/api/outings/' + this.outingCode + '/vote', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ venueId: venue.id, voterName: 'You' })
+                        });
+                    } catch (e) {
+                        console.error('Vote error:', e);
+                    }
+                },
+
+                getVenueImage(venue) {
+                    const name = (venue.name || '').toLowerCase();
+                    const cat = (venue.category || '').toLowerCase();
+
+                    if (cat.includes('vegetarian') || cat.includes('chay')) {
+                        return 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80';
+                    }
+                    if (name.includes('matcha') || cat.includes('matcha')) {
+                        return 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80';
+                    }
+                    if (venue.isAlley || cat.includes('alley') || cat.includes('hẻm') || cat.includes('street food')) {
+                        return 'https://images.unsplash.com/photo-1503764654157-72d979d9af2f?w=600&auto=format&fit=crop&q=80';
+                    }
+                    if (cat.includes('music') || cat.includes('pub') || cat.includes('bar')) {
+                        return 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&auto=format&fit=crop&q=80';
+                    }
+                    if (cat.includes('coffee') || cat.includes('workspace') || cat.includes('cà phê')) {
+                        return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80';
+                    }
+                    return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80';
+                }
+            }
+        }
+    </script>
+
+    <!-- GLOBAL TOAST NOTIFICATION -->
+    <div x-show="toastMessage" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
+         class="fixed bottom-6 right-6 z-[9999] bg-gradient-to-r from-amber-500 to-amber-400 text-dark-950 font-extrabold px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-2.5 border-2 border-white text-xs max-w-md" 
+         style="display: none;">
+        <i class="fa-solid fa-circle-check text-base text-dark-950"></i>
+        <span x-text="toastMessage"></span>
+    </div>
+
+</body>
+</html>

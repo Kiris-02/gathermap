@@ -1,0 +1,17 @@
+{
+  "name": "gathermap",
+  "version": "1.0.0",
+  "description": "Smart group hangout spot finder powered by Google Maps & AI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "sqlite3": "^6.0.1"
+  }
+}
