@@ -30,7 +30,13 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 // Resilient Gemini Caller with automatic model fallback
 async function callGemini(prompt, responseMimeType = 'application/json') {
     if (!GEMINI_KEY) return null;
-    const candidateModels = ['gemini-3.6-flash', 'gemini-3.8-flash'];
+    const candidateModels = [
+        'gemini-3.1-flash-lite',
+        'gemini-3.5-flash',
+        'gemini-3.7-flash',
+        'gemini-3.6-flash',
+        'gemini-3.8-flash'
+    ];
     for (const model of candidateModels) {
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`, {
@@ -164,12 +170,50 @@ async function fetchGooglePlacesNearby(center, radiusMeters = 3000) {
     }
 }
 
-// Geocoding endpoint (Google Geocoding with OpenStreetMap Nominatim Fallback)
+// Geocoding endpoint (Gemini AI Natural Language Location Resolver + Google / OSM fallback)
 app.get('/api/geocode', async (req, res) => {
     const q = (req.query.q || '').trim();
     if (!q) return res.status(400).json({ error: 'Query parameter q required' });
 
-    // 1. If Google Key exists, use Google Geocoding API
+    // 1. LLM NATURAL LANGUAGE PLACE INTERPRETATION (Resolves "UEH B", "BK CS2", "Hồ Thị Kỷ", "Landmark 81"...)
+    if (GEMINI_KEY) {
+        try {
+            const prompt = `Bạn là chuyên gia bản đồ và ngôn ngữ đời sống tại TP.HCM (Sài Gòn).
+Người dùng nhập cụm từ địa danh tiếng Việt đời thường, từ viết tắt trường học, chợ, công viên hoặc tiếng lóng địa phương: "${q}".
+Hãy giải mã chính xác địa điểm này tại TP.HCM (hoặc vùng phụ cận).
+Trả về JSON duy nhất:
+{
+  "recognized": true,
+  "standardName": "Tên địa điểm chuẩn (ví dụ: Trường Đại học Kinh tế TP.HCM - Cơ sở B)",
+  "fullAddress": "Địa chỉ đầy đủ tại TP.HCM (ví dụ: 279 Nguyễn Tri Phương, Phường 5, Quận 10, TP.HCM)",
+  "searchQuery": "Địa chỉ tối ưu ngắn gọn (ví dụ: 279 Nguyễn Tri Phương, Quận 10, TP.HCM)",
+  "lat": 10.763462,
+  "lng": 106.666998,
+  "explanation": "Giải thích ngắn gọn nguồn gốc từ lóng/viết tắt"
+}`;
+
+            const aiResp = await callGemini(prompt, 'application/json');
+            if (aiResp && aiResp.text) {
+                const aiData = JSON.parse(aiResp.text);
+                if (aiData && aiData.recognized && aiData.lat && aiData.lng) {
+                    console.log(`🧠 AI Geocoded "${q}" -> ${aiData.standardName} (${aiData.lat}, ${aiData.lng})`);
+                    return res.json({
+                        source: 'gemini_nlp',
+                        name: aiData.standardName || q,
+                        address: aiData.fullAddress || aiData.standardName,
+                        lat: Number(aiData.lat),
+                        lng: Number(aiData.lng),
+                        explanation: aiData.explanation || '',
+                        aiModel: aiResp.model
+                    });
+                }
+            }
+        } catch (err) {
+            console.warn('AI Geocoding notice:', err.message);
+        }
+    }
+
+    // 2. If Google Key exists, use Google Geocoding API
     if (GOOGLE_KEY) {
         try {
             const gRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q + ', Ho Chi Minh City')}&key=${GOOGLE_KEY}`);
@@ -190,7 +234,7 @@ app.get('/api/geocode', async (req, res) => {
         }
     }
 
-    // 2. Free Fallback Geocoding via Nominatim
+    // 3. Free Fallback Geocoding via Nominatim
     try {
         const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q + ', Ho Chi Minh City')}&limit=1`, {
             headers: { 'User-Agent': 'GatherMap-App/1.0' }

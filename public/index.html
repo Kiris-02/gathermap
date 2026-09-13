@@ -880,21 +880,29 @@
 
                 async searchAddressForFriend(friend, query) {
                     if (!query || !query.trim()) return;
+                    friend.locating = true;
                     try {
                         const res = await fetch('/api/geocode?q=' + encodeURIComponent(query.trim()));
                         const data = await res.json();
                         if (data && data.lat && data.lng) {
                             friend.lat = Number(data.lat);
                             friend.lng = Number(data.lng);
-                            friend.customAddress = data.address || query;
-                            alert('Đã tìm thấy địa chỉ: ' + (data.address ? data.address.slice(0, 45) + '...' : query));
+                            friend.customAddress = data.name && data.address && !data.address.startsWith(data.name)
+                                ? `${data.name} (${data.address})`
+                                : (data.address || data.name || query);
+                            const msg = data.source === 'gemini_nlp'
+                                ? `✨ AI đã giải mã: ${data.name} (Q.10)`
+                                : `📍 Đã định vị: ${data.name || data.address}`;
+                            this.showToast(msg);
                             this.renderFriendMarkers();
                             this.calculateCenter().then(() => this.executeSearchAndRank());
                         } else {
-                            alert('Không tìm thấy tọa độ cho địa chỉ này, vui lòng thử lại.');
+                            this.showToast('⚠️ Không tìm thấy tọa độ cho địa điểm này.');
                         }
                     } catch (e) {
-                        alert('Lỗi tìm địa chỉ: ' + e.message);
+                        this.showToast('⚠️ Lỗi định vị: ' + e.message);
+                    } finally {
+                        friend.locating = false;
                     }
                 },
 
