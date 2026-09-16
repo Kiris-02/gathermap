@@ -197,108 +197,27 @@
         <!-- SIDEBAR PANEL (CONTROLS & SHORTLIST) -->
         <aside class="w-full lg:w-[490px] xl:w-[530px] bg-dark-900 border-r border-slate-800 flex flex-col shrink-0 z-10 overflow-hidden shadow-2xl" :class="mobileView === 'map' ? 'hidden lg:flex' : 'flex'">
             
-            <!-- CONTROLS & STATUS BAR -->
-            <div class="p-3.5 bg-dark-850 border-b border-slate-800 space-y-3 shrink-0">
-
-                <!-- 1-CLICK WINNING PRESETS BAR (IN-DEPTH DEMO) -->
-                <div class="bg-dark-950/80 p-2.5 rounded-xl border border-amber-500/30 space-y-2 shadow-inner">
-                    <div class="flex items-center justify-between text-[11px]">
-                        <span class="font-black text-amber-400 flex items-center space-x-1.5">
-                            <i class="fa-solid fa-bolt text-amber-400"></i>
-                            <span>KỊCH BẢN MẪU 1-CLICK (Presets):</span>
+            <!-- MINIMALIST CONTROLS BAR: SINGLE WISHES BUTTON -->
+            <div class="p-3 bg-dark-850 border-b border-slate-800 shrink-0">
+                <button @click="openGroupModal()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-dark-950 font-bold text-xs flex items-center justify-between shadow-lg shadow-amber-500/20 transition group">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-dark-950/25 flex items-center justify-center text-xs group-hover:rotate-12 transition">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
                         </span>
-                        <span class="text-[10px] text-slate-400">Bấm là chạy tức thì</span>
+                        <div class="text-left">
+                            <span class="font-black text-sm block leading-tight">Wishes</span>
+                            <span class="text-[10px] opacity-80 block" x-text="friends.length + ' bạn • Bán kính ' + (searchRadiusMeters/1000).toFixed(1) + 'km'"></span>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-1.5 text-[11px]">
-                        <button @click="loadPreset('preset_cuoituan_3nguoi')" 
-                                :class="activePresetId === 'preset_cuoituan_3nguoi' ? 'bg-amber-500 text-dark-950 font-black shadow-md shadow-amber-500/20' : 'bg-dark-800 hover:bg-slate-750 text-slate-300'" 
-                                class="p-1.5 rounded-lg border border-slate-700/60 flex flex-col items-center justify-center text-center transition">
-                            <span class="text-xs font-bold">🍕 Cuối tuần</span>
-                            <span class="text-[9px] opacity-80">3 bạn (Q1-Q3-BT)</span>
-                        </button>
-                        <button @click="loadPreset('preset_deadline_4nguoi')" 
-                                :class="activePresetId === 'preset_deadline_4nguoi' ? 'bg-amber-500 text-dark-950 font-black shadow-md shadow-amber-500/20' : 'bg-dark-800 hover:bg-slate-750 text-slate-300'" 
-                                class="p-1.5 rounded-lg border border-slate-700/60 flex flex-col items-center justify-center text-center transition">
-                            <span class="text-xs font-bold">💻 Deadline</span>
-                            <span class="text-[9px] opacity-80">4 bạn (Q10-PN-TB)</span>
-                        </button>
-                        <button @click="loadPreset('preset_launuong_cholon_4nguoi')" 
-                                :class="activePresetId === 'preset_launuong_cholon_4nguoi' ? 'bg-amber-500 text-dark-950 font-black shadow-md shadow-amber-500/20' : 'bg-dark-800 hover:bg-slate-750 text-slate-300'" 
-                                class="p-1.5 rounded-lg border border-slate-700/60 flex flex-col items-center justify-center text-center transition">
-                            <span class="text-xs font-bold">🍲 Lẩu nướng</span>
-                            <span class="text-[9px] opacity-80">4 bạn (Q5-Q4-Q1)</span>
-                        </button>
-                    </div>
-                </div>
-
-                
-                <!-- Group Members & Click Map Reminder -->
-                <div class="flex items-center justify-between text-xs">
                     <div class="flex items-center space-x-2">
-                        <span class="font-bold text-slate-200">Group Members (<span x-text="friends.length"></span>):</span>
                         <div class="flex -space-x-1.5 overflow-hidden">
                             <template x-for="f in friends" :key="f.id">
-                                <span :class="f.color" class="inline-block h-6 w-6 rounded-full text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-dark-900 cursor-pointer" :title="f.name + ': ' + (f.wish || 'No wish')" @click="selectFriend(f)" x-text="f.name.charAt(0)"></span>
+                                <span :class="f.color" class="inline-block h-6 w-6 rounded-full text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-dark-900" x-text="f.name.charAt(0)"></span>
                             </template>
                         </div>
+                        <i class="fa-solid fa-chevron-right text-xs opacity-70 group-hover:translate-x-0.5 transition"></i>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <button @click="addFriendAtCenter()" class="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center space-x-1">
-                            <i class="fa-solid fa-user-plus"></i>
-                            <span>Add</span>
-                        </button>
-                        <span class="text-slate-600">|</span>
-                        <button @click="openGroupModal()" class="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center space-x-1">
-                            <i class="fa-solid fa-users-gear text-[11px]"></i>
-                            <span>Sửa nhóm & Mong muốn</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Radius Slider & Draggable Center Reminder -->
-                <div class="flex items-center justify-between space-x-3 text-xs bg-dark-950 p-2.5 rounded-xl border border-slate-800/80">
-                    <div class="flex items-center space-x-2 flex-1 min-w-0">
-                        <i class="fa-solid fa-location-crosshairs text-amber-400 text-sm shrink-0"></i>
-                        <div class="truncate">
-                            <span class="text-slate-400 block text-[10px]">Geometric Center & Search Radius:</span>
-                            <span class="font-bold text-amber-300" x-text="(searchRadiusMeters/1000).toFixed(1) + ' km'"></span>
-                            <span class="text-slate-400 text-[11px] ml-1">(Drag gold pin on map to re-center)</span>
-                        </div>
-                    </div>
-
-                    <!-- Radius Quick Buttons -->
-                    <div class="flex items-center space-x-1 shrink-0">
-                        <button @click="setRadius(1000)" :class="searchRadiusMeters === 1000 ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-800 text-slate-400 hover:text-white'" class="px-2 py-1 rounded text-[11px] transition">1km</button>
-                        <button @click="setRadius(2000)" :class="searchRadiusMeters === 2000 ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-800 text-slate-400 hover:text-white'" class="px-2 py-1 rounded text-[11px] transition">2km</button>
-                        <button @click="setRadius(3000)" :class="searchRadiusMeters === 3000 ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-800 text-slate-400 hover:text-white'" class="px-2 py-1 rounded text-[11px] transition">3km</button>
-                        <button @click="setRadius(5000)" :class="searchRadiusMeters === 5000 ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-800 text-slate-400 hover:text-white'" class="px-2 py-1 rounded text-[11px] transition">5km</button>
-                    </div>
-                </div>
-
-                <!-- One-Touch Preference Chips -->
-                <div class="space-y-1.5">
-                    <div class="flex items-center justify-between text-[11px] text-slate-400">
-                        <span class="font-semibold">Quick Preference Chips (Tap to toggle):</span>
-                        <button @click="openGroupModal()" class="text-amber-400 hover:text-amber-300 font-semibold flex items-center space-x-1">
-                            <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
-                            <span>Nhập mong muốn AI</span>
-                        </button>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5">
-                        <button @click="toggleConstraint('vegetarian')" :class="confirmedConstraints.vegetarian ? 'bg-emerald-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-300 border border-slate-700'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
-                            <span>🌿 Vegetarian</span>
-                        </button>
-                        <button @click="toggleConstraint('no_alcohol')" :class="confirmedConstraints.no_alcohol ? 'bg-emerald-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-300 border border-slate-700'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
-                            <span>🚫 No Alcohol</span>
-                        </button>
-                        <button @click="toggleConstraint('quiet_only')" :class="confirmedConstraints.quiet_only ? 'bg-emerald-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-300 border border-slate-700'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
-                            <span>🤫 Quiet Only</span>
-                        </button>
-                        <button @click="toggleBudget()" :class="confirmedConstraints.max_price_vnd <= 65000 ? 'bg-emerald-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-300 border border-slate-700'" class="px-2.5 py-1 rounded-full text-xs transition flex items-center space-x-1">
-                            <span>💸 &lt;50k Budget</span>
-                        </button>
-                    </div>
-                </div>
+                </button>
             </div>
 
             <!-- SHORTLIST RESULTS -->
@@ -552,121 +471,94 @@
             </div>
 
             <!-- Scrollable Body -->
-            <div class="overflow-y-auto custom-scroll pr-1 space-y-3 flex-1">
-                <!-- Group Members List -->
+            <div class="overflow-y-auto custom-scroll pr-1 space-y-3.5 flex-1">
+                <!-- SECTION 1: GROUP MEMBERS & MANUAL STARTING ADDRESS -->
                 <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
                         <span class="font-bold text-slate-200 flex items-center space-x-1.5">
                             <i class="fa-solid fa-user-group text-amber-400"></i>
                             <span>Thành viên trong nhóm (<span x-text="friends.length"></span> bạn):</span>
                         </span>
-                        <button @click="addFriendAtCenter()" class="text-[11px] text-amber-400 hover:text-amber-300 font-bold flex items-center space-x-1">
+                        <button @click="addFriendAtCenter()" class="text-[11px] text-amber-400 hover:text-amber-300 font-bold flex items-center space-x-1 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20 transition">
                             <i class="fa-solid fa-user-plus"></i>
                             <span>+ Thêm bạn</span>
                         </button>
                     </div>
 
-                    <template x-for="(f, idx) in friends" :key="f.id">
-                        <div class="p-2.5 sm:p-3 rounded-xl bg-dark-850 border border-slate-800 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-2 flex-1 min-w-0">
-                                    <span :class="f.color" class="w-6 h-6 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0" x-text="f.name.charAt(0)"></span>
-                                    <input type="text" x-model="f.name" placeholder="Tên bạn" class="bg-transparent font-bold text-xs text-white border-b border-transparent focus:border-amber-400 focus:outline-none w-36 truncate" />
+                    <div class="space-y-2">
+                        <template x-for="(f, idx) in friends" :key="f.id">
+                            <div class="p-2.5 rounded-xl bg-dark-850 border border-slate-800 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2 flex-1 min-w-0">
+                                        <span :class="f.color" class="w-6 h-6 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0" x-text="f.name.charAt(0)"></span>
+                                        <input type="text" x-model="f.name" placeholder="Tên bạn" class="bg-transparent font-bold text-xs text-white border-b border-transparent focus:border-amber-400 focus:outline-none w-36 truncate" />
+                                    </div>
+                                    <button x-show="friends.length > 2" @click="removeFriend(idx)" class="text-slate-500 hover:text-rose-400 p-1 text-xs transition" title="Xóa bạn này">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
                                 </div>
-                                <button x-show="friends.length > 2" @click="removeFriend(idx)" class="text-slate-500 hover:text-rose-400 p-1 text-xs" title="Xóa bạn này">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                <!-- Location Input with GPS and AI Search -->
+                                <!-- Manual Address Input -->
                                 <div>
-                                    <span class="text-[10px] text-slate-400 block mb-0.5">📍 Điểm xuất phát:</span>
-                                    <div class="flex items-center space-x-1">
-                                        <input type="text" x-model="f.customAddress" placeholder="Tên đường, địa danh hoặc viết tắt (UEH B, L81...)" class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchAddressForFriend(f, f.customAddress)" />
-                                        <button @click="searchAddressForFriend(f, f.customAddress)" :disabled="f.locating" class="px-2 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded text-xs shrink-0 transition disabled:opacity-50" title="Định vị bằng AI / Tìm kiếm">
+                                    <div class="flex items-center space-x-1.5">
+                                        <input type="text" x-model="f.customAddress" placeholder="Nhập địa chỉ hoặc tên địa danh (vd: UEH B, Hồ Thị Kỷ, Landmark 81...)" class="bg-dark-950 text-[11px] text-slate-200 rounded-lg px-2.5 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchAddressForFriend(f, f.customAddress)" />
+                                        <button @click="searchAddressForFriend(f, f.customAddress)" :disabled="f.locating" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded-lg text-xs shrink-0 transition disabled:opacity-50" title="Định vị địa chỉ">
                                             <i x-show="!f.locating" class="fa-solid fa-magnifying-glass"></i>
                                             <i x-show="f.locating" class="fa-solid fa-spinner fa-spin"></i>
                                         </button>
-                                        <button type="button" @click="useCurrentLocationForFriend(f)" :disabled="f.locating" class="px-2 py-1.5 bg-dark-800 hover:bg-slate-700 text-amber-400 border border-slate-700 rounded text-xs shrink-0 transition disabled:opacity-50" title="Lấy vị trí GPS hiện tại của bạn">
-                                            <i class="fa-solid fa-location-crosshairs"></i>
-                                        </button>
                                     </div>
-                                    <span class="text-[9px] text-slate-500 block pt-1">💡 Nhập địa chỉ rồi ấn Enter hoặc bấm nút GPS để lấy vị trí</span>
-                                </div>
-
-                                <!-- Wish Input with Fast Taste Tags -->
-                                <div>
-                                    <div class="flex items-center justify-between mb-0.5">
-                                        <span class="text-[10px] text-slate-400">🍽️ Khẩu vị / Gợi ý (tùy chọn):</span>
-                                        <button type="button" x-show="f.wish" @click="f.wish = ''" class="text-[9px] text-slate-500 hover:text-rose-400 transition">Xóa</button>
-                                    </div>
-                                    <input type="text" x-model="f.wish" placeholder="vd: matcha, ăn chay, yên tĩnh..." class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" />
-                                    <!-- Quick Taste Chips -->
-                                    <div class="flex items-center space-x-1 pt-1 overflow-x-auto no-scrollbar">
-                                        <button type="button" @click="addWishTag(f, 'matcha')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[9px] text-emerald-300 border border-slate-700/70 hover:border-emerald-500/50 shrink-0 transition">+ 🍵 Matcha</button>
-                                        <button type="button" @click="addWishTag(f, 'yên tĩnh')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[9px] text-amber-300 border border-slate-700/70 hover:border-amber-500/50 shrink-0 transition">+ 🤫 Yên tĩnh</button>
-                                        <button type="button" @click="addWishTag(f, 'ăn chay')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[9px] text-lime-300 border border-slate-700/70 hover:border-lime-500/50 shrink-0 transition">+ 🌿 Chay</button>
-                                        <button type="button" @click="addWishTag(f, 'lẩu nướng')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[9px] text-rose-300 border border-slate-700/70 hover:border-rose-500/50 shrink-0 transition">+ 🍲 Lẩu nướng</button>
-                                    </div>
+                                    <span class="text-[9px] text-slate-500 block pt-1">💡 Nhập địa chỉ rồi ấn Enter hoặc bấm nút kính lúp để định vị</span>
                                 </div>
                             </div>
-                        </div>
-                    </template>
+                        </template>
+                    </div>
                 </div>
 
-                <!-- AI Chat Extractor (Collapsible Accelerator) -->
-                <div class="bg-gradient-to-r from-indigo-950/40 via-dark-850 to-dark-850 p-2.5 sm:p-3 rounded-xl border border-indigo-900/40 space-y-2">
-                    <div class="flex items-center justify-between cursor-pointer select-none" @click="showChatPaste = !showChatPaste">
+                <!-- AI DISCUSSION / BACKGROUND PARSER (LLM HANDLES PREFERENCES & CONSTRAINTS) -->
+                <div class="bg-gradient-to-r from-indigo-950/40 via-dark-850 to-dark-850 p-3 rounded-xl border border-indigo-900/40 space-y-2">
+                    <div class="flex items-center justify-between text-xs">
                         <div class="flex items-center space-x-2">
                             <span class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs shrink-0">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i>
                             </span>
                             <div>
-                                <div class="flex items-center space-x-1.5">
-                                    <span class="font-bold text-xs text-indigo-200">✨ AI Tự Động Đọc Tin Nhắn Nhóm</span>
-                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">Zalo / Mess</span>
-                                </div>
-                                <span class="text-[10px] text-slate-400 block">Dán đoạn chat bạn bè bàn tán, Gemini AI tự động bóc tách khẩu vị</span>
+                                <span class="font-bold text-xs text-indigo-200">✨ Mong muốn & Bối cảnh nhóm (Gemini LLM)</span>
+                                <span class="text-[10px] text-slate-400 block">Dán tin nhắn Zalo/Mess hoặc ghi chú khẩu vị chung, AI tự động phân tích & đối chiếu với quán</span>
                             </div>
                         </div>
-                        <button type="button" class="text-indigo-400 p-1 hover:text-indigo-200 transition" title="Bấm để mở/thu gọn">
-                            <i class="fa-solid text-xs transition-transform duration-200" :class="showChatPaste ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                        </button>
                     </div>
-
-                    <div x-show="showChatPaste" x-transition class="space-y-1.5 pt-1.5 border-t border-indigo-950/60">
-                        <textarea x-model="discussionText" rows="2" class="w-full bg-dark-950 border border-indigo-800/40 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-400 resize-none placeholder-slate-500" placeholder="Copy tin nhắn nhóm dán vào đây (vd: Nhóm mình đứa ăn chay đứa thích matcha, kiếm quán mát mẻ dưới 70k nha)..."></textarea>
-                        <div class="flex items-center justify-between text-[10px] text-slate-400">
-                            <span class="flex items-center space-x-1">
-                                <i class="fa-solid fa-circle-info text-indigo-400"></i>
-                                <span>AI sẽ tự động nhận diện ăn chay, ngân sách và không khí</span>
-                            </span>
-                            <button type="button" x-show="discussionText" @click="discussionText = ''" class="text-indigo-400 hover:text-indigo-200 font-semibold">Xóa nội dung</button>
-                        </div>
+                    <textarea x-model="discussionText" rows="3" class="w-full bg-dark-950 border border-indigo-800/40 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400 resize-none placeholder-slate-500" placeholder="vd: Nhóm mình đứa ăn chay đứa thích matcha, kiếm quán mát mẻ dưới 70k nha (hoặc copy tin nhắn Zalo dán vào đây)..."></textarea>
+                    <div class="flex items-center justify-between text-[10px] text-slate-400">
+                        <span class="flex items-center space-x-1">
+                            <i class="fa-solid fa-circle-info text-indigo-400"></i>
+                            <span>LLM sẽ tự nhận diện khẩu vị, ngân sách và bối cảnh nhóm</span>
+                        </span>
+                        <button type="button" x-show="discussionText" @click="discussionText = ''" class="text-indigo-400 hover:text-indigo-200 font-semibold">Xóa nội dung</button>
                     </div>
                 </div>
 
-                <!-- Hard Required Constraints Checkboxes -->
-                <div class="space-y-2 bg-dark-850 p-2.5 sm:p-3 rounded-xl border border-slate-800">
-                    <span class="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">Bộ lọc Bắt buộc (Hard Constraints):</span>
-                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-300">
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" x-model="confirmedConstraints.vegetarian" class="accent-amber-500 rounded" />
-                            <span>🌿 Ăn chay</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" x-model="confirmedConstraints.no_alcohol" class="accent-amber-500 rounded" />
-                            <span>🚫 Không cồn/bia</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" x-model="confirmedConstraints.quiet_only" class="accent-amber-500 rounded" />
-                            <span>🤫 Yên tĩnh</span>
-                        </label>
-                        <div class="flex items-center space-x-1">
-                            <span class="text-[10px] text-slate-400">💸 Tối đa:</span>
-                            <input type="number" step="10000" x-model.number="confirmedConstraints.max_price_vnd" class="bg-dark-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-400 w-20 text-xs font-bold" />
-                            <span class="text-[10px]">đ</span>
+                <!-- SECTION 3: TÂM ĐIỂM & BÁN KÍNH TÌM KIẾM -->
+                <div class="bg-dark-850 p-3 rounded-xl border border-slate-800 space-y-2.5">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-slate-200 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-location-crosshairs text-amber-400"></i>
+                            <span>Tâm điểm & Bán kính tìm kiếm</span>
+                        </span>
+                        <span class="text-[10px] text-amber-400 font-mono font-bold" x-text="(searchRadiusMeters/1000).toFixed(1) + ' km'"></span>
+                    </div>
+
+                    <div class="text-[10px] text-slate-400 bg-dark-950 p-2 rounded-lg border border-slate-800/80">
+                        📍 <span class="text-slate-300 font-medium">Tâm điểm Weiszfeld:</span> Tự động tối ưu quãng đường di chuyển công bằng cho tất cả các bạn (hoặc bạn có thể kéo thả ghim vàng trực tiếp trên bản đồ).
+                    </div>
+
+                    <!-- Radius Buttons -->
+                    <div class="space-y-1">
+                        <span class="text-[10px] text-slate-400 block font-medium">Chọn bán kính tìm quán:</span>
+                        <div class="grid grid-cols-4 gap-1.5 text-xs">
+                            <button type="button" @click="setRadius(1000)" :class="searchRadiusMeters === 1000 ? 'bg-amber-500 text-dark-950 font-black shadow-sm' : 'bg-dark-950 text-slate-400 hover:text-white border border-slate-800'" class="py-1.5 rounded-lg text-center font-bold transition">1 km</button>
+                            <button type="button" @click="setRadius(2000)" :class="searchRadiusMeters === 2000 ? 'bg-amber-500 text-dark-950 font-black shadow-sm' : 'bg-dark-950 text-slate-400 hover:text-white border border-slate-800'" class="py-1.5 rounded-lg text-center font-bold transition">2 km</button>
+                            <button type="button" @click="setRadius(3000)" :class="searchRadiusMeters === 3000 ? 'bg-amber-500 text-dark-950 font-black shadow-sm' : 'bg-dark-950 text-slate-400 hover:text-white border border-slate-800'" class="py-1.5 rounded-lg text-center font-bold transition">3 km</button>
+                            <button type="button" @click="setRadius(5000)" :class="searchRadiusMeters === 5000 ? 'bg-amber-500 text-dark-950 font-black shadow-sm' : 'bg-dark-950 text-slate-400 hover:text-white border border-slate-800'" class="py-1.5 rounded-lg text-center font-bold transition">5 km</button>
                         </div>
                     </div>
                 </div>
