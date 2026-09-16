@@ -542,7 +542,6 @@
                         <div class="text-[10px] text-slate-400 pt-0.5 flex items-center justify-between">
                             <span x-show="!isCustomCenter" class="text-amber-400/90 font-medium">⚡ Đang tính tự động theo vị trí cả nhóm (Weiszfeld)</span>
                             <span x-show="isCustomCenter" class="text-emerald-400 font-semibold">✓ Đang dùng tâm điểm bạn chọn</span>
-                            <span class="text-[9px] text-slate-500 hidden sm:inline">(Hoặc kéo ghim vàng trên bản đồ)</span>
                         </div>
                     </div>
 
@@ -1357,7 +1356,7 @@
 
                     const icon = L.divIcon({
                         className: 'center-beacon-outer',
-                        html: '<div style="background:#f59e0b; width:26px; height:26px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 0 18px rgba(245,158,11,1); display:flex; align-items:center; justify-content:center; cursor:grab;"><div style="width:7px; height:7px; background:#ffffff; border-radius:50%;"></div></div>',
+                        html: '<div style="background:#f59e0b; width:26px; height:26px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 0 18px rgba(245,158,11,1); display:flex; align-items:center; justify-content:center; cursor:default;"><div style="width:7px; height:7px; background:#ffffff; border-radius:50%;"></div></div>',
                         iconSize: [26, 26],
                         iconAnchor: [13, 13],
                         popupAnchor: [0, -13]
@@ -1365,21 +1364,11 @@
 
                     this.centerMarker = L.marker([this.centerCoords.lat, this.centerCoords.lng], {
                         icon,
-                        draggable: true,
+                        draggable: false,
                         zIndexOffset: 1000
                     }).addTo(this.map);
 
-                    this.centerMarker.bindTooltip('<strong>📍 Tâm điểm (Kéo thả để chỉnh)</strong>', { permanent: false, direction: 'top', offset: [0, -14] });
-
-                    this.centerMarker.on('dragend', (e) => {
-                        const pos = e.target.getLatLng();
-                        this.centerCoords = { lat: Number(pos.lat.toFixed(6)), lng: Number(pos.lng.toFixed(6)) };
-                        this.isCustomCenter = true;
-                        this.customCenterAddress = `Vị trí thủ công (${this.centerCoords.lat.toFixed(4)}, ${this.centerCoords.lng.toFixed(4)})`;
-                        this.updateRadiusCircle();
-                        this.executeSearchAndRank();
-                        this.showToast('📍 Đã cập nhật tâm điểm tại vị trí kéo thả!');
-                    });
+                    this.centerMarker.bindTooltip('<strong>📍 Tâm điểm gặp mặt</strong>', { permanent: false, direction: 'top', offset: [0, -14] });
 
                     this.updateRadiusCircle();
                 },

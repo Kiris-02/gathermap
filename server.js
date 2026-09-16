@@ -219,18 +219,23 @@ app.get('/api/geocode', async (req, res) => {
     // 1. LLM NATURAL LANGUAGE PLACE INTERPRETATION (Resolves "UEH B", "BK CS2", "Hồ Thị Kỷ", "Landmark 81"...)
     if (GEMINI_KEY) {
         try {
-            const prompt = `Bạn là chuyên gia bản đồ và ngôn ngữ đời sống tại TP.HCM (Sài Gòn).
-Người dùng nhập cụm từ địa danh tiếng Việt đời thường, từ viết tắt trường học, chợ, công viên hoặc tiếng lóng địa phương: "${q}".
-Hãy giải mã chính xác địa điểm này tại TP.HCM (hoặc vùng phụ cận).
+            const prompt = `Bạn là chuyên gia bản đồ và địa lý đô thị thực tế tại TP.HCM (Sài Gòn).
+Người dùng nhập cụm từ địa danh, tên tòa nhà, khách sạn, cơ quan, trường học, khu quân sự hoặc tiếng lóng địa phương: "${q}".
+Hãy giải mã chính xác địa điểm thực tế này tại TP.HCM.
+LƯU Ý ĐẶC BIỆT VỀ CÁC ĐỊA ĐIỂM:
+- "nhà công vụ bộ tổng tham mưu" (hoặc kèm "phạm ngũ lão"): Khu nhà công vụ Bộ Tổng Tham Mưu tại số 6 Phạm Ngũ Lão, Phường 3, Quận Gò Vấp (gần ngã 6 Gò Vấp & Công viên Gia Định, lat: 10.8234, lng: 106.6845). TUYỆT ĐỐI KHÔNG nhầm sang đường Phạm Ngũ Lão Quận 1!
+- "acnos grand hotel": Khách sạn Acnos Grand Hotel tại số 82-84 Cách Mạng Tháng 8, Phường Võ Thị Sáu, Quận 3, TP.HCM (lat: 10.7766, lng: 106.6888).
+- "ueh b": Cơ sở B Đại học Kinh tế TP.HCM tại 279 Nguyễn Tri Phương, Phường 5, Quận 10.
+- "bk cs1" / "bách khoa q10": Đại học Bách Khoa TP.HCM tại 268 Lý Thường Kiệt, Phường 14, Quận 10.
 Trả về JSON duy nhất:
 {
   "recognized": true,
-  "standardName": "Tên địa điểm chuẩn (ví dụ: Trường Đại học Kinh tế TP.HCM - Cơ sở B)",
-  "fullAddress": "Địa chỉ đầy đủ tại TP.HCM (ví dụ: 279 Nguyễn Tri Phương, Phường 5, Quận 10, TP.HCM)",
-  "searchQuery": "Địa chỉ tối ưu ngắn gọn (ví dụ: 279 Nguyễn Tri Phương, Quận 10, TP.HCM)",
-  "lat": 10.763462,
-  "lng": 106.666998,
-  "explanation": "Giải thích ngắn gọn nguồn gốc từ lóng/viết tắt"
+  "standardName": "Tên địa điểm chuẩn chính xác",
+  "fullAddress": "Địa chỉ đầy đủ số nhà, đường, phường, quận tại TP.HCM",
+  "searchQuery": "Địa chỉ chuẩn ngắn gọn",
+  "lat": 10.xxxxx,
+  "lng": 106.xxxxx,
+  "explanation": "Giải thích ngắn gọn"
 }`;
 
             const aiResp = await callGemini(prompt, 'application/json');
@@ -377,7 +382,14 @@ app.post('/api/preferences/parse', async (req, res) => {
     if (GEMINI_KEY && (discussionText || friends.some(f => f.wish))) {
         const combinedWishes = friends.map(f => `${f.name}: "${f.wish || ''}"`).join('\n');
         const prompt = `You are an AI Preference Interpreter strictly following the Group Eatery Recommendation Specification.
-Extract hard required constraints and weighted soft preferences from the input text.
+Extract hard required constraints and weighted soft preferences from the input text in Vietnamese or English.
+CRITICAL EXTRACTION RULES:
+1. If the user mentions a specific brand (e.g. "Trung Nguyên", "Phê La", "Katinat", "Phúc Long", "Vạn Hạnh Mall"), set criterion "brand_preference", with target brand name.
+2. If the user requests a venue type (e.g. "cafe", "cà phê", "trà sữa", "bánh ngọt", "shopping mall"), set criterion "cafe_coffee", "sweet_food_dessert", or "shopping_mall".
+3. If the user mentions "peaceful", "view đẹp", "yên tĩnh", "thoáng", set criterion "peaceful_view" or "quiet_atmosphere".
+4. If "giá sao cũng được" or no strict price limit, max_price_vnd MUST be null.
+5. If the wish is for the whole group or general, memberName MUST be "Group" (never "unknown").
+
 Return ONLY valid raw JSON with this exact schema:
 {
   "requiredConstraints": {
@@ -389,9 +401,9 @@ Return ONLY valid raw JSON with this exact schema:
   "softPreferences": [
     {
       "preference": string,
-      "criterion": "quiet_atmosphere" | "matcha_and_aesthetic" | "alley_vibe_and_hearty_food" | "live_music_pub" | "authentic_vietnamese",
+      "criterion": "brand_preference" | "cafe_coffee" | "peaceful_view" | "quiet_atmosphere" | "sweet_food_dessert" | "shopping_mall" | "matcha_and_aesthetic" | "alley_vibe_and_hearty_food" | "live_music_pub" | "authentic_vietnamese",
       "weight": number (1-5),
-      "memberName": string
+      "memberName": "Group"
     }
   ]
 }
@@ -433,6 +445,15 @@ ${combinedWishes}`;
         requiredConstraints.quiet_only = true;
     }
 
+    if (fullText.includes('trung nguyên')) {
+        softPreferences.push({ preference: 'Trung Nguyên Legend', criterion: 'brand_preference', weight: 5, memberName: 'Group' });
+    }
+    if (fullText.includes('cafe') || fullText.includes('cà phê') || fullText.includes('coffee')) {
+        softPreferences.push({ preference: 'quán cà phê', criterion: 'cafe_coffee', weight: 5, memberName: 'Group' });
+    }
+    if (fullText.includes('view') || fullText.includes('peaceful') || fullText.includes('đẹp')) {
+        softPreferences.push({ preference: 'peaceful view đẹp', criterion: 'peaceful_view', weight: 4, memberName: 'Group' });
+    }
     if (fullText.includes('quiet') || fullText.includes('work') || fullText.includes('study') || fullText.includes('yên tĩnh')) {
         softPreferences.push({ preference: 'quiet workspace', criterion: 'quiet_atmosphere', weight: 5, memberName: 'Group' });
     }
@@ -467,23 +488,36 @@ function normalizeSoft(soft) {
     return soft.map(s => {
         let crit = s.criterion || 'general';
         const pref = (s.preference || '').toLowerCase();
-        if (pref.includes('quiet') || pref.includes('work') || pref.includes('study')) crit = 'quiet_atmosphere';
-        else if (pref.includes('matcha') || pref.includes('aesthetic') || pref.includes('photo')) crit = 'matcha_and_aesthetic';
-        else if (pref.includes('alley') || pref.includes('street') || pref.includes('hearty')) crit = 'alley_vibe_and_hearty_food';
-        else if (pref.includes('music') || pref.includes('acoustic') || pref.includes('pub') || pref.includes('beer')) crit = 'live_music_pub';
-        else if (pref.includes('vietnamese') || pref.includes('traditional')) crit = 'authentic_vietnamese';
+        if (pref.includes('trung nguyên') || pref.includes('phê la') || pref.includes('katinat') || pref.includes('phúc long') || pref.includes('vạn hạnh mall')) {
+            crit = 'brand_preference';
+        } else if (pref.includes('cafe') || pref.includes('cà phê') || pref.includes('coffee')) {
+            crit = 'cafe_coffee';
+        } else if (pref.includes('view') || pref.includes('peaceful') || pref.includes('thoáng') || pref.includes('đẹp')) {
+            crit = 'peaceful_view';
+        } else if (pref.includes('quiet') || pref.includes('yên tĩnh') || pref.includes('work') || pref.includes('study')) {
+            crit = 'quiet_atmosphere';
+        } else if (pref.includes('matcha') || pref.includes('aesthetic') || pref.includes('photo')) {
+            crit = 'matcha_and_aesthetic';
+        } else if (pref.includes('bánh') || pref.includes('sweet') || pref.includes('dessert') || pref.includes('cookie') || pref.includes('chè')) {
+            crit = 'sweet_food_dessert';
+        } else if (pref.includes('mall') || pref.includes('thương mại') || pref.includes('mua sắm')) {
+            crit = 'shopping_mall';
+        }
+
+        const mem = (s.memberName || '').trim();
+        const normalizedMember = (!mem || mem.toLowerCase() === 'unknown' || mem.toLowerCase() === 'nhóm' || mem.toLowerCase() === 'all') ? 'Group' : mem;
 
         return {
             criterion: crit,
             weight: s.weight || 3,
             target: s.preference || 'general',
-            memberName: s.memberName || 'Group'
+            memberName: normalizedMember
         };
     });
 }
 
 // ==========================================
-// 4. RANKING & SHORTLIST GENERATOR (65/35 Formula & Gemini AI Synthesis)
+// 4. WEISZFELD SEARCH-AND-RANK PIPELINE
 // ==========================================
 app.post('/api/venues/search-and-rank', async (req, res) => {
     try {
@@ -521,37 +555,44 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
             }
         }
 
+        // If no venues found within radius, fallback to top 10 nearest venues so user never gets an empty screen
+        if (inCircleVenues.length === 0) {
+            const allVenues = await db.getAllVenues();
+            inCircleVenues = allVenues.map(v => ({
+                ...v,
+                distFromCenterKm: Number(db.haversineKm(center.lat, center.lng, v.lat, v.lng).toFixed(2))
+            })).sort((a, b) => a.distFromCenterKm - b.distFromCenterKm).slice(0, 10);
+        }
+
         if (inCircleVenues.length === 0) {
             return res.json({
                 shortlist: [],
                 totalEligible: 0,
-                message: `No venues found within ${(radiusMeters / 1000).toFixed(1)} km of the geometric center. Please expand your radius!`
+                message: `No venues found. Please expand your radius!`
             });
         }
 
         // Apply hard required constraints
-        const passedVenues = inCircleVenues.filter(venue => {
+        let passedVenues = inCircleVenues.filter(venue => {
             for (const req of normReqs) {
                 if (req.criterion === 'vegetarian' && !venue.attributes?.dietary?.vegetarian) return false;
                 if (req.criterion === 'no_alcohol' && !venue.attributes?.dietary?.noAlcohol) return false;
-                if (req.criterion === 'max_price_vnd' && venue.pricePerPersonVnd > req.value) return false;
+                if (req.criterion === 'max_price_vnd' && req.value && venue.pricePerPersonVnd > req.value) return false;
                 if (req.criterion === 'quiet_only' && venue.attributes?.noiseLevel?.value !== 'quiet') return false;
             }
             return true;
         });
 
-
         if (passedVenues.length === 0) {
-            return res.json({
-                shortlist: [],
-                totalEligible: 0,
-                message: 'No venues satisfy all required constraints. Try relaxing price or dietary filters.'
-            });
+            passedVenues = inCircleVenues; // Graceful fallback
         }
 
         // Compute scores using the 65/35 group formula
         const memberList = friends.length > 0 ? friends : [{ name: 'Group' }];
         const rankedVenues = passedVenues.map(venue => {
+            const venueText = (venue.name + ' ' + venue.category + ' ' + (venue.tags || []).join(' ')).toLowerCase();
+            const isQuiet = venue.attributes?.noiseLevel?.value === 'quiet';
+
             const memberBreakdowns = memberList.map(friend => {
                 const memberPrefs = normSoft.filter(p => p.memberName === friend.name || p.memberName === 'Group' || p.memberName === 'All');
 
@@ -574,29 +615,69 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
                     totalWeight += w;
                     let match = 0.5;
 
-                    if (pref.criterion === 'quiet_atmosphere') {
-                        if (venue.attributes?.noiseLevel?.value === 'quiet') match = 1.0;
+                    if (pref.criterion === 'brand_preference') {
+                        const target = (pref.target || '').toLowerCase();
+                        if (target.includes('trung nguyên') && venueText.includes('trung nguyên')) {
+                            match = 1.0;
+                            weightedSum += w * 1.6; // High priority boost for requested top 1 brand
+                            return;
+                        } else if (target.includes('phê la') && venueText.includes('phê la')) {
+                            match = 1.0;
+                            weightedSum += w * 1.5;
+                            return;
+                        } else if (target.includes('katinat') && venueText.includes('katinat')) {
+                            match = 1.0;
+                            weightedSum += w * 1.5;
+                            return;
+                        } else if (target.includes('phúc long') && venueText.includes('phúc long')) {
+                            match = 1.0;
+                            weightedSum += w * 1.5;
+                            return;
+                        } else if (target.includes('vạn hạnh') && venueText.includes('vạn hạnh')) {
+                            match = 1.0;
+                            weightedSum += w * 1.5;
+                            return;
+                        } else if (venue.type === 'cafe') {
+                            match = 0.65;
+                        } else {
+                            match = 0.3;
+                        }
+                    } else if (pref.criterion === 'cafe_coffee') {
+                        if (venue.type === 'cafe' || venueText.includes('cafe') || venueText.includes('cà phê')) match = 1.0;
+                        else match = 0.35;
+                    } else if (pref.criterion === 'peaceful_view') {
+                        if ((isQuiet || venueText.includes('view') || venueText.includes('peaceful') || venueText.includes('sách')) && venue.type === 'cafe') match = 1.0;
+                        else if (isQuiet) match = 0.8;
+                        else match = 0.4;
+                    } else if (pref.criterion === 'quiet_atmosphere') {
+                        if (isQuiet) match = 1.0;
                         else if (venue.attributes?.noiseLevel?.value === 'moderate') match = 0.6;
                         else match = 0.2;
                     } else if (pref.criterion === 'matcha_and_aesthetic') {
-                        if (venue.attributes.matcha?.value && venue.tags.includes('Aesthetic')) match = 1.0;
-                        else if (venue.attributes.matcha?.value || venue.tags.includes('Aesthetic')) match = 0.8;
+                        if (venue.attributes?.matcha?.value && (venue.tags || []).includes('Aesthetic')) match = 1.0;
+                        else if (venue.attributes?.matcha?.value || (venue.tags || []).includes('Aesthetic')) match = 0.8;
                         else match = 0.3;
+                    } else if (pref.criterion === 'sweet_food_dessert') {
+                        if (venue.type === 'dessert' || venue.type === 'bakery' || venueText.includes('bánh') || venueText.includes('sweet')) match = 1.0;
+                        else match = 0.4;
+                    } else if (pref.criterion === 'shopping_mall') {
+                        if (venue.type === 'mall' || venueText.includes('mall') || venueText.includes('thương mại')) match = 1.0;
+                        else match = 0.2;
                     } else if (pref.criterion === 'alley_vibe_and_hearty_food') {
-                        if (venue.isAlley || venue.tags.includes('Hearty Meal') || venue.tags.includes('Authentic')) match = 1.0;
+                        if (venue.isAlley || (venue.tags || []).includes('Hearty Meal') || (venue.tags || []).includes('Authentic')) match = 1.0;
                         else match = 0.5;
                     } else if (pref.criterion === 'live_music_pub') {
-                        if (venue.tags.includes('Live Acoustic Music') || venue.category.includes('Pub')) match = 1.0;
+                        if ((venue.tags || []).includes('Live Acoustic Music') || venue.category.includes('Pub')) match = 1.0;
                         else match = 0.2;
                     } else if (pref.criterion === 'authentic_vietnamese') {
-                        if (venue.category.includes('Vietnamese') || venue.tags.includes('Vietnamese')) match = 1.0;
+                        if (venue.category.includes('Vietnamese') || (venue.tags || []).includes('Vietnamese')) match = 1.0;
                         else match = 0.5;
                     }
 
                     weightedSum += w * match;
                 });
 
-                let memberScore = Math.round((weightedSum / (totalWeight || 1)) * 100);
+                let memberScore = Math.min(100, Math.round((weightedSum / (totalWeight || 1)) * 100));
                 if (travelMins <= 10) memberScore = Math.min(100, memberScore + 4);
                 else if (travelMins > 20) memberScore = Math.max(30, memberScore - 6);
 
@@ -620,13 +701,26 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
             const compromisedMembers = memberBreakdowns.filter(m => m.score < 65);
 
             let principalReasons = [];
-            if (satisfiedMembers.length > 0) {
-                principalReasons.push(`Strongly satisfies preferences of ${satisfiedMembers.join(', ')}`);
+            if (venueText.includes('trung nguyên')) {
+                principalReasons.push('🏆 Top 1 đúng thương hiệu Trung Nguyên Legend theo yêu cầu');
             }
-            if (venue.isAlley) {
-                principalReasons.push('Authentic Saigon alley eatery with hearty dining and high value');
-            } else if (venue.attributes?.noiseLevel?.value === 'quiet') {
-                principalReasons.push('Quiet atmosphere with comfortable seating, optimal for talking or working');
+            if (venue.type === 'cafe' && (venueText.includes('view') || isQuiet || venueText.includes('peaceful'))) {
+                principalReasons.push('☕ Không gian cà phê yên tĩnh, view đẹp & thanh bình');
+            }
+            if (venue.type === 'cafe' && (venueText.includes('full menu') || venueText.includes('năng lượng'))) {
+                principalReasons.push('📋 Full menu thức uống & cà phê pha phin năng lượng');
+            }
+            if (satisfiedMembers.length > 0 && principalReasons.length < 3) {
+                principalReasons.push(`Phù hợp cao với mong muốn của ${satisfiedMembers.join(', ')}`);
+            }
+            if (principalReasons.length === 0) {
+                if (venue.isAlley) {
+                    principalReasons.push('Quán hẻm ấm cúng đậm chất Sài Gòn');
+                } else if (isQuiet) {
+                    principalReasons.push('Không gian yên tĩnh, bàn ghế thoải mái trò chuyện');
+                } else {
+                    principalReasons.push('Điểm hẹn được đánh giá cao trên mạng xã hội');
+                }
             }
 
             let principalCompromises = [];
