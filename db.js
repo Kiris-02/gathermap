@@ -1713,7 +1713,7 @@ async function addVenueReview({ venueId, source = 'user', authorName = 'Kiris (T
     if (isSupabaseConfigured) {
         try {
             await dbClient.from('reviews').insert([{
-                id, venue_id: venueId, source, author_name: authorName, rating, content, sentiment, tags: tagStr, review_date: reviewDate
+                id, venue_id: venueId, source, author_name: authorName, rating, content, tags: tagStr, date_text: reviewDate
             }]);
             return { id, success: true };
         } catch (e) {
