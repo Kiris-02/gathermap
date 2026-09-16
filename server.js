@@ -336,9 +336,12 @@ app.post('/api/center/geometric-median', (req, res) => {
 // ==========================================
 // 2. VENUE DATABASE ENDPOINTS (Connected to db.js)
 // ==========================================
-app.get('/api/venues/all', async (req, res) => {
+app.get(['/api/venues', '/api/venues/all'], async (req, res) => {
     try {
         const venues = await db.getAllVenues();
+        if (req.path === '/api/venues') {
+            return res.json(venues);
+        }
         res.json({ venues, total: venues.length, database: db.dbType });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -752,6 +755,15 @@ app.post('/api/outings/:id/vote', async (req, res) => {
         await db.recordVote(req.params.id, venueId, voterName);
         const votes = await db.getVotes(req.params.id);
         res.json({ votes, totalVotesForVenue: (votes[venueId] || []).length });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/outings/:id/votes', async (req, res) => {
+    try {
+        const votes = await db.getVotes(req.params.id);
+        res.json({ outingId: req.params.id, votes: votes || {} });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
