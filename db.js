@@ -1544,17 +1544,20 @@ function formatVenueRecord(r) {
 }
 
 
-async function saveOuting({ id, name = 'Weekend Hangout', mode = 'representative', centerLat, centerLng, radiusKm = 3 }) {
+async function saveOuting({ id, name = 'Weekend Hangout', mode = 'representative', centerLat = 10.7725, centerLng = 106.6698, radiusKm = 3 }) {
     const outingId = id || ('outing_' + Date.now());
+    const cLat = centerLat != null ? Number(centerLat) : 10.7725;
+    const cLng = centerLng != null ? Number(centerLng) : 106.6698;
+    const rKm = radiusKm != null ? Number(radiusKm) : 3.0;
+
     if (isSupabaseConfigured) {
         try {
             await dbClient.from('outings').upsert([{
                 id: outingId,
-                name,
-                mode,
-                center_lat: centerLat,
-                center_lng: centerLng,
-                radius_km: radiusKm
+                center_lat: cLat,
+                center_lng: cLng,
+                radius_km: rKm,
+                status: 'active'
             }]);
         } catch (e) {
             console.error('Supabase saveOuting error:', e.message);
@@ -1563,7 +1566,7 @@ async function saveOuting({ id, name = 'Weekend Hangout', mode = 'representative
         sqliteDb.prepare(`
             INSERT OR REPLACE INTO outings (id, name, mode, center_lat, center_lng, radius_km)
             VALUES (?, ?, ?, ?, ?, ?)
-        `).run(outingId, name, mode, centerLat, centerLng, radiusKm);
+        `).run(outingId, name, mode, cLat, cLng, rKm);
     }
     return outingId;
 }
@@ -1653,7 +1656,14 @@ async function saveRecommendations(outingId, recommendations = []) {
 async function recordVote(outingId, venueId, voterName = 'Guest') {
     if (isSupabaseConfigured) {
         try {
-            await dbClient.from('votes').insert([{ outing_id: outingId, venue_id: venueId, voter_name: voterName }]);
+            await saveOuting({ id: outingId });
+            const voteId = 'vote-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+            await dbClient.from('votes').insert([{
+                id: voteId,
+                outing_id: outingId,
+                venue_id: venueId,
+                voter_name: voterName
+            }]);
         } catch (e) {
             console.error('Supabase recordVote error:', e.message);
         }
