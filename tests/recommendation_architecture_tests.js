@@ -377,6 +377,48 @@ async function runAllTests() {
             assert.strictEqual(unfair.fairnessScore, Math.round(0.65 * 50 + 0.35 * 10), '65% * 50 + 35% * 10 = 36');
         });
 
+    
+        await it('Regression: strict unknown budget must not pass', () => {
+            const result = semanticEngine.evaluateHardConstraints(
+                { name: 'Unknown Price Cafe', category: 'Cafe', attributes: {} },
+                { maxPricePerPersonVnd: 100000 },
+                3,
+                1
+            );
+            assert.strictEqual(result.passed, false);
+            assert.ok(result.violations.some(v => v.rule === 'price_unverified'));
+        });
+
+        await it('Regression: strict no-alcohol unknown must not pass', () => {
+            const result = semanticEngine.evaluateHardConstraints(
+                { name: 'Mystery Restaurant', category: 'Restaurant', type: 'restaurant', attributes: { dietary: { noAlcohol: null } } },
+                { noAlcohol: true },
+                3,
+                1
+            );
+            assert.strictEqual(result.passed, false);
+            assert.ok(result.violations.some(v => v.rule === 'no_alcohol_unverified'));
+        });
+
+        await it('Regression: strict parking unknown must not pass', () => {
+            const result = semanticEngine.evaluateHardConstraints(
+                { name: 'Mystery Restaurant', category: 'Restaurant', attributes: { parking: { ease: null } } },
+                { parkingRequired: true },
+                3,
+                1
+            );
+            assert.strictEqual(result.passed, false);
+            assert.ok(result.violations.some(v => v.rule === 'parking_unverified'));
+        });
+
+        await it('Regression: unknown group-friendliness remains unknown', () => {
+            const profile = semanticEngine.buildVenueSemanticProfile(
+                { id: 'unknown-group', name: 'Unknown Group Venue', category: 'Restaurant', attributes: {}, tags: [] },
+                []
+            );
+            assert.strictEqual(profile.traits.groupFriendly, null);
+        });
+
     } finally {
         if (server) {
             server.close();

@@ -444,6 +444,7 @@ IMPORTANT INSTRUCTIONS:
 2. Hard constraints are non-negotiable boolean filters or maximum budgets. Only set a hard constraint to true if the user explicitly demands it (e.g. "must be vegetarian", "chay", "strictly no alcohol", "under 100k").
 3. Soft preferences carry weights from 1 (minor bonus) to 5 (top priority).
 4. If no specific cuisine is mentioned (e.g. "anything nearby", "ăn gì cũng được"), keep cuisines and dishes empty.
+5. Preserve individual preferences. If a preference comes from a line formatted as MemberName: "wish", set memberName to that exact MemberName. Use memberName "Group" only for preferences that apply to everyone or come from general group discussion.
 
 Return ONLY valid JSON matching this exact schema:
 {
@@ -743,6 +744,22 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
         const memberList = (friends && friends.length > 0) ? friends : [{ name: 'Group' }];
         const evaluatedCandidates = [];
 
+        const preferenceAppliesToMember = (pref, friendName) => {
+            if (!pref || typeof pref !== 'object' || !pref.memberName) return true;
+            const owner = String(pref.memberName).trim().toLowerCase();
+            const member = String(friendName || '').trim().toLowerCase();
+            return owner === 'group' || owner === 'all' || owner === member;
+        };
+
+        const intentForMember = (friend) => ({
+            ...intentProfile,
+            cuisines: (intentProfile.cuisines || []).filter(p => preferenceAppliesToMember(p, friend.name)),
+            dishes: (intentProfile.dishes || []).filter(p => preferenceAppliesToMember(p, friend.name)),
+            ambience: (intentProfile.ambience || []).filter(p => preferenceAppliesToMember(p, friend.name)),
+            features: (intentProfile.features || []).filter(p => preferenceAppliesToMember(p, friend.name)),
+            negativePreferences: (intentProfile.negativePreferences || []).filter(p => preferenceAppliesToMember(p, friend.name))
+        });
+
         for (const venue of candidates) {
             // Load reviews for venue
             const reviews = await db.getVenueReviews(venue.id, 15);
@@ -774,13 +791,24 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
                 const travelMins = Math.max(5, Math.round((friendDist / 20) * 60));
                 const travelScore = Math.max(20, Math.min(100, Math.round(100 - (travelMins * 2.2))));
 
+                const memberSemanticMatch = semanticEngine.scoreVenueAgainstIntent({
+                    intentProfile: intentForMember(friend),
+                    venueProfile,
+                    venue,
+                    distanceKm: friendDist
+                });
+
                 // 70% preference satisfaction + 30% travel burden
-                const memberScore = Math.round(0.70 * semanticMatch.semanticScore + 0.30 * travelScore);
+                const memberScore = Math.round(0.70 * memberSemanticMatch.semanticScore + 0.30 * travelScore);
 
                 return {
                     friendName: friend.name,
                     score: memberScore,
-                    preferenceScore: semanticMatch.semanticScore,
+                    preferenceScore: memberSemanticMatch.semanticScore,
+                    preferenceConfidence: memberSemanticMatch.confidence,
+                    matches: memberSemanticMatch.matches,
+                    mismatches: memberSemanticMatch.mismatches,
+                    unknowns: memberSemanticMatch.unknowns,
                     travelScore,
                     travelMins,
                     distKm: friendDist
@@ -816,7 +844,7 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
                 memberBreakdowns,
                 reviewsSummary: {
                     count: reviews.length,
-                    avgRating: venue.rating || 4.5,
+                    avgRating: venue.rating ?? null,
                     evidenceSummaries: venueProfile.evidenceSummaries
                 },
                 socialHighlights: venue.socialHighlights || {},
@@ -898,11 +926,11 @@ Return JSON:
         // Attach reviewer drawer details for the shortlist
         for (const venue of strictShortlist) {
             venue.reviewerHighlights = await db.getVenueReviewerHighlights(venue.id);
-            venue.reviewerCount = venue.reviewerHighlights.reviewerCount || 3;
+            venue.reviewerCount = venue.reviewerHighlights.reviewerCount ?? 0;
         }
         for (const venue of nearbyAlternatives) {
             venue.reviewerHighlights = await db.getVenueReviewerHighlights(venue.id);
-            venue.reviewerCount = venue.reviewerHighlights.reviewerCount || 3;
+            venue.reviewerCount = venue.reviewerHighlights.reviewerCount ?? 0;
         }
 
         // Persist session

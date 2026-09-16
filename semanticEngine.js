@@ -275,12 +275,24 @@ function buildVenueSemanticProfile(venue, reviews = []) {
         features,
         dietary,
         traits: {
-            conversationFriendly: reviewProfile.conversationFriendly.score !== null ? (reviewProfile.conversationFriendly.score >= 0.5) : (vAttributes.noiseLevel?.value === 'quiet'),
-            quietAtmosphere: reviewProfile.quietAtmosphere.score !== null ? (reviewProfile.quietAtmosphere.score >= 0.5) : (vAttributes.noiseLevel?.value === 'quiet'),
-            livelyAtmosphere: reviewProfile.livelyAtmosphere.score !== null ? (reviewProfile.livelyAtmosphere.score >= 0.5) : (vAttributes.noiseLevel?.value === 'lively'),
-            groupFriendly: reviewProfile.groupFriendly.score !== null ? (reviewProfile.groupFriendly.score >= 0.5) : true,
-            easyParking: reviewProfile.parkingEase.score !== null ? (reviewProfile.parkingEase.score >= 0.5) : (vAttributes.parking?.ease === 'easy'),
-            difficultParking: (reviewProfile.parkingEase.score !== null && reviewProfile.parkingEase.score < 0.4) || vAttributes.parking?.ease === 'difficult'
+            conversationFriendly: reviewProfile.conversationFriendly.score !== null
+                ? (reviewProfile.conversationFriendly.score >= 0.5)
+                : (vAttributes.noiseLevel?.value ? vAttributes.noiseLevel.value === 'quiet' : null),
+            quietAtmosphere: reviewProfile.quietAtmosphere.score !== null
+                ? (reviewProfile.quietAtmosphere.score >= 0.5)
+                : (vAttributes.noiseLevel?.value ? vAttributes.noiseLevel.value === 'quiet' : null),
+            livelyAtmosphere: reviewProfile.livelyAtmosphere.score !== null
+                ? (reviewProfile.livelyAtmosphere.score >= 0.5)
+                : (vAttributes.noiseLevel?.value ? vAttributes.noiseLevel.value === 'lively' : null),
+            groupFriendly: reviewProfile.groupFriendly.score !== null
+                ? (reviewProfile.groupFriendly.score >= 0.5)
+                : null,
+            easyParking: reviewProfile.parkingEase.score !== null
+                ? (reviewProfile.parkingEase.score >= 0.5)
+                : (vAttributes.parking?.ease ? vAttributes.parking.ease === 'easy' : null),
+            difficultParking: reviewProfile.parkingEase.score !== null
+                ? (reviewProfile.parkingEase.score < 0.4)
+                : (vAttributes.parking?.ease ? vAttributes.parking.ease === 'difficult' : null)
         },
         noiseLevel: reviewProfile.quietAtmosphere.score !== null 
             ? (reviewProfile.quietAtmosphere.score >= 0.5 ? 'quiet' : 'loud') 
@@ -363,6 +375,11 @@ function evaluateHardConstraints(venue, hardConstraints = {}, radiusKm = 3.0, di
                 rule: 'serves_alcohol',
                 detail: 'Không gian có phục vụ đồ uống có cồn / bia rượu'
             });
+        } else if (dietary.noAlcohol !== true && !vText.includes('no alcohol') && !vText.includes('khong con')) {
+            violations.push({
+                rule: 'no_alcohol_unverified',
+                detail: 'Chưa có dữ liệu xác thực quán không phục vụ đồ uống có cồn'
+            });
         }
     }
 
@@ -381,12 +398,56 @@ function evaluateHardConstraints(venue, hardConstraints = {}, radiusKm = 3.0, di
     // 7. Strict Budget Cap
     const maxBudget = hardConstraints.maxPricePerPersonVnd || hardConstraints.max_price_vnd || hardConstraints.maxPriceVnd;
     if (maxBudget) {
-        const vPrice = venue.pricePerPersonVnd || venue.avgPriceNumber || (venue.priceRangeVnd?.min) || null;
-        if (vPrice && vPrice > maxBudget) {
-            const excessK = Math.round((vPrice - maxBudget) / 1000);
+        const rangeMax = venue.priceRangeVnd?.max ?? null;
+        const vPrice = venue.pricePerPersonVnd ?? venue.avgPriceNumber ?? null;
+        const strictPrice = rangeMax ?? vPrice;
+        if (strictPrice == null) {
+            violations.push({
+                rule: 'price_unverified',
+                detail: `Chưa có dữ liệu giá đủ tin cậy để xác nhận mức tối đa ${Math.round(maxBudget / 1000)}k/người`
+            });
+        } else if (strictPrice > maxBudget) {
+            const excessK = Math.round((strictPrice - maxBudget) / 1000);
             violations.push({
                 rule: 'exceeds_budget',
-                detail: `Giá ước tính ~${Math.round(vPrice / 1000)}k/người (vượt ngân sách ~${excessK}k)`
+                detail: `Giá ước tính có thể tới ~${Math.round(strictPrice / 1000)}k/người (vượt ngân sách ~${excessK}k)`
+            });
+        }
+    }
+
+    // 8. Strict Parking Requirement
+    const parkingRequired = !!hardConstraints.parkingRequired;
+    if (parkingRequired) {
+        const parkingEase = venue.attributes?.parking?.ease ?? null;
+        if (parkingEase === 'difficult' || parkingEase === 'none') {
+            violations.push({
+                rule: 'parking_difficult',
+                detail: 'Thông tin hiện có cho thấy việc gửi/đỗ xe khó khăn'
+            });
+        } else if (parkingEase !== 'easy') {
+            violations.push({
+                rule: 'parking_unverified',
+                detail: 'Chưa có dữ liệu xác thực chỗ gửi/đỗ xe thuận tiện'
+            });
+        }
+    }
+
+    // 9. Strict Open-Now Requirement
+    const openNowRequired = !!hardConstraints.openNowRequired;
+    if (openNowRequired) {
+        const openNow = venue.isOpenNow
+            ?? venue.openingHours?.openNow
+            ?? venue.currentOpeningHours?.openNow
+            ?? null;
+        if (openNow === false) {
+            violations.push({
+                rule: 'closed_now',
+                detail: 'Địa điểm hiện được ghi nhận là đang đóng cửa'
+            });
+        } else if (openNow !== true) {
+            violations.push({
+                rule: 'open_now_unverified',
+                detail: 'Chưa có dữ liệu thời gian thực để xác nhận địa điểm đang mở cửa'
             });
         }
     }

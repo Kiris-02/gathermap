@@ -4,7 +4,8 @@
   "description": "Smart group hangout spot finder powered by Google Maps & AI",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node tests/recommendation_architecture_tests.js && node tests/pipeline.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
