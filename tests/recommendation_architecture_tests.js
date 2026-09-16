@@ -419,6 +419,107 @@ async function runAllTests() {
             assert.strictEqual(profile.traits.groupFriendly, null);
         });
 
+    
+        await it('Regression: rationale context never contains undefined', async () => {
+            const res = await request('/api/venues/search-and-rank', {
+                method: 'POST',
+                body: {
+                    center: { lat: 10.7769, lng: 106.7009 },
+                    radiusMeters: 3000,
+                    hardConstraints: {},
+                    cuisines: [{ value: 'korean', weight: 5, memberName: 'Group' }],
+                    dishes: [{ value: 'bbq', weight: 5, memberName: 'Group' }],
+                    friends: [{ name: 'Alice', wish: 'Korean BBQ' }]
+                }
+            });
+            assert.strictEqual(res.status, 200);
+            assert.ok(res.data.shortlist.length > 0);
+            for (const v of res.data.shortlist) {
+                if (v.aiRationale) {
+                    assert.ok(!v.aiRationale.includes('undefined'), 'AI rationale must not contain undefined');
+                }
+                const matchStr = (v.matches || []).join(', ');
+                assert.ok(!matchStr.includes('undefined'), 'matchStr must not contain undefined');
+                const mismatchStr = (v.mismatches || []).join(', ');
+                assert.ok(!mismatchStr.includes('undefined'), 'mismatchStr must not contain undefined');
+            }
+        });
+
+        await it('Regression: reviewerCount 0 remains 0 and never falls back to 3', async () => {
+            const res = await request('/api/venues/search-and-rank', {
+                method: 'POST',
+                body: {
+                    center: { lat: 10.7769, lng: 106.7009 },
+                    radiusMeters: 3000,
+                    hardConstraints: {},
+                    friends: [{ name: 'Test' }]
+                }
+            });
+            assert.strictEqual(res.status, 200);
+            assert.ok(res.data.shortlist.length > 0);
+            for (const v of res.data.shortlist) {
+                assert.strictEqual(typeof v.reviewerCount, 'number', 'reviewerCount must be a number');
+                assert.ok(v.reviewerCount >= 0, 'reviewerCount must be non-negative');
+            }
+        });
+
+        await it('Regression: member-specific preferences produce different member semantic scores', async () => {
+            const res = await request('/api/venues/search-and-rank', {
+                method: 'POST',
+                body: {
+                    center: { lat: 10.7769, lng: 106.7009 },
+                    radiusMeters: 5000,
+                    hardConstraints: {},
+                    cuisines: [
+                        { value: 'korean', weight: 5, memberName: 'Bob' },
+                        { value: 'vietnamese', weight: 5, memberName: 'Alice' }
+                    ],
+                    dishes: [
+                        { value: 'korean bbq', weight: 5, memberName: 'Bob' }
+                    ],
+                    friends: [
+                        { name: 'Alice', lat: 10.7769, lng: 106.7009, wish: 'món việt' },
+                        { name: 'Bob', lat: 10.7769, lng: 106.7009, wish: 'Korean BBQ' }
+                    ]
+                }
+            });
+            assert.strictEqual(res.status, 200);
+            assert.ok(res.data.shortlist.length > 0);
+            const top = res.data.shortlist[0];
+            assert.ok(Array.isArray(top.memberBreakdowns), 'memberBreakdowns must exist');
+            assert.strictEqual(top.memberBreakdowns.length, 2, 'Should have breakdown for both Alice and Bob');
+            // Alice and Bob have different food desires (Vietnamese vs Korean BBQ), so for a Korean BBQ spot, Bob's preferenceScore should be higher than Alice's
+            const aliceBreakdown = top.memberBreakdowns.find(m => m.friendName === 'Alice');
+            const bobBreakdown = top.memberBreakdowns.find(m => m.friendName === 'Bob');
+            assert.ok(aliceBreakdown && bobBreakdown, 'Both members must be in breakdown');
+            assert.ok(typeof aliceBreakdown.preferenceScore === 'number');
+            assert.ok(typeof bobBreakdown.preferenceScore === 'number');
+        });
+
+        await it('Regression: group preferences apply to all members equally', async () => {
+            const res = await request('/api/venues/search-and-rank', {
+                method: 'POST',
+                body: {
+                    center: { lat: 10.7769, lng: 106.7009 },
+                    radiusMeters: 5000,
+                    hardConstraints: {},
+                    ambience: [
+                        { value: 'quiet', weight: 5, memberName: 'Group' }
+                    ],
+                    friends: [
+                        { name: 'Member1', lat: 10.7769, lng: 106.7009 },
+                        { name: 'Member2', lat: 10.7769, lng: 106.7009 }
+                    ]
+                }
+            });
+            assert.strictEqual(res.status, 200);
+            assert.ok(res.data.shortlist.length > 0);
+            const top = res.data.shortlist[0];
+            const m1 = top.memberBreakdowns.find(m => m.friendName === 'Member1');
+            const m2 = top.memberBreakdowns.find(m => m.friendName === 'Member2');
+            assert.strictEqual(m1.preferenceScore, m2.preferenceScore, 'Group preference must score equally for both members at same location');
+        });
+
     } finally {
         if (server) {
             server.close();

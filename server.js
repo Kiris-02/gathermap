@@ -881,8 +881,8 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
         const venuesForRationale = strictShortlist.length > 0 ? strictShortlist.slice(0, 3) : nearbyAlternatives.slice(0, 3);
         if (GEMINI_KEY && venuesForRationale.length > 0) {
             const contextSummary = venuesForRationale.map((v, i) => {
-                const matchStr = v.matches.map(m => m.preference).join(', ') || 'Đánh giá chung tốt';
-                const mismatchStr = v.mismatches.map(m => m.preference).join(', ') || 'Không có đánh đổi lớn';
+                const matchStr = (v.matches || []).map(m => typeof m === 'string' ? m : (m.preference || m.value || '')).filter(Boolean).join(', ') || 'Đánh giá chung tốt';
+                const mismatchStr = (v.mismatches || []).map(m => typeof m === 'string' ? m : (m.preference || m.value || '')).filter(Boolean).join(', ') || 'Không có đánh đổi lớn';
                 const reviewEvidenceStr = (v.venueProfile?.evidenceSummaries || []).join('; ') || 'Thực khách đánh giá tích cực';
                 const violStr = v.violations ? `Vi phạm: ${v.violations.join(', ')}` : 'Thỏa mãn tiêu chí';
                 return `#${i+1} ${v.name} (Score: ${v.groupScore}/100, Giá: ${v.avgPrice || 'Bình dân'}, Phù hợp: [${matchStr}], Đánh đổi: [${mismatchStr}], Đánh giá thực tế: "${reviewEvidenceStr}", ${violStr})`;
