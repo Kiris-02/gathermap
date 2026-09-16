@@ -579,47 +579,72 @@
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                <!-- Location Input with Natural Language Autocomplete Chips -->
+                                <!-- Location Input with GPS and AI Search -->
                                 <div>
-                                    <span class="text-[10px] text-slate-400 block mb-0.5">📍 Điểm xuất phát (Tên địa danh / Viết tắt):</span>
+                                    <span class="text-[10px] text-slate-400 block mb-0.5">📍 Điểm xuất phát:</span>
                                     <div class="flex items-center space-x-1">
-                                        <input type="text" x-model="f.customAddress" placeholder="vd: UEH B, Hồ Thị Kỷ, Landmark 81..." class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchAddressForFriend(f, f.customAddress)" />
-                                        <button @click="searchAddressForFriend(f, f.customAddress)" :disabled="f.locating" class="px-2 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded text-xs shrink-0 transition disabled:opacity-50" title="Định vị bằng AI">
+                                        <input type="text" x-model="f.customAddress" placeholder="Tên đường, địa danh hoặc viết tắt (UEH B, L81...)" class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchAddressForFriend(f, f.customAddress)" />
+                                        <button @click="searchAddressForFriend(f, f.customAddress)" :disabled="f.locating" class="px-2 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded text-xs shrink-0 transition disabled:opacity-50" title="Định vị bằng AI / Tìm kiếm">
                                             <i x-show="!f.locating" class="fa-solid fa-magnifying-glass"></i>
                                             <i x-show="f.locating" class="fa-solid fa-spinner fa-spin"></i>
                                         </button>
+                                        <button type="button" @click="useCurrentLocationForFriend(f)" :disabled="f.locating" class="px-2 py-1.5 bg-dark-800 hover:bg-slate-700 text-amber-400 border border-slate-700 rounded text-xs shrink-0 transition disabled:opacity-50" title="Lấy vị trí GPS hiện tại của bạn">
+                                            <i class="fa-solid fa-location-crosshairs"></i>
+                                        </button>
                                     </div>
-                                    <!-- Quick Landmark Chips -->
-                                    <div class="flex items-center space-x-1 overflow-x-auto no-scrollbar pt-1.5">
-                                        <span class="text-[9px] text-slate-500 font-bold shrink-0">Nhanh:</span>
-                                        <button type="button" @click="pickLandmark(f, 'UEH B')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-amber-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🏫 UEH B</button>
-                                        <button type="button" @click="pickLandmark(f, 'Chợ Hồ Thị Kỷ')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-slate-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🌸 Hồ Thị Kỷ</button>
-                                        <button type="button" @click="pickLandmark(f, 'Landmark 81')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-slate-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🏢 L81</button>
-                                        <button type="button" @click="pickLandmark(f, 'Chợ Bến Thành')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-slate-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🏛️ Bến Thành</button>
-                                        <button type="button" @click="pickLandmark(f, 'ĐH Bách Khoa CS2')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[10px] text-slate-300 border border-slate-700 hover:border-amber-400/50 shrink-0 transition">🎓 BK CS2</button>
-                                    </div>
+                                    <span class="text-[9px] text-slate-500 block pt-1">💡 Nhập địa chỉ rồi ấn Enter hoặc bấm nút GPS để lấy vị trí</span>
                                 </div>
 
-                                <!-- Wish Input -->
+                                <!-- Wish Input with Fast Taste Tags -->
                                 <div>
-                                    <span class="text-[10px] text-slate-400 block mb-0.5">🍽️ Mong muốn cá nhân:</span>
-                                    <input type="text" x-model="f.wish" placeholder="vd: matcha, ăn chay, quán yên tĩnh..." class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" />
+                                    <div class="flex items-center justify-between mb-0.5">
+                                        <span class="text-[10px] text-slate-400">🍽️ Khẩu vị / Gợi ý (tùy chọn):</span>
+                                        <button type="button" x-show="f.wish" @click="f.wish = ''" class="text-[9px] text-slate-500 hover:text-rose-400 transition">Xóa</button>
+                                    </div>
+                                    <input type="text" x-model="f.wish" placeholder="vd: matcha, ăn chay, yên tĩnh..." class="bg-dark-950 text-[11px] text-slate-200 rounded px-2 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" />
+                                    <!-- Quick Taste Chips -->
+                                    <div class="flex items-center space-x-1 pt-1 overflow-x-auto no-scrollbar">
+                                        <button type="button" @click="addWishTag(f, 'matcha')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[9px] text-emerald-300 border border-slate-700/70 hover:border-emerald-500/50 shrink-0 transition">+ 🍵 Matcha</button>
+                                        <button type="button" @click="addWishTag(f, 'yên tĩnh')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[9px] text-amber-300 border border-slate-700/70 hover:border-amber-500/50 shrink-0 transition">+ 🤫 Yên tĩnh</button>
+                                        <button type="button" @click="addWishTag(f, 'ăn chay')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[9px] text-lime-300 border border-slate-700/70 hover:border-lime-500/50 shrink-0 transition">+ 🌿 Chay</button>
+                                        <button type="button" @click="addWishTag(f, 'lẩu nướng')" class="px-1.5 py-0.5 rounded bg-dark-900 hover:bg-slate-800 text-[9px] text-rose-300 border border-slate-700/70 hover:border-rose-500/50 shrink-0 transition">+ 🍲 Lẩu nướng</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </template>
                 </div>
 
-                <!-- Quick Group Chat Paste (Optional) -->
-                <div class="bg-dark-850 p-2.5 sm:p-3 rounded-xl border border-slate-800 space-y-1.5">
-                    <div class="flex items-center justify-between text-[11px]">
-                        <span class="font-bold text-slate-300 flex items-center space-x-1">
-                            <i class="fa-solid fa-comments text-indigo-400"></i>
-                            <span>Dán tin nhắn nhóm chat (nếu có):</span>
-                        </span>
-                        <span class="text-[10px] text-slate-500">Zalo, Messenger</span>
+                <!-- AI Chat Extractor (Collapsible Accelerator) -->
+                <div class="bg-gradient-to-r from-indigo-950/40 via-dark-850 to-dark-850 p-2.5 sm:p-3 rounded-xl border border-indigo-900/40 space-y-2">
+                    <div class="flex items-center justify-between cursor-pointer select-none" @click="showChatPaste = !showChatPaste">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs shrink-0">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </span>
+                            <div>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="font-bold text-xs text-indigo-200">✨ AI Tự Động Đọc Tin Nhắn Nhóm</span>
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">Zalo / Mess</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 block">Dán đoạn chat bạn bè bàn tán, Gemini AI tự động bóc tách khẩu vị</span>
+                            </div>
+                        </div>
+                        <button type="button" class="text-indigo-400 p-1 hover:text-indigo-200 transition" title="Bấm để mở/thu gọn">
+                            <i class="fa-solid text-xs transition-transform duration-200" :class="showChatPaste ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </button>
                     </div>
-                    <textarea x-model="discussionText" rows="2" class="w-full bg-dark-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400 resize-none placeholder-slate-500" placeholder="vd: Nhóm mình đứa ăn chay đứa thích matcha, kiếm quán mát mẻ dưới 70k nha..."></textarea>
+
+                    <div x-show="showChatPaste" x-transition class="space-y-1.5 pt-1.5 border-t border-indigo-950/60">
+                        <textarea x-model="discussionText" rows="2" class="w-full bg-dark-950 border border-indigo-800/40 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-400 resize-none placeholder-slate-500" placeholder="Copy tin nhắn nhóm dán vào đây (vd: Nhóm mình đứa ăn chay đứa thích matcha, kiếm quán mát mẻ dưới 70k nha)..."></textarea>
+                        <div class="flex items-center justify-between text-[10px] text-slate-400">
+                            <span class="flex items-center space-x-1">
+                                <i class="fa-solid fa-circle-info text-indigo-400"></i>
+                                <span>AI sẽ tự động nhận diện ăn chay, ngân sách và không khí</span>
+                            </span>
+                            <button type="button" x-show="discussionText" @click="discussionText = ''" class="text-indigo-400 hover:text-indigo-200 font-semibold">Xóa nội dung</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Hard Required Constraints Checkboxes -->
@@ -885,6 +910,7 @@
                 showWishModal: false,
                 showReviewersModal: false,
                 showShareModal: false,
+                showChatPaste: false,
                 shareModalData: {
                     message: '',
                     shareUrl: '',
@@ -940,6 +966,38 @@
                 pickLandmark(friend, landmarkName) {
                     friend.customAddress = landmarkName;
                     this.searchAddressForFriend(friend, landmarkName);
+                },
+
+                useCurrentLocationForFriend(friend) {
+                    if (!navigator.geolocation) {
+                        this.showToast('⚠️ Trình duyệt không hỗ trợ định vị GPS.');
+                        return;
+                    }
+                    friend.locating = true;
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            friend.lat = Number(pos.coords.latitude.toFixed(6));
+                            friend.lng = Number(pos.coords.longitude.toFixed(6));
+                            friend.customAddress = 'Vị trí GPS hiện tại';
+                            friend.locating = false;
+                            this.showToast(`📍 Đã lấy tọa độ GPS cho ${friend.name}!`);
+                            this.renderFriendMarkers();
+                            this.calculateCenter().then(() => this.executeSearchAndRank());
+                        },
+                        (err) => {
+                            friend.locating = false;
+                            this.showToast('⚠️ Không thể lấy GPS: ' + (err.message || 'Quyền truy cập bị từ chối'));
+                        },
+                        { enableHighAccuracy: true, timeout: 8000 }
+                    );
+                },
+
+                addWishTag(friend, tag) {
+                    if (!friend.wish || !friend.wish.trim()) {
+                        friend.wish = tag;
+                    } else if (!friend.wish.toLowerCase().includes(tag.toLowerCase())) {
+                        friend.wish = `${friend.wish.trim()}, ${tag}`;
+                    }
                 },
 
                 copyShareMessage() {
