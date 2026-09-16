@@ -195,6 +195,53 @@
             <!-- SHORTLIST RESULTS -->
             <div class="flex-1 overflow-y-auto custom-scroll p-3.5 space-y-3.5">
                 
+                <!-- INTERPRETATION PREVIEW BANNER -->
+                <div class="p-3 rounded-xl bg-dark-850 border border-slate-800 text-xs space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-300 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-brain text-amber-400"></i>
+                            <span>Interpreted Group Criteria</span>
+                        </span>
+                        <button @click="openGroupModal()" class="text-[11px] text-amber-400 hover:text-amber-300 font-semibold flex items-center space-x-1">
+                            <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                            <span>Edit Wishes</span>
+                        </button>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1.5 pt-0.5">
+                        <template x-if="confirmedConstraints.vegetarian">
+                            <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold flex items-center space-x-1">
+                                <i class="fa-solid fa-leaf text-[9px]"></i><span>Vegetarian</span>
+                            </span>
+                        </template>
+                        <template x-if="confirmedConstraints.no_alcohol">
+                            <span class="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold flex items-center space-x-1">
+                                <i class="fa-solid fa-ban-smoking text-[9px]"></i><span>No Alcohol</span>
+                            </span>
+                        </template>
+                        <template x-if="confirmedConstraints.quiet_only">
+                            <span class="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold flex items-center space-x-1">
+                                <i class="fa-solid fa-volume-xmark text-[9px]"></i><span>Quiet Only</span>
+                            </span>
+                        </template>
+                        <template x-if="confirmedConstraints.max_price_vnd && confirmedConstraints.max_price_vnd < 500000">
+                            <span class="px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 text-[10px] font-bold flex items-center space-x-1">
+                                <i class="fa-solid fa-tag text-[9px]"></i><span x-text="'Max ' + (confirmedConstraints.max_price_vnd/1000) + 'k'"></span>
+                            </span>
+                        </template>
+
+                        <template x-for="p in confirmedSoftPreferences" :key="p.preference">
+                            <span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-medium flex items-center space-x-1">
+                                <i class="fa-solid fa-heart text-[9px] text-amber-400"></i><span x-text="p.preference"></span>
+                            </span>
+                        </template>
+
+                        <template x-if="!confirmedConstraints.vegetarian && !confirmedConstraints.no_alcohol && !confirmedConstraints.quiet_only && (!confirmedSoftPreferences || confirmedSoftPreferences.length === 0)">
+                            <span class="text-slate-500 text-[11px] italic">Standard Discovery mode (unrestricted)</span>
+                        </template>
+                    </div>
+                </div>
+
                 <!-- Header with Fairness Index Gauge -->
                 <div class="flex items-center justify-between text-xs text-slate-400">
                     <span class="font-bold text-slate-200 flex items-center space-x-1.5">
@@ -329,6 +376,30 @@
                                         </div>
                                     </template>
                                 </div>
+                            </div>
+
+                            <!-- Structured Evidence Badges (Matches, Partials, Unknowns, Mismatches) -->
+                            <div class="flex flex-wrap gap-1 text-[10px] pt-1">
+                                <template x-for="m in (venue.matches || [])" :key="'m-' + m">
+                                    <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-medium flex items-center space-x-1">
+                                        <i class="fa-solid fa-check text-[9px]"></i><span x-text="m"></span>
+                                    </span>
+                                </template>
+                                <template x-for="pm in (venue.partialMatches || [])" :key="'pm-' + pm">
+                                    <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium flex items-center space-x-1">
+                                        <i class="fa-solid fa-circle-half-stroke text-[9px]"></i><span x-text="pm"></span>
+                                    </span>
+                                </template>
+                                <template x-for="u in (venue.unknowns || [])" :key="'u-' + u">
+                                    <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-medium flex items-center space-x-1">
+                                        <i class="fa-solid fa-question text-[9px]"></i><span x-text="u"></span>
+                                    </span>
+                                </template>
+                                <template x-for="mm in (venue.mismatches || [])" :key="'mm-' + mm">
+                                    <span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 font-medium flex items-center space-x-1">
+                                        <i class="fa-solid fa-xmark text-[9px]"></i><span x-text="mm"></span>
+                                    </span>
+                                </template>
                             </div>
 
                             <!-- Highlights & Trade-offs -->
@@ -1015,7 +1086,24 @@
                         // Re-render friend markers at their updated positions
                         this.renderFriendMarkers();
 
-                        // 1. Recalculate Weiszfeld center with the updated friend coordinates
+                        // 1. Auto-resolve custom center address if typed in Section 3
+                        const customCenter = (this.customCenterAddress || '').trim();
+                        if (customCenter && (!this.isCustomCenter || customCenter !== this.lastResolvedCenterAddress)) {
+                            try {
+                                const centerRes = await fetch('/api/geocode?q=' + encodeURIComponent(customCenter));
+                                const centerData = await centerRes.json();
+                                if (centerData && centerData.lat && centerData.lng) {
+                                    this.centerCoords = { lat: Number(centerData.lat), lng: Number(centerData.lng) };
+                                    this.isCustomCenter = true;
+                                    this.lastResolvedCenterAddress = customCenter;
+                                    this.customCenterAddress = centerData.name || centerData.address || customCenter;
+                                }
+                            } catch (cErr) {
+                                console.warn('Auto-geocoding error for custom center:', cErr);
+                            }
+                        }
+
+                        // Recalculate Weiszfeld center (or maintain custom center if set)
                         await this.calculateCenter();
 
                         // Fit map bounds to encompass all friends and the center beacon
@@ -1044,16 +1132,27 @@
                             })
                         });
                         const data = await res.json();
-                        if (data.requiredConstraints) {
+                        this.parsedInterpretation = data;
+                        if (data.hardConstraints) {
+                            this.confirmedConstraints = {
+                                vegetarian: !!data.hardConstraints.vegetarian,
+                                no_alcohol: !!data.hardConstraints.no_alcohol,
+                                quiet_only: !!data.hardConstraints.quiet_only,
+                                max_price_vnd: data.hardConstraints.max_price_vnd || 500000
+                            };
+                        } else if (data.requiredConstraints) {
                             if (Array.isArray(data.requiredConstraints)) {
-                                this.confirmedConstraints.vegetarian = data.requiredConstraints.some(r => r.criterion === 'vegetarian');
-                                this.confirmedConstraints.no_alcohol = data.requiredConstraints.some(r => r.criterion === 'no_alcohol');
+                                this.confirmedConstraints.vegetarian = data.requiredConstraints.some(r => r.criterion === 'vegetarian' && r.required);
+                                this.confirmedConstraints.no_alcohol = data.requiredConstraints.some(r => r.criterion === 'no_alcohol' && r.required);
+                                this.confirmedConstraints.quiet_only = data.requiredConstraints.some(r => r.criterion === 'quiet_only' && r.required);
                             } else {
                                 this.confirmedConstraints = { ...this.confirmedConstraints, ...data.requiredConstraints };
                             }
                         }
                         if (data.softPreferences && Array.isArray(data.softPreferences)) {
                             this.confirmedSoftPreferences = data.softPreferences;
+                        } else {
+                            this.confirmedSoftPreferences = [];
                         }
 
                         // 4. Execute search and rank
@@ -1083,9 +1182,9 @@
                 centerCoords: { lat: 10.7782, lng: 106.6912 },
 
                 friends: [
-                    { id: 1, name: 'You', lat: 10.7798, lng: 106.6990, color: 'bg-blue-500', wish: 'quiet work space' },
-                    { id: 2, name: 'Bob', lat: 10.7950, lng: 106.7218, color: 'bg-emerald-500', wish: 'matcha and photos' },
-                    { id: 3, name: 'Charlie', lat: 10.7827, lng: 106.6958, color: 'bg-indigo-500', wish: 'vegetarian comfort' }
+                    { id: 1, name: 'You', lat: 10.7798, lng: 106.6990, color: 'bg-blue-500', wish: '' },
+                    { id: 2, name: 'Bob', lat: 10.7950, lng: 106.7218, color: 'bg-emerald-500', wish: '' },
+                    { id: 3, name: 'Charlie', lat: 10.7827, lng: 106.6958, color: 'bg-indigo-500', wish: '' }
                 ],
 
                 discussionText: '',
@@ -1096,11 +1195,18 @@
                     quiet_only: false,
                     max_price_vnd: 150000
                 },
-                confirmedSoftPreferences: [
-                    { preference: 'Quiet workspace', weight: 5 },
-                    { preference: 'Matcha & Aesthetic', weight: 5 },
-                    { preference: 'Authentic Vietnamese', weight: 4 }
-                ],
+                confirmedSoftPreferences: [],
+                parsedInterpretation: {
+                    hardConstraints: {},
+                    cuisines: [],
+                    dishes: [],
+                    ambience: [],
+                    features: [],
+                    negativePreferences: [],
+                    rawIntent: ''
+                },
+                searchRequestId: 0,
+                searchAbortController: null,
 
                 shortlist: [],
                 selectedVenue: null,
@@ -1521,16 +1627,27 @@
                             })
                         });
                         const data = await res.json();
-                        if (data.requiredConstraints) {
+                        this.parsedInterpretation = data;
+                        if (data.hardConstraints) {
+                            this.confirmedConstraints = {
+                                vegetarian: !!data.hardConstraints.vegetarian,
+                                no_alcohol: !!data.hardConstraints.no_alcohol,
+                                quiet_only: !!data.hardConstraints.quiet_only,
+                                max_price_vnd: data.hardConstraints.max_price_vnd || 500000
+                            };
+                        } else if (data.requiredConstraints) {
                             if (Array.isArray(data.requiredConstraints)) {
-                                this.confirmedConstraints.vegetarian = data.requiredConstraints.some(r => r.criterion === 'vegetarian');
-                                this.confirmedConstraints.no_alcohol = data.requiredConstraints.some(r => r.criterion === 'no_alcohol');
+                                this.confirmedConstraints.vegetarian = data.requiredConstraints.some(r => r.criterion === 'vegetarian' && r.required);
+                                this.confirmedConstraints.no_alcohol = data.requiredConstraints.some(r => r.criterion === 'no_alcohol' && r.required);
+                                this.confirmedConstraints.quiet_only = data.requiredConstraints.some(r => r.criterion === 'quiet_only' && r.required);
                             } else {
                                 this.confirmedConstraints = { ...this.confirmedConstraints, ...data.requiredConstraints };
                             }
                         }
                         if (data.softPreferences && Array.isArray(data.softPreferences)) {
                             this.confirmedSoftPreferences = data.softPreferences;
+                        } else {
+                            this.confirmedSoftPreferences = [];
                         }
                     } catch (e) {
                         console.error(e);
@@ -1543,19 +1660,28 @@
 
                 async executeSearchAndRank() {
                     this.ranking = true;
+                    this.searchRequestId = (this.searchRequestId || 0) + 1;
+                    const currentReqId = this.searchRequestId;
+                    if (this.searchAbortController) {
+                        try { this.searchAbortController.abort(); } catch (_) {}
+                    }
+                    this.searchAbortController = new AbortController();
                     try {
                         const res = await fetch('/api/venues/search-and-rank', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            signal: this.searchAbortController.signal,
                             body: JSON.stringify({
                                 center: this.centerCoords,
                                 radiusMeters: this.searchRadiusMeters,
                                 requiredConstraints: this.confirmedConstraints,
                                 softPreferences: this.confirmedSoftPreferences,
+                                interpretation: this.parsedInterpretation,
                                 friends: this.friends
                             })
                         });
                         const data = await res.json();
+                        if (currentReqId !== this.searchRequestId) return; // Discard outdated response
                         this.shortlist = data.shortlist || [];
                         this.searchMessage = data.message || '';
 
@@ -1566,9 +1692,12 @@
                             this.clearTravelLines();
                         }
                     } catch (e) {
+                        if (e.name === 'AbortError') return;
                         console.error('Execute ranking error:', e);
                     } finally {
-                        this.ranking = false;
+                        if (currentReqId === this.searchRequestId) {
+                            this.ranking = false;
+                        }
                     }
                 },
 
