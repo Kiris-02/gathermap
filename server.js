@@ -54,7 +54,16 @@ process.on('unhandledRejection', (reason) => {
     console.warn('🛡️ Handled unhandledRejection:', reason);
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: 0,
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        }
+    }
+}));
 
 let GOOGLE_KEY = process.env.GOOGLE_MAPS_API_KEY || '';
 const GEMINI_KEY = process.env.GEMINI_API_KEY || '';

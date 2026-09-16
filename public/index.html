@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>GatherMap — Equal-Weight Geometric Group Eatery Matchmaker</title>
     
     <!-- Tailwind CSS CDN -->
@@ -933,6 +936,60 @@
                     this.$nextTick(() => {
                         setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 80);
                     });
+                },
+
+                async openReviewersDrawer(venue) {
+                    this.activeReviewerVenue = venue;
+                    this.showReviewersModal = true;
+                    try {
+                        const res = await fetch('/api/venues/' + venue.id + '/reviewers');
+                        const data = await res.json();
+                        if (data && data.reviewers) {
+                            this.activeReviewerVenue = {
+                                ...venue,
+                                reviewers: data.reviewers,
+                                reviewerCount: data.reviewerCount || data.reviewers.length,
+                                socialHighlights: data.socialHighlights || venue.socialHighlights || {}
+                            };
+                        }
+                    } catch (e) {
+                        console.error('Error fetching reviewers:', e);
+                    }
+                },
+
+                async submitReviewFromDrawer() {
+                    if (!this.drawerNewReview.content || !this.drawerNewReview.content.trim() || !this.activeReviewerVenue) return;
+                    const venueId = this.activeReviewerVenue.id;
+                    const content = this.drawerNewReview.content.trim();
+                    try {
+                        const res = await fetch('/api/venues/' + venueId + '/reviews', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                source: 'user',
+                                authorName: 'Bạn (Người dùng)',
+                                rating: Number(this.drawerNewReview.rating || 5.0),
+                                content
+                            })
+                        });
+                        const data = await res.json();
+                        if (data && data.success) {
+                            this.showToast('🎉 Nhận xét của bạn đã được đăng thành công!');
+                            if (!this.activeReviewerVenue.reviewers) this.activeReviewerVenue.reviewers = [];
+                            this.activeReviewerVenue.reviewers.unshift({
+                                id: data.id || ('rev-' + Date.now()),
+                                authorName: 'Bạn (Người dùng)',
+                                source: 'user',
+                                rating: Number(this.drawerNewReview.rating || 5.0),
+                                content,
+                                reviewDate: 'Vừa xong'
+                            });
+                            this.drawerNewReview.content = '';
+                        }
+                    } catch (e) {
+                        console.error('Submit review error:', e);
+                        this.showToast('⚠️ Không thể gửi nhận xét. Vui lòng thử lại!');
+                    }
                 },
 
                 async saveAndParseGroup() {
