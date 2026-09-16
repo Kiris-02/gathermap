@@ -135,25 +135,6 @@
             </div>
         </div>
 
-        <!-- Center Controls: One-Tap Quick Filter Chips (Desktop) -->
-        <div class="hidden md:flex items-center space-x-1.5 bg-dark-950/80 border border-slate-800 rounded-lg p-1 text-xs">
-            <button @click="applyFastScenario('all')" :class="activeScenario === 'all' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition">
-                All Eateries
-            </button>
-            <button @click="applyFastScenario('chay')" :class="activeScenario === 'chay' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition flex items-center space-x-1">
-                <span>🌿 Vegetarian</span>
-            </button>
-            <button @click="applyFastScenario('matcha')" :class="activeScenario === 'matcha' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition flex items-center space-x-1">
-                <span>🍵 Matcha & Photo</span>
-            </button>
-            <button @click="applyFastScenario('hem')" :class="activeScenario === 'hem' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition flex items-center space-x-1">
-                <span>🍜 Alley &lt;50k</span>
-            </button>
-            <button @click="applyFastScenario('chill')" :class="activeScenario === 'chill' ? 'bg-amber-500 text-dark-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition flex items-center space-x-1">
-                <span>🎸 Live Music Pub</span>
-            </button>
-        </div>
-
         <!-- Mobile View Toggle (Visible on < lg screens) -->
         <div class="flex lg:hidden items-center bg-dark-950 p-1 rounded-xl border border-slate-800 text-xs shrink-0 space-x-1">
             <button @click="switchMobileView('list')" :class="mobileView === 'list' ? 'bg-amber-500 text-dark-950 font-black shadow-md shadow-amber-500/20' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-lg transition flex items-center space-x-1 font-bold">
@@ -166,25 +147,13 @@
             </button>
         </div>
 
-        <!-- Right Side: GPS Button, Engine Status & Share -->
+        <!-- Right Side: GPS Button & Share -->
         <div class="flex items-center space-x-2">
             <!-- One-tap GPS Button -->
             <button @click="useCurrentLocation()" :disabled="locating" class="px-2.5 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-xs font-semibold text-blue-300 transition flex items-center space-x-1.5 shadow-sm" title="Pin your real coordinates">
                 <i class="fa-solid fa-crosshairs text-blue-400" :class="locating ? 'fa-spin' : ''"></i>
                 <span class="hidden sm:inline" x-text="locating ? 'Locating...' : 'My GPS'"></span>
             </button>
-
-            <!-- AI Engine Indicator -->
-            <div class="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300" title="Connected to Google Gemini Live API">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="font-semibold" x-text="backendConfig.aiModel || 'Gemini Flash'"></span>
-            </div>
-
-            <!-- Database Status Indicator -->
-            <div class="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/25 text-xs text-indigo-300" :title="backendConfig.databaseType">
-                <i class="fa-solid fa-database text-indigo-400 text-[10px]"></i>
-                <span class="font-semibold" x-text="backendConfig.isSupabaseConfigured ? 'Supabase' : 'SQLite DB'"></span>
-            </div>
 
             <!-- Outing Code / Share Button -->
             <button @click="copyShareLink()" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-750 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center space-x-1.5 shadow-sm">
@@ -541,7 +510,7 @@
                 </div>
 
                 <!-- SECTION 3: TÂM ĐIỂM & BÁN KÍNH TÌM KIẾM -->
-                <div class="bg-dark-850 p-3 rounded-xl border border-slate-800 space-y-2.5">
+                <div class="bg-dark-850 p-3 rounded-xl border border-slate-800 space-y-3">
                     <div class="flex items-center justify-between text-xs">
                         <span class="font-bold text-slate-200 flex items-center space-x-1.5">
                             <i class="fa-solid fa-location-crosshairs text-amber-400"></i>
@@ -550,8 +519,31 @@
                         <span class="text-[10px] text-amber-400 font-mono font-bold" x-text="(searchRadiusMeters/1000).toFixed(1) + ' km'"></span>
                     </div>
 
-                    <div class="text-[10px] text-slate-400 bg-dark-950 p-2 rounded-lg border border-slate-800/80">
-                        📍 <span class="text-slate-300 font-medium">Tâm điểm Weiszfeld:</span> Tự động tối ưu quãng đường di chuyển công bằng cho tất cả các bạn (hoặc bạn có thể kéo thả ghim vàng trực tiếp trên bản đồ).
+                    <!-- Center Location Input & Status -->
+                    <div class="space-y-1.5 bg-dark-950 p-2.5 rounded-xl border border-slate-800/80">
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="text-slate-300 font-bold flex items-center space-x-1">
+                                <span>📍 Vị trí tâm điểm:</span>
+                            </span>
+                            <button type="button" x-show="isCustomCenter" @click="resetToGeometricCenter()" class="text-amber-400 hover:text-amber-300 font-bold text-[10px] flex items-center space-x-1 transition">
+                                <i class="fa-solid fa-rotate-right"></i>
+                                <span>Tính lại Weiszfeld</span>
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center space-x-1.5">
+                            <input type="text" x-model="customCenterAddress" :placeholder="isCustomCenter ? customCenterAddress : 'Nhập địa điểm tâm mới (vd: Chợ Bến Thành, Q.1, L81...)'" class="bg-dark-900 text-[11px] text-slate-200 rounded-lg px-2.5 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchCustomCenter(customCenterAddress)" />
+                            <button type="button" @click="searchCustomCenter(customCenterAddress)" :disabled="searchingCenter" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded-lg text-xs shrink-0 transition disabled:opacity-50" title="Đặt tâm điểm tại địa điểm này">
+                                <i x-show="!searchingCenter" class="fa-solid fa-magnifying-glass"></i>
+                                <i x-show="searchingCenter" class="fa-solid fa-spinner fa-spin"></i>
+                            </button>
+                        </div>
+
+                        <div class="text-[10px] text-slate-400 pt-0.5 flex items-center justify-between">
+                            <span x-show="!isCustomCenter" class="text-amber-400/90 font-medium">⚡ Đang tính tự động theo vị trí cả nhóm (Weiszfeld)</span>
+                            <span x-show="isCustomCenter" class="text-emerald-400 font-semibold">✓ Đang dùng tâm điểm bạn chọn</span>
+                            <span class="text-[9px] text-slate-500 hidden sm:inline">(Hoặc kéo ghim vàng trên bản đồ)</span>
+                        </div>
                     </div>
 
                     <!-- Radius Buttons -->
@@ -806,6 +798,9 @@
                 showReviewersModal: false,
                 showShareModal: false,
                 showChatPaste: false,
+                isCustomCenter: false,
+                customCenterAddress: '',
+                searchingCenter: false,
                 shareModalData: {
                     message: '',
                     shareUrl: '',
@@ -1333,6 +1328,11 @@
                 },
 
                 async calculateCenter() {
+                    if (this.isCustomCenter) {
+                        this.renderCenterMarker();
+                        this.renderFriendMarkers();
+                        return;
+                    }
                     const points = this.friends.map(f => ({ name: f.name, lat: f.lat, lng: f.lng }));
                     try {
                         const res = await fetch('/api/center/geometric-median', {
@@ -1357,21 +1357,64 @@
 
                     const icon = L.divIcon({
                         className: 'center-beacon-outer',
-                        html: '<div style="background:#f59e0b; width:24px; height:24px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 0 16px rgba(245,158,11,1); display:flex; align-items:center; justify-content:center;"><div style="width:6px; height:6px; background:#ffffff; border-radius:50%;"></div></div>',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12],
-                        popupAnchor: [0, -12]
+                        html: '<div style="background:#f59e0b; width:26px; height:26px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 0 18px rgba(245,158,11,1); display:flex; align-items:center; justify-content:center; cursor:grab;"><div style="width:7px; height:7px; background:#ffffff; border-radius:50%;"></div></div>',
+                        iconSize: [26, 26],
+                        iconAnchor: [13, 13],
+                        popupAnchor: [0, -13]
                     });
 
                     this.centerMarker = L.marker([this.centerCoords.lat, this.centerCoords.lng], {
                         icon,
-                        draggable: false,
+                        draggable: true,
                         zIndexOffset: 1000
                     }).addTo(this.map);
 
-                    this.centerMarker.bindTooltip('<strong>Tâm hình học Weiszfeld</strong>', { permanent: false, direction: 'top', offset: [0, -14] });
+                    this.centerMarker.bindTooltip('<strong>📍 Tâm điểm (Kéo thả để chỉnh)</strong>', { permanent: false, direction: 'top', offset: [0, -14] });
+
+                    this.centerMarker.on('dragend', (e) => {
+                        const pos = e.target.getLatLng();
+                        this.centerCoords = { lat: Number(pos.lat.toFixed(6)), lng: Number(pos.lng.toFixed(6)) };
+                        this.isCustomCenter = true;
+                        this.customCenterAddress = `Vị trí thủ công (${this.centerCoords.lat.toFixed(4)}, ${this.centerCoords.lng.toFixed(4)})`;
+                        this.updateRadiusCircle();
+                        this.executeSearchAndRank();
+                        this.showToast('📍 Đã cập nhật tâm điểm tại vị trí kéo thả!');
+                    });
 
                     this.updateRadiusCircle();
+                },
+
+                async searchCustomCenter(query) {
+                    if (!query || !query.trim()) return;
+                    this.searchingCenter = true;
+                    try {
+                        const res = await fetch('/api/geocode?q=' + encodeURIComponent(query.trim()));
+                        const data = await res.json();
+                        if (data && data.lat && data.lng) {
+                            this.centerCoords = { lat: Number(data.lat), lng: Number(data.lng) };
+                            this.isCustomCenter = true;
+                            this.customCenterAddress = data.name || data.address || query.trim();
+                            this.showToast(`📍 Đã đặt tâm điểm tại: ${this.customCenterAddress}`);
+                            this.renderCenterMarker();
+                            if (this.map) this.map.panTo([this.centerCoords.lat, this.centerCoords.lng]);
+                            this.executeSearchAndRank();
+                        } else {
+                            this.showToast('⚠️ Không tìm thấy tọa độ cho địa điểm này.');
+                        }
+                    } catch (e) {
+                        this.showToast('⚠️ Lỗi tìm tâm điểm: ' + e.message);
+                    } finally {
+                        this.searchingCenter = false;
+                    }
+                },
+
+                resetToGeometricCenter() {
+                    this.isCustomCenter = false;
+                    this.customCenterAddress = '';
+                    this.calculateCenter().then(() => {
+                        this.showToast('🔄 Đã tính lại tâm Weiszfeld tự động!');
+                        this.executeSearchAndRank();
+                    });
                 },
 
                 updateRadiusCircle() {
