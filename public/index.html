@@ -461,6 +461,41 @@
                         </div>
                     </div>
                 </template>
+
+                <!-- NEARBY ALTERNATIVES (STRICT VIOLATIONS OR EXPANDED RADIUS) -->
+                <template x-if="nearbyAlternatives && nearbyAlternatives.length > 0">
+                    <div class="pt-4 border-t border-slate-800/80 space-y-3">
+                        <div class="flex items-center justify-between px-1">
+                            <span class="font-extrabold text-xs text-amber-400/90 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-compass"></i>
+                                <span>Gợi ý thêm ngoài bán kính / Nới lỏng tiêu chí</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400 font-mono" x-text="nearbyAlternatives.length + ' địa điểm'"></span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 px-1">
+                            Các quán dưới đây có độ tương đồng cao nhưng vượt bán kính hoặc vi phạm một số điều kiện:
+                        </p>
+                        <template x-for="altVenue in nearbyAlternatives" :key="'alt-' + altVenue.id">
+                            <div class="rounded-xl border border-slate-800 bg-dark-850/60 hover:bg-dark-850 p-3 space-y-2 cursor-pointer transition" @click="selectVenue(altVenue)">
+                                <div class="flex items-start justify-between">
+                                    <div class="min-w-0 pr-2">
+                                        <h5 class="font-bold text-xs text-slate-200 truncate" x-text="altVenue.name"></h5>
+                                        <p class="text-[10px] text-slate-400 truncate" x-text="altVenue.address"></p>
+                                    </div>
+                                    <span class="text-xs font-black text-amber-400 shrink-0" x-text="altVenue.groupScore + '/100'"></span>
+                                </div>
+                                <div class="flex flex-wrap gap-1 text-[9px]">
+                                    <template x-for="v in (altVenue.violations || [])" :key="v">
+                                        <span class="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center space-x-1">
+                                            <i class="fa-solid fa-triangle-exclamation text-[8px]"></i>
+                                            <span x-text="v"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
             </div>
         </aside>
 
@@ -1209,6 +1244,7 @@
                 searchAbortController: null,
 
                 shortlist: [],
+                nearbyAlternatives: [],
                 selectedVenue: null,
 
                 async searchAddressForFriend(friend, query) {
@@ -1683,6 +1719,7 @@
                         const data = await res.json();
                         if (currentReqId !== this.searchRequestId) return; // Discard outdated response
                         this.shortlist = data.shortlist || [];
+                        this.nearbyAlternatives = data.nearbyAlternatives || [];
                         this.searchMessage = data.message || '';
 
                         this.renderVenueMarkers();

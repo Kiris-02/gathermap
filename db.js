@@ -14,6 +14,146 @@ let sqliteDb = null;
 // Initial curated 10 venues from specification
 const INITIAL_VENUES = [
     {
+        "id": "hcm-vnu-veg-01",
+        "name": "Hum Vegetarian, Lounge & Restaurant",
+        "category": "Gourmet Vegetarian & Plant-Based Dining",
+        "type": "restaurant",
+        "isAlley": false,
+        "alleyNote": "",
+        "address": "32 Võ Văn Tần, Phường 6, Quận 3, TP.HCM",
+        "placeId": "ChIJ_hum_veg_q3",
+        "lat": 10.7779,
+        "lng": 106.6908,
+        "rating": 4.9,
+        "reviewsCount": 2340,
+        "pricePerPersonVnd": 180000,
+        "avgPrice": "150k - 250k VND",
+        "tags": ["vegetarian", "vegan", "plant-based", "chay", "fine-dining", "quiet"],
+        "attributes": {
+            "noiseLevel": { "value": "quiet", "confidence": "verified" },
+            "seatingComfort": { "value": "spacious_cushioned", "confidence": "verified" },
+            "dietary": { "vegetarian": true, "vegan": true, "halal": false, "noAlcohol": true },
+            "wifiSpeed": { "value": "fast", "confidence": "verified" },
+            "parking": { "ease": "easy", "note": "Có bảo vệ giữ xe máy và hỗ trợ ô tô" }
+        },
+        "unknowns": []
+    },
+    {
+        "id": "hcm-vnu-veg-02",
+        "name": "Mani Vegan Restaurant (Nhà Hàng Chay Mani)",
+        "category": "Authentic Vietnamese Vegetarian Dining",
+        "type": "restaurant",
+        "isAlley": true,
+        "alleyNote": "Hẻm 291 rộng 6m, xe hơi vào tận cửa",
+        "address": "291/2 Võ Văn Tần, Phường 5, Quận 3, TP.HCM",
+        "placeId": "ChIJ_mani_vegan_q3",
+        "lat": 10.7738,
+        "lng": 106.6854,
+        "rating": 4.7,
+        "reviewsCount": 890,
+        "pricePerPersonVnd": 85000,
+        "avgPrice": "60k - 120k VND",
+        "tags": ["vegetarian", "vegan", "chay", "cơm chay", "lẩu nấm chay"],
+        "attributes": {
+            "noiseLevel": { "value": "quiet", "confidence": "verified" },
+            "dietary": { "vegetarian": true, "vegan": true, "halal": false, "noAlcohol": true },
+            "parking": { "ease": "moderate", "note": "Giữ xe máy miễn phí trước quán" }
+        },
+        "unknowns": []
+    },
+    {
+        "id": "hcm-vnu-bbq-01",
+        "name": "Meat & Meet BBQ — Korean Charcoal Grill",
+        "category": "Korean BBQ & Samgyeopsal Buffet",
+        "type": "restaurant",
+        "isAlley": false,
+        "alleyNote": "",
+        "address": "8 Lê Thị Riêng, Phường Bến Thành, Quận 1, TP.HCM",
+        "placeId": "ChIJ_meat_and_meet_q1",
+        "lat": 10.7712,
+        "lng": 106.6918,
+        "rating": 4.6,
+        "reviewsCount": 1820,
+        "pricePerPersonVnd": 220000,
+        "avgPrice": "180k - 280k VND",
+        "tags": ["korean", "bbq", "thịt nướng", "samgyeopsal", "hàn quốc", "grill", "lively"],
+        "attributes": {
+            "noiseLevel": { "value": "lively", "confidence": "verified" },
+            "dietary": { "vegetarian": false, "vegan": false, "halal": false, "noAlcohol": false },
+            "parking": { "ease": "moderate", "note": "Bãi gửi xe gần vòng xoay Phù Đổng" }
+        },
+        "unknowns": []
+    },
+    {
+        "id": "hcm-vnu-bbq-02",
+        "name": "GoGi House — Quán Thịt Nướng Hàn Quốc",
+        "category": "Authentic Korean BBQ & Hotpot",
+        "type": "restaurant",
+        "isAlley": false,
+        "alleyNote": "",
+        "address": "189 Nguyễn Thái Học, Phạm Ngũ Lão, Quận 1, TP.HCM",
+        "placeId": "ChIJ_gogi_house_q1",
+        "lat": 10.7668,
+        "lng": 106.6935,
+        "rating": 4.7,
+        "reviewsCount": 2100,
+        "pricePerPersonVnd": 290000,
+        "avgPrice": "250k - 350k VND",
+        "tags": ["korean", "bbq", "thịt nướng", "ba chỉ bò", "hàn quốc", "grill"],
+        "attributes": {
+            "noiseLevel": { "value": "moderate", "confidence": "verified" },
+            "dietary": { "vegetarian": false, "vegan": false, "halal": false, "noAlcohol": false },
+            "parking": { "ease": "easy", "note": "Bãi đỗ ô tô và xe máy rộng rãi" }
+        },
+        "unknowns": []
+    },
+    {
+        "id": "hcm-vnu-jp-01",
+        "name": "Sushi Hokkaido Sachi — Đông Du",
+        "category": "Premium Japanese Cuisine & Fresh Sashimi",
+        "type": "restaurant",
+        "isAlley": false,
+        "alleyNote": "",
+        "address": "40-42 Đông Du, Bến Nghé, Quận 1, TP.HCM",
+        "placeId": "ChIJ_sushi_hokkaido_q1",
+        "lat": 10.7758,
+        "lng": 106.7045,
+        "rating": 4.8,
+        "reviewsCount": 3200,
+        "pricePerPersonVnd": 350000,
+        "avgPrice": "300k - 500k VND",
+        "tags": ["japanese", "sushi", "sashimi", "nhật bản", "salmon"],
+        "attributes": {
+            "noiseLevel": { "value": "quiet", "confidence": "verified" },
+            "dietary": { "vegetarian": false, "vegan": false, "halal": false, "noAlcohol": true },
+            "parking": { "ease": "easy", "note": "Valet đỗ xe ô tô và xe máy" }
+        },
+        "unknowns": []
+    },
+    {
+        "id": "hcm-vnu-vn-01",
+        "name": "Phở Lệ — Nguyễn Trãi (Michelin Selected)",
+        "category": "Heritage Saigon Beef Pho & Traditional Broth",
+        "type": "restaurant",
+        "isAlley": false,
+        "alleyNote": "",
+        "address": "413-415 Nguyễn Trãi, Phường 7, Quận 5, TP.HCM",
+        "placeId": "ChIJ_pho_le_q5",
+        "lat": 10.7548,
+        "lng": 106.6712,
+        "rating": 4.7,
+        "reviewsCount": 4500,
+        "pricePerPersonVnd": 85000,
+        "avgPrice": "70k - 100k VND",
+        "tags": ["vietnamese", "pho", "món việt", "phở bò", "truyền thống"],
+        "attributes": {
+            "noiseLevel": { "value": "lively", "confidence": "verified" },
+            "dietary": { "vegetarian": false, "vegan": false, "halal": false, "noAlcohol": true },
+            "parking": { "ease": "moderate", "note": "Có nhân viên xếp xe máy trước cửa" }
+        },
+        "unknowns": []
+    },
+    {
         "id": "hcm-vnu-01",
         "name": "The Workshop Coffee",
         "category": "Specialty Coffee & Workspace",
@@ -1470,17 +1610,28 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 }
 
 async function getAllVenues() {
+    let venues = [];
     if (isSupabaseConfigured) {
         try {
             const { data, error } = await dbClient.from('venues').select('*');
             if (error) throw error;
-            return (data || []).map(formatVenueRecord);
+            venues = (data || []).map(formatVenueRecord);
         } catch (e) {
             console.error('Supabase query error:', e.message);
         }
+    } else if (sqliteDb) {
+        const rows = sqliteDb.prepare('SELECT * FROM venues').all();
+        venues = rows.map(formatVenueRecord);
     }
-    const rows = sqliteDb.prepare('SELECT * FROM venues').all();
-    return rows.map(formatVenueRecord);
+
+    // Guarantee curated flagship venues are always present
+    const existingIds = new Set(venues.map(v => v.id));
+    for (const iv of INITIAL_VENUES) {
+        if (!existingIds.has(iv.id)) {
+            venues.push(formatVenueRecord(iv));
+        }
+    }
+    return venues;
 }
 
 async function getVenuesInRadius({ lat, lng, radiusKm = 3 }) {
