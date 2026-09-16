@@ -989,8 +989,44 @@
                 async saveAndParseGroup() {
                     this.parsing = true;
                     try {
-                        // 1. Recalculate Weiszfeld center
+                        // 0. Auto-resolve custom addresses for friends if typed but not explicitly searched
+                        for (const f of this.friends) {
+                            const addr = (f.customAddress || '').trim();
+                            if (addr && addr !== f.lastResolvedAddress) {
+                                try {
+                                    const geoRes = await fetch('/api/geocode?q=' + encodeURIComponent(addr));
+                                    const geoData = await geoRes.json();
+                                    if (geoData && geoData.lat && geoData.lng) {
+                                        f.lat = Number(geoData.lat);
+                                        f.lng = Number(geoData.lng);
+                                        f.lastResolvedAddress = addr;
+                                        if (geoData.name && geoData.address && !geoData.address.startsWith(geoData.name)) {
+                                            f.customAddress = `${geoData.name} (${geoData.address})`;
+                                        } else {
+                                            f.customAddress = geoData.address || geoData.name || addr;
+                                        }
+                                    }
+                                } catch (geoErr) {
+                                    console.warn('Auto-geocoding error for friend', f.name, geoErr);
+                                }
+                            }
+                        }
+
+                        // Re-render friend markers at their updated positions
+                        this.renderFriendMarkers();
+
+                        // 1. Recalculate Weiszfeld center with the updated friend coordinates
                         await this.calculateCenter();
+
+                        // Fit map bounds to encompass all friends and the center beacon
+                        if (this.map && this.friends.length > 0) {
+                            const allPoints = this.friends.map(f => [f.lat, f.lng]);
+                            if (this.centerCoords && this.centerCoords.lat) {
+                                allPoints.push([this.centerCoords.lat, this.centerCoords.lng]);
+                            }
+                            const bounds = L.latLngBounds(allPoints);
+                            this.map.fitBounds(bounds.pad(0.25));
+                        }
 
                         // 2. Prepare text for Gemini
                         let textToSend = this.discussionText ? this.discussionText.trim() : '';
@@ -1081,8 +1117,9 @@
                             friend.customAddress = data.name && data.address && !data.address.startsWith(data.name)
                                 ? `${data.name} (${data.address})`
                                 : (data.address || data.name || query);
+                            friend.lastResolvedAddress = query.trim();
                             const msg = data.source === 'gemini_nlp'
-                                ? `✨ AI đã giải mã: ${data.name} (Q.10)`
+                                ? `✨ AI đã giải mã: ${data.name}`
                                 : `📍 Đã định vị: ${data.name || data.address}`;
                             this.showToast(msg);
                             this.renderFriendMarkers();
