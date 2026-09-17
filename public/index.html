@@ -703,14 +703,14 @@
                 <button @click="closeGroupModal()" class="py-2.5 px-4 rounded-xl bg-dark-800 hover:bg-slate-750 text-slate-300 font-bold text-xs transition">
                     Đóng
                 </button>
-                <button @click="saveAndParseGroup()" :disabled="parsing" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-dark-950 font-black text-xs flex-1 transition shadow-lg shadow-amber-500/20 disabled:opacity-50 flex items-center justify-center space-x-2">
-                    <span x-show="!parsing" class="flex items-center space-x-1.5">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>Phân tích bằng Gemini AI & Tìm quán</span>
+                <button @click="saveAndParseGroup()" :disabled="parsing" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-dark-950 font-black text-sm flex-1 transition shadow-lg shadow-amber-500/20 disabled:opacity-50 flex items-center justify-center space-x-2 tracking-wide">
+                    <span x-show="!parsing" class="flex items-center space-x-2">
+                        <i class="fa-solid fa-rocket"></i>
+                        <span>Let's Go!</span>
                     </span>
-                    <span x-show="parsing" class="flex items-center space-x-1.5">
+                    <span x-show="parsing" class="flex items-center space-x-1.5 text-xs">
                         <i class="fa-solid fa-spinner fa-spin"></i>
-                        <span>Gemini đang phân tích & Weiszfeld tính tâm...</span>
+                        <span>Đang phân tích & tìm quán...</span>
                     </span>
                 </button>
             </div>
