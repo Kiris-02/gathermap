@@ -84,6 +84,40 @@
             border: none !important;
         }
 
+        /* Dark Theme for Leaflet Controls & Tooltips */
+        .leaflet-bar {
+            border: 1px solid #334155 !important;
+            border-radius: 10px !important;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+        }
+        .leaflet-bar a {
+            background-color: #0f172a !important;
+            color: #f1f5f9 !important;
+            border-bottom: 1px solid #1e293b !important;
+            transition: all 0.2s ease;
+        }
+        .leaflet-bar a:hover {
+            background-color: #1e293b !important;
+            color: #f59e0b !important;
+        }
+        .leaflet-tooltip {
+            background: #0b0f19 !important;
+            color: #f8fafc !important;
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+            padding: 5px 9px !important;
+            font-size: 11px !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        }
+        .leaflet-tooltip-top:before {
+            border-top-color: #0b0f19 !important;
+        }
+        .leaflet-tooltip-bottom:before {
+            border-bottom-color: #0b0f19 !important;
+        }
+
         .friend-pin, .venue-pin {
             display: block !important;
             line-height: 0 !important;
@@ -293,7 +327,7 @@
 
                 <!-- Cards List with Visual Thumbnails & Route Lines -->
                 <template x-for="(venue, index) in filteredShortlist" :key="venue.id">
-                    <div :class="selectedVenue?.id === venue.id ? 'ring-2 ring-amber-400 bg-dark-850 shadow-2xl scale-[1.01]' : 'bg-dark-850/80 hover:bg-dark-850 border-slate-800'" class="rounded-2xl border overflow-hidden transition-all duration-150 space-y-0 cursor-pointer group" @click="selectVenue(venue)">
+                    <div :id="'venue-card-' + venue.id" :class="selectedVenue?.id === venue.id ? 'ring-2 ring-amber-400 bg-dark-850 shadow-2xl scale-[1.01]' : 'bg-dark-850/80 hover:bg-dark-850 border-slate-800'" class="rounded-2xl border overflow-hidden transition-all duration-150 space-y-0 cursor-pointer group" @click="selectVenue(venue)">
                         
                         <!-- Visual Image Banner with Badges -->
                         <div class="relative h-32 w-full bg-dark-950 overflow-hidden">
@@ -500,11 +534,11 @@
         </aside>
 
         <!-- MAP CONTAINER (RIGHT COLUMN) -->
-        <div id="map-container" class="flex-1 relative h-full w-full bg-dark-950 flex flex-col" :class="(showGroupModal || showReviewersModal || showShareModal) ? 'hidden' : (mobileView === 'list' ? 'hidden lg:flex' : 'flex')">
+        <div id="map-container" class="flex-1 relative h-full w-full bg-dark-950 flex flex-col" :class="mobileView === 'list' ? 'hidden lg:flex' : 'flex'">
             <div id="map"></div>
 
             <!-- Floating Map Legend & Guide -->
-            <div class="absolute top-4 right-4 z-[400] bg-dark-900/90 backdrop-blur border border-slate-800 rounded-xl p-3 shadow-2xl text-xs space-y-1.5 max-w-xs">
+            <div class="absolute top-4 right-4 z-[1000] bg-dark-900/90 backdrop-blur border border-slate-800 rounded-xl p-3 shadow-2xl text-xs space-y-1.5 max-w-xs pointer-events-auto">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
                     <span class="font-bold text-slate-200">Map Controls</span>
                     <span class="text-[10px] text-amber-400 font-mono" x-text="centerCoords.lat.toFixed(4) + ', ' + centerCoords.lng.toFixed(4)"></span>
@@ -1006,7 +1040,8 @@
                     this.mobileView = v;
                     if (v === 'map') {
                         this.$nextTick(() => {
-                            setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 80);
+                            setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 60);
+                            setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 220);
                         });
                     }
                 },
@@ -1395,15 +1430,16 @@
 
                     L.control.zoom({ position: 'bottomleft' }).addTo(this.map);
 
-                    // Clean, 100% watermark-free OpenStreetMap & ESRI World Street tiles
+                    // Clean, high-performance OpenStreetMap, CartoDB Dark Matter & ESRI Street tiles
                     this.tileLayers = {
                         osm: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                             maxZoom: 19,
                             attribution: '&copy; OpenStreetMap contributors'
                         }),
-                        dark: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-                            maxZoom: 16,
-                            attribution: '&copy; Esri, HERE, Garmin, FAO, NOAA, USGS'
+                        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                            subdomains: 'abcd',
+                            maxZoom: 20,
+                            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
                         }),
                         street: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
                             maxZoom: 18,
@@ -1767,12 +1803,20 @@
                 },
 
                 selectVenue(venue) {
+                    if (!venue) return;
                     this.selectedVenue = venue;
                     this.drawTravelLines(venue);
-                    // Smooth, gentle pan only if venue is far away from center
-                    if (this.map && !this.map.getBounds().contains([venue.lat, venue.lng])) {
+                    // Smooth, gentle pan only if venue is outside current map view
+                    if (this.map && this.map.getBounds && !this.map.getBounds().contains([venue.lat, venue.lng])) {
                         this.map.panTo([venue.lat, venue.lng], { animate: true, duration: 0.5 });
                     }
+                    // Auto-scroll the sidebar list to the selected venue card
+                    this.$nextTick(() => {
+                        const el = document.getElementById('venue-card-' + venue.id);
+                        if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    });
                 },
 
                 drawTravelLines(venue) {
