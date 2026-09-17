@@ -147,11 +147,12 @@ async function runTests() {
             assert.ok(Array.isArray(shortlist) && shortlist.length > 0, 'Shortlist should return vegetarian options');
 
             const top = shortlist[0];
-            const isVeg = (top.category || '').toLowerCase().includes('chay') ||
+            const isVeg = top.isVegetarian ||
+                          Boolean(top.attributes?.dietary?.vegetarian) ||
+                          (top.category || '').toLowerCase().includes('chay') ||
                           (top.category || '').toLowerCase().includes('vegetarian') ||
                           (top.name || '').toLowerCase().includes('chay') ||
-                          (top.name || '').toLowerCase().includes('hum') ||
-                          (top.name || '').toLowerCase().includes('mani') ||
+                          (top.tags || []).some(t => t.toLowerCase().includes('vegetarian') || t.toLowerCase().includes('chay')) ||
                           (top.matches || []).some(m => m.toLowerCase().includes('vegetarian') || m.toLowerCase().includes('chay'));
 
             assert.ok(isVeg, 'Top venue (' + top.name + ' - ' + top.category + ') must be vegetarian-compatible');
