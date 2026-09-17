@@ -70,18 +70,49 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #4b5563; }
 
-        /* Fix Leaflet marker positioning - ensure Leaflet iconAnchor is respected during zoom/pan */
-        .leaflet-marker-icon, .leaflet-marker-shadow {
+        /* Bulletproof Leaflet Marker & Layer Positioning Rules */
+        .leaflet-container {
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        .leaflet-pane {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            opacity: 1;
+            z-index: 400;
+        }
+        .leaflet-map-pane { z-index: 400 !important; }
+        .leaflet-tile-pane { z-index: 200 !important; }
+        .leaflet-overlay-pane { z-index: 400 !important; }
+        .leaflet-shadow-pane { z-index: 500 !important; }
+        .leaflet-marker-pane { z-index: 600 !important; }
+        .leaflet-tooltip-pane { z-index: 650 !important; }
+        .leaflet-popup-pane { z-index: 700 !important; }
+
+        .leaflet-zoom-animated {
+            transform-origin: 0 0 !important;
+            -webkit-transform-origin: 0 0 !important;
+        }
+
+        .leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-div-icon {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            display: block !important;
             background: transparent !important;
             border: none !important;
             outline: none !important;
             padding: 0 !important;
-            user-select: none;
-            pointer-events: auto;
+            user-select: none !important;
+            -webkit-user-drag: none !important;
+            pointer-events: auto !important;
+            transform-origin: 0 0 !important;
         }
-        .leaflet-div-icon {
-            background: transparent !important;
-            border: none !important;
+
+        .leaflet-container img {
+            max-width: none !important;
+            max-height: none !important;
         }
 
         /* Dark Theme for Leaflet Controls & Tooltips */
@@ -136,14 +167,14 @@
             70%, 100% { transform: scale(2.4); opacity: 0; }
         }
         .center-beacon-outer {
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             pointer-events: auto;
         }
         .center-beacon-outer::before {
             content: '';
             position: absolute;
-            left: -12px; top: -12px;
+            left: -11px; top: -11px;
             width: 48px; height: 48px;
             border-radius: 50%;
             background: rgba(245, 158, 11, 0.4);
