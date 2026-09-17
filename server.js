@@ -1243,6 +1243,16 @@ Return JSON:
             }
         }
 
+        // Ensure every shortlisted venue has a valid rationale
+        for (const venue of venuesForRationale) {
+            if (!venue.aiRationale) {
+                const matchStr = (venue.matches || []).slice(0, 2).map(m => typeof m === 'string' ? m : (m.preference || m.value || '')).filter(Boolean).join(', ');
+                venue.aiRationale = matchStr
+                    ? `Không gian và phong cách rất phù hợp với tiêu chí của nhóm (${matchStr}).`
+                    : `Địa điểm thuận tiện với đánh giá thực tế tích cực từ thực khách.`;
+            }
+        }
+
         // Attach reviewer drawer details for the shortlist
         for (const venue of strictShortlist) {
             venue.reviewerHighlights = await db.getVenueReviewerHighlights(venue.id);

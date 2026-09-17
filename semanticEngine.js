@@ -201,10 +201,12 @@ function evaluatePreferenceDeterministically({ prefId, prefText, polarity = 'pos
 
         reviews.forEach(r => {
             const txt = norm(r.content || r.review_text || r.text || '');
-            if (txt.includes('upstairs no elevator') || (txt.includes('upstairs') && txt.includes('no elevator')) || txt.includes('khong co thang may') || txt.includes('cau thang doc') || txt.includes('cau thang hep') || (txt.includes('tren lau') && txt.includes('khong co thang'))) {
+            const isContra = txt.includes('upstairs no elevator') || (txt.includes('upstairs') && txt.includes('no elevator')) || txt.includes('khong co thang may') || txt.includes('cau thang doc') || txt.includes('cau thang hep') || (txt.includes('tren lau') && txt.includes('khong co thang')) || (txt.includes('tren lau') && !txt.includes('co thang may'));
+            const isSupport = !isContra && (txt.includes('ground floor') || txt.includes('tang tret') || (txt.includes('co thang may') && !txt.includes('khong co thang may')) || txt.includes('thang may rong') || txt.includes('wheelchair') || txt.includes('xe lan') || txt.includes('thuan tien cho nguoi lon tuoi'));
+
+            if (isContra) {
                 contraReviews.push(r);
-            }
-            if (txt.includes('ground floor') || txt.includes('tang tret') || txt.includes('co thang may') || txt.includes('thang may rong') || txt.includes('wheelchair') || txt.includes('xe lan') || txt.includes('thuan tien cho nguoi lon tuoi')) {
+            } else if (isSupport) {
                 supportReviews.push(r);
             }
         });
@@ -433,8 +435,8 @@ function evaluatePreferenceDeterministically({ prefId, prefText, polarity = 'pos
             const txt = norm(r.content || r.review_text || r.text || '');
             const weight = getReviewRecencyWeight(r);
 
-            const isNeg = txt.includes('parking area removed') || txt.includes('must park far away') || txt.includes('kho gui xe') || txt.includes('khong co cho gui xe') || txt.includes('mat cho gui xe') || txt.includes('het cho gui xe') || txt.includes('khong cho de xe') || txt.includes('parking is difficult');
-            const isPos = txt.includes('parking is easy') || txt.includes('de gui xe') || txt.includes('bai xe rong') || txt.includes('co bao ve giu xe') || txt.includes('gui xe mien phi') || txt.includes('easy parking');
+            const isNeg = txt.includes('parking area removed') || txt.includes('must park far away') || txt.includes('kho gui xe') || txt.includes('khong co cho gui xe') || txt.includes('mat cho gui xe') || txt.includes('het cho gui xe') || txt.includes('khong cho de xe') || txt.includes('khong con cho do xe') || txt.includes('khong con cho de xe') || txt.includes('khong co cho do xe') || txt.includes('gui o ngoai') || txt.includes('parking is difficult');
+            const isPos = !isNeg && (txt.includes('parking is easy') || txt.includes('de gui xe') || txt.includes('bai xe rong') || txt.includes('co bao ve giu xe') || txt.includes('gui xe mien phi') || txt.includes('easy parking') || txt.includes('cho gui xe rong') || txt.includes('cho de xe rong') || txt.includes('cho do xe rong') || (txt.includes('gui xe') && txt.includes('thoai mai')) || (txt.includes('do xe') && txt.includes('thoai mai')));
 
             if (isNeg) {
                 negWeight += weight;
