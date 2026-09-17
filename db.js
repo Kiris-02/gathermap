@@ -1951,6 +1951,44 @@ async function getVotes(outingId) {
 // SOCIAL MEDIA & COMMUNITY REVIEWS SERVICE
 // ==========================================
 const venueReviewsCache = new Map();
+let allReviewsPreloaded = false;
+
+async function preloadAllReviews() {
+    if (allReviewsPreloaded) return;
+    if (isSupabaseConfigured) {
+        try {
+            const { data, error } = await dbClient.from('reviews').select('*').order('created_at', { ascending: false });
+            if (!error && data) {
+                data.forEach(r => {
+                    const formatted = formatReviewRecord(r);
+                    if (!venueReviewsCache.has(r.venue_id)) {
+                        venueReviewsCache.set(r.venue_id, []);
+                    }
+                    venueReviewsCache.get(r.venue_id).push(formatted);
+                });
+                allReviewsPreloaded = true;
+                return;
+            }
+        } catch (e) {
+            console.warn('Supabase preloadAllReviews warning:', e.message);
+        }
+    }
+    if (sqliteDb) {
+        try {
+            const rows = sqliteDb.prepare('SELECT * FROM reviews ORDER BY created_at DESC').all();
+            rows.forEach(r => {
+                const formatted = formatReviewRecord(r);
+                if (!venueReviewsCache.has(r.venue_id)) {
+                    venueReviewsCache.set(r.venue_id, []);
+                }
+                venueReviewsCache.get(r.venue_id).push(formatted);
+            });
+            allReviewsPreloaded = true;
+        } catch (e) {
+            console.warn('SQLite preloadAllReviews warning:', e.message);
+        }
+    }
+}
 
 async function getVenueReviews(venueId, limit = 50) {
     if (venueReviewsCache.has(venueId)) {
@@ -2066,6 +2104,7 @@ module.exports = {
     recordVote,
     getVotes,
     getVenueReviews,
+    preloadAllReviews,
     addVenueReview,
     getVenueReviewsSummary,
     getVenueReviewerHighlights,

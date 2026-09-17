@@ -873,6 +873,7 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
         });
 
         // 2. Candidate Retrieval with Query Expansion
+        await db.preloadAllReviews();
         const allDbVenues = await db.getAllVenues();
 
         // Generate retrieval queries from cuisines, dishes, and dynamic preferences
@@ -1546,6 +1547,7 @@ if (require.main === module) {
         console.log(`🚀 GATHERMAP backend running at http://localhost:${PORT}`);
         console.log(`🤖 AI Engine: ${GEMINI_KEY ? 'Connected (Gemini Multi-Model Fallback)' : 'Disabled'}`);
         console.log(`💾 Database: ${db.dbType}`);
+        db.preloadAllReviews().then(() => console.log('⚡ All venue reviews preloaded into fast memory cache')).catch(() => {});
 
         // Self-ping every 9 minutes to prevent Render Free Tier from falling asleep
         const RENDER_APP_URL = process.env.RENDER_EXTERNAL_URL || 'https://gathermap.onrender.com';

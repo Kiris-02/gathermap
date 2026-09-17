@@ -1415,11 +1415,12 @@
 
                     L.control.zoom({ position: 'bottomleft' }).addTo(this.map);
 
-                    // Clean, high-performance OpenStreetMap, CartoDB Dark Matter & ESRI Street tiles
+                    // Clean, high-performance CartoDB Dark Matter, Voyager & ESRI Street tiles
                     this.tileLayers = {
-                        osm: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            maxZoom: 19,
-                            attribution: '&copy; OpenStreetMap contributors'
+                        osm: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                            subdomains: 'abcd',
+                            maxZoom: 20,
+                            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
                         }),
                         dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                             subdomains: 'abcd',
@@ -1432,8 +1433,8 @@
                         })
                     };
 
-                    this.currentMapStyle = 'osm';
-                    this.tileLayers.osm.addTo(this.map);
+                    this.currentMapStyle = 'dark';
+                    this.tileLayers.dark.addTo(this.map);
 
                     setTimeout(() => {
                         if (this.map) this.map.invalidateSize();
@@ -1739,6 +1740,7 @@
                         });
                         const data = await res.json();
                         if (currentReqId !== this.searchRequestId) return; // Discard outdated response
+                        this._hasRetriedSearch = false;
                         this.shortlist = data.shortlist || [];
                         this.nearbyAlternatives = data.nearbyAlternatives || [];
                         this.searchMessage = data.message || '';
@@ -1751,7 +1753,11 @@
                         }
                     } catch (e) {
                         if (e.name === 'AbortError') return;
-                        console.error('Execute ranking error:', e);
+                        console.warn('Execute ranking initial attempt error:', e.message);
+                        if (!this._hasRetriedSearch) {
+                            this._hasRetriedSearch = true;
+                            setTimeout(() => this.executeSearchAndRank(), 2200);
+                        }
                     } finally {
                         if (currentReqId === this.searchRequestId) {
                             this.ranking = false;
