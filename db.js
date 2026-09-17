@@ -1645,23 +1645,125 @@ async function getVenuesInRadius({ lat, lng, radiusKm = 3 }) {
     }).filter(v => v.distFromCenterKm <= radiusKm);
 }
 
+function sanitizeGooglePlaceId(rawId) {
+    if (!rawId || typeof rawId !== 'string') return null;
+    const trimmed = rawId.trim();
+    if (trimmed.startsWith('place_') || trimmed.startsWith('ChIJ_') || trimmed.includes('vanhanhmall') || trimmed.length < 20) {
+        return null;
+    }
+    if (/^ChIJ[A-Za-z0-9_-]{20,}$/.test(trimmed)) {
+        return trimmed;
+    }
+    return null;
+}
+
 function formatVenueRecord(r) {
     const rawAttrs = r.attributes || r.traits || {};
     const attrs = typeof rawAttrs === 'string' ? JSON.parse(rawAttrs || '{}') : (rawAttrs || {});
 
-    // Ensure nested objects always exist so safe access never throws
-    const dietary = attrs.dietary || { vegetarian: false, noAlcohol: false };
-    const noiseLevel = attrs.noiseLevel || { value: 'moderate' };
+    // Truthful extraction: do NOT fabricate defaults when values are missing
+    const rawDietary = attrs.dietary || {};
+    const dietary = {
+        vegetarian: rawDietary.vegetarian !== undefined ? Boolean(rawDietary.vegetarian) : null,
+        vegan: rawDietary.vegan !== undefined ? Boolean(rawDietary.vegan) : null,
+        halal: rawDietary.halal !== undefined ? Boolean(rawDietary.halal) : null,
+        noAlcohol: rawDietary.noAlcohol !== undefined ? Boolean(rawDietary.noAlcohol) : null
+    };
+
+    const noiseLevel = attrs.noiseLevel?.value ? attrs.noiseLevel : { value: null };
+    const parking = attrs.parking?.ease ? attrs.parking : { ease: null };
     const matcha = attrs.matcha || { value: false };
+
     const safeAttrs = {
         ...attrs,
         dietary,
         noiseLevel,
+        parking,
         matcha
     };
 
     const rawHighlights = r.social_highlights || attrs.social_highlights || {};
     const socialHighlights = typeof rawHighlights === 'string' ? JSON.parse(rawHighlights || '{}') : (rawHighlights || {});
+
+    const placeId = sanitizeGooglePlaceId(r.place_id || attrs.place_id || r.placeId);
+    const rating = r.rating != null ? Number(r.rating) : null;
+    const reviewsCount = r.reviews_count != null ? Number(r.reviews_count) : (r.reviewsCount != null ? Number(r.reviewsCount) : null);
+
+    const rawPrice = r.price_per_person_vnd ?? attrs.price_per_person_vnd ?? r.pricePerPersonVnd ?? null;
+    const pricePerPersonVnd = rawPrice != null ? Number(rawPrice) : null;
+    const avgPrice = r.avg_price || attrs.avg_price || r.avgPrice || null;
+
+    const openingHours = r.opening_hours || attrs.opening_hours || attrs.openingHours || r.openingHours || null;
+
+    // Standardized Provenance Model per architectural specification
+    const provenance = {
+        rating: {
+            value: rating,
+            source: rating ? (r.source === 'google_places' ? 'google_places' : 'venue_seed') : 'inferred',
+            confidence: rating ? 0.75 : 0.0,
+            verifiedAt: r.verified_at || null
+        },
+        reviewsCount: {
+            value: reviewsCount,
+            source: reviewsCount != null ? (r.source === 'google_places' ? 'google_places' : 'venue_seed') : 'inferred',
+            confidence: reviewsCount != null ? 0.70 : 0.0,
+            verifiedAt: r.verified_at || null
+        },
+        price: {
+            value: pricePerPersonVnd,
+            source: pricePerPersonVnd != null ? 'venue_seed' : 'inferred',
+            confidence: pricePerPersonVnd != null ? 0.70 : 0.0,
+            verifiedAt: r.verified_at || null
+        },
+        vegetarian: {
+            value: dietary.vegetarian,
+            source: rawDietary.vegetarian !== undefined ? 'venue_seed' : 'inferred',
+            confidence: rawDietary.vegetarian !== undefined ? 0.65 : 0.0,
+            verifiedAt: null
+        },
+        vegan: {
+            value: dietary.vegan,
+            source: rawDietary.vegan !== undefined ? 'venue_seed' : 'inferred',
+            confidence: rawDietary.vegan !== undefined ? 0.65 : 0.0,
+            verifiedAt: null
+        },
+        halal: {
+            value: dietary.halal,
+            source: rawDietary.halal !== undefined ? 'venue_seed' : 'inferred',
+            confidence: rawDietary.halal !== undefined ? 0.65 : 0.0,
+            verifiedAt: null
+        },
+        noAlcohol: {
+            value: dietary.noAlcohol,
+            source: rawDietary.noAlcohol !== undefined ? 'venue_seed' : 'inferred',
+            confidence: rawDietary.noAlcohol !== undefined ? 0.65 : 0.0,
+            verifiedAt: null
+        },
+        parking: {
+            value: parking?.ease || null,
+            source: parking?.ease ? 'venue_seed' : 'inferred',
+            confidence: parking?.ease ? 0.65 : 0.0,
+            verifiedAt: null
+        },
+        noiseLevel: {
+            value: noiseLevel?.value || null,
+            source: noiseLevel?.value ? 'venue_seed' : 'inferred',
+            confidence: noiseLevel?.value ? 0.65 : 0.0,
+            verifiedAt: null
+        },
+        placeId: {
+            value: placeId,
+            source: placeId ? 'google_places' : 'venue_seed',
+            confidence: placeId ? 0.95 : 0.0,
+            verifiedAt: null
+        },
+        openingHours: {
+            value: openingHours,
+            source: openingHours ? 'venue_seed' : 'inferred',
+            confidence: openingHours ? 0.70 : 0.0,
+            verifiedAt: null
+        }
+    };
 
     return {
         id: r.id,
@@ -1671,26 +1773,21 @@ function formatVenueRecord(r) {
         isAlley: Boolean(r.is_alley !== undefined ? r.is_alley : attrs.is_alley),
         alleyNote: r.alley_note || attrs.alley_note || '',
         address: r.address,
-        placeId: r.place_id || attrs.place_id || '',
+        placeId,
         lat: Number(r.lat),
         lng: Number(r.lng),
-        rating: Number(r.rating || 4.5),
-        reviewsCount: Number(r.reviews_count || 100),
-        pricePerPersonVnd: Number(r.price_per_person_vnd || attrs.price_per_person_vnd || 50000),
-        avgPrice: r.avg_price || '35k - 80k VND',
+        rating,
+        reviewsCount,
+        pricePerPersonVnd,
+        avgPrice,
         heroImage: r.hero_image || attrs.hero_image || attrs.heroImage || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
         photos: r.photos || attrs.photos || [attrs.heroImage || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80'],
-        openingHours: r.opening_hours || attrs.opening_hours || attrs.openingHours || {
-            open: '09:00',
-            close: '22:00',
-            is24_7: false,
-            displayText: '09:00 - 22:00',
-            openDays: 'Thứ 2 - Chủ Nhật'
-        },
+        openingHours,
         tags: typeof r.tags === 'string' ? JSON.parse(r.tags || '[]') : (r.tags || []),
         attributes: safeAttrs,
         unknowns: typeof r.unknowns === 'string' ? JSON.parse(r.unknowns || '[]') : (r.unknowns || []),
-        socialHighlights
+        socialHighlights,
+        provenance
     };
 }
 
@@ -1853,17 +1950,28 @@ async function getVotes(outingId) {
 // ==========================================
 // SOCIAL MEDIA & COMMUNITY REVIEWS SERVICE
 // ==========================================
+const venueReviewsCache = new Map();
+
 async function getVenueReviews(venueId, limit = 50) {
+    if (venueReviewsCache.has(venueId)) {
+        const cached = venueReviewsCache.get(venueId);
+        return cached.slice(0, limit);
+    }
+
     if (isSupabaseConfigured) {
         try {
             const { data } = await dbClient.from('reviews').select('*').eq('venue_id', venueId).order('created_at', { ascending: false }).limit(limit);
-            return (data || []).map(formatReviewRecord);
+            const formatted = (data || []).map(formatReviewRecord);
+            venueReviewsCache.set(venueId, formatted);
+            return formatted;
         } catch (e) {
             console.error('Supabase getVenueReviews error:', e.message);
         }
     }
     const rows = sqliteDb.prepare('SELECT * FROM reviews WHERE venue_id = ? ORDER BY created_at DESC LIMIT ?').all(venueId, limit);
-    return rows.map(formatReviewRecord);
+    const formatted = rows.map(formatReviewRecord);
+    venueReviewsCache.set(venueId, formatted);
+    return formatted;
 }
 
 async function addVenueReview({ venueId, source = 'user', authorName = 'Kiris (Thực khách)', rating = 5.0, content, sentiment = 'positive', tags = [] }) {
@@ -1876,6 +1984,7 @@ async function addVenueReview({ venueId, source = 'user', authorName = 'Kiris (T
             await dbClient.from('reviews').insert([{
                 id, venue_id: venueId, source, author_name: authorName, rating, content, tags: tagStr, date_text: reviewDate
             }]);
+            venueReviewsCache.delete(venueId);
             return { id, success: true };
         } catch (e) {
             console.error('Supabase addVenueReview error:', e.message);
@@ -1886,6 +1995,7 @@ async function addVenueReview({ venueId, source = 'user', authorName = 'Kiris (T
         INSERT INTO reviews (id, venue_id, source, author_name, rating, content, sentiment, tags, likes_count, review_date)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
     `).run(id, venueId, source, authorName, rating, content, sentiment, tagStr, reviewDate);
+    venueReviewsCache.delete(venueId);
 
     return { id, success: true };
 }
@@ -1895,8 +2005,8 @@ async function getVenueReviewsSummary(venueId) {
     if (reviews.length === 0) {
         return {
             count: 0,
-            avgRating: 4.5,
-            sources: ['google'],
+            avgRating: null,
+            sources: [],
             topReview: null
         };
     }
@@ -1937,7 +2047,7 @@ async function getVenueReviewerHighlights(venueId) {
         name: venue ? venue.name : '',
         address: venue ? venue.address : '',
         category: venue ? venue.category : '',
-        rating: venue ? venue.rating : 4.5,
+        rating: venue ? (venue.rating ?? null) : null,
         socialHighlights: venue ? (venue.socialHighlights || {}) : {},
         reviewerCount: reviews.length,
         reviewers: reviews

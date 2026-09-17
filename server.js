@@ -506,8 +506,52 @@ ${rawInput}`;
                     maxPricePerPersonVnd: parsed.hardConstraints?.maxPricePerPersonVnd ?? legacyReqs.max_price_vnd
                 };
 
+                const dynamicPreferences = [];
+                let pId = 1;
+                (parsed.cuisines || []).forEach(c => dynamicPreferences.push({
+                    id: `pref_${pId++}`,
+                    memberId: c.memberId || null,
+                    memberName: c.memberName || 'Group',
+                    text: c.value,
+                    importance: c.weight || 5,
+                    polarity: 'positive'
+                }));
+                (parsed.dishes || []).forEach(d => dynamicPreferences.push({
+                    id: `pref_${pId++}`,
+                    memberId: d.memberId || null,
+                    memberName: d.memberName || 'Group',
+                    text: d.value,
+                    importance: d.weight || 5,
+                    polarity: 'positive'
+                }));
+                (parsed.ambience || []).forEach(a => dynamicPreferences.push({
+                    id: `pref_${pId++}`,
+                    memberId: a.memberId || null,
+                    memberName: a.memberName || 'Group',
+                    text: a.value,
+                    importance: a.weight || 4,
+                    polarity: 'positive'
+                }));
+                (parsed.features || []).forEach(f => dynamicPreferences.push({
+                    id: `pref_${pId++}`,
+                    memberId: f.memberId || null,
+                    memberName: f.memberName || 'Group',
+                    text: f.value,
+                    importance: f.weight || 4,
+                    polarity: 'positive'
+                }));
+                (parsed.negativePreferences || []).forEach(n => dynamicPreferences.push({
+                    id: `pref_${pId++}`,
+                    memberId: null,
+                    memberName: 'Group',
+                    text: n.value || n,
+                    importance: n.weight || 5,
+                    polarity: 'negative'
+                }));
+
                 return res.json({
                     ...parsed,
+                    preferences: dynamicPreferences,
                     requiredConstraints: legacyReqs,
                     softPreferences: legacySoft,
                     aiPowered: true,
@@ -628,6 +672,49 @@ ${rawInput}`;
         ...features.map(f => ({ preference: f.value, criterion: 'feature', weight: f.weight, memberName: f.memberName }))
     ];
 
+    const dynamicPreferences = [];
+    let pId = 1;
+    (cuisines || []).forEach(c => dynamicPreferences.push({
+        id: `pref_${pId++}`,
+        memberId: c.memberId || null,
+        memberName: c.memberName || 'Group',
+        text: c.value,
+        importance: c.weight || 5,
+        polarity: 'positive'
+    }));
+    (dishes || []).forEach(d => dynamicPreferences.push({
+        id: `pref_${pId++}`,
+        memberId: d.memberId || null,
+        memberName: d.memberName || 'Group',
+        text: d.value,
+        importance: d.weight || 5,
+        polarity: 'positive'
+    }));
+    (ambience || []).forEach(a => dynamicPreferences.push({
+        id: `pref_${pId++}`,
+        memberId: a.memberId || null,
+        memberName: a.memberName || 'Group',
+        text: a.value,
+        importance: a.weight || 4,
+        polarity: 'positive'
+    }));
+    (features || []).forEach(f => dynamicPreferences.push({
+        id: `pref_${pId++}`,
+        memberId: f.memberId || null,
+        memberName: f.memberName || 'Group',
+        text: f.value,
+        importance: f.weight || 4,
+        polarity: 'positive'
+    }));
+    (negativePreferences || []).forEach(n => dynamicPreferences.push({
+        id: `pref_${pId++}`,
+        memberId: null,
+        memberName: 'Group',
+        text: n.value || n,
+        importance: n.weight || 5,
+        polarity: 'negative'
+    }));
+
     res.json({
         hardConstraints: {
             ...hardConstraints,
@@ -641,6 +728,7 @@ ${rawInput}`;
         ambience,
         features,
         negativePreferences,
+        preferences: dynamicPreferences,
         rawIntent: rawInput || 'Tìm địa điểm gặp mặt phù hợp xung quanh tâm điểm nhóm',
         requiredConstraints: {
             vegetarian: hardConstraints.vegetarianRequired,
@@ -718,25 +806,155 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
             });
         }
 
-        // 2. Fetch Candidates (Local DB + Google Places Live)
+        // Build unified list of dynamic preferences
+        const allDynamicPreferences = [];
+        let pCounter = 1;
+        if (Array.isArray(req.body.preferences)) {
+            req.body.preferences.forEach(p => {
+                allDynamicPreferences.push({
+                    id: p.id || `pref_${pCounter++}`,
+                    memberId: p.memberId || null,
+                    memberName: p.memberName || 'Group',
+                    text: p.text || p.preference || '',
+                    importance: p.importance || 4,
+                    polarity: p.polarity || 'positive'
+                });
+            });
+        }
+        (intentProfile.cuisines || []).forEach(c => {
+            allDynamicPreferences.push({
+                id: `pref_c_${pCounter++}`,
+                memberId: c.memberId || null,
+                memberName: c.memberName || 'Group',
+                text: typeof c === 'string' ? c : (c.value || c.preference || ''),
+                importance: c.weight || 5,
+                polarity: 'positive'
+            });
+        });
+        (intentProfile.dishes || []).forEach(d => {
+            allDynamicPreferences.push({
+                id: `pref_d_${pCounter++}`,
+                memberId: d.memberId || null,
+                memberName: d.memberName || 'Group',
+                text: typeof d === 'string' ? d : (d.value || d.preference || ''),
+                importance: d.weight || 5,
+                polarity: 'positive'
+            });
+        });
+        (intentProfile.ambience || []).forEach(a => {
+            allDynamicPreferences.push({
+                id: `pref_a_${pCounter++}`,
+                memberId: a.memberId || null,
+                memberName: a.memberName || 'Group',
+                text: typeof a === 'string' ? a : (a.value || a.preference || ''),
+                importance: a.weight || 4,
+                polarity: 'positive'
+            });
+        });
+        (intentProfile.features || []).forEach(f => {
+            allDynamicPreferences.push({
+                id: `pref_f_${pCounter++}`,
+                memberId: f.memberId || null,
+                memberName: f.memberName || 'Group',
+                text: typeof f === 'string' ? f : (f.value || f.preference || ''),
+                importance: f.weight || 4,
+                polarity: 'positive'
+            });
+        });
+        (intentProfile.negativePreferences || []).forEach(n => {
+            allDynamicPreferences.push({
+                id: `pref_n_${pCounter++}`,
+                memberId: null,
+                memberName: 'Group',
+                text: typeof n === 'string' ? n : (n.value || n.preference || ''),
+                importance: n.weight || 5,
+                polarity: 'negative'
+            });
+        });
+
+        // 2. Candidate Retrieval with Query Expansion
         const allDbVenues = await db.getAllVenues();
-        let candidates = allDbVenues.map(v => ({
+
+        // Generate retrieval queries from cuisines, dishes, and dynamic preferences
+        const retrievalQueries = new Set();
+        (intentProfile.cuisines || []).forEach(c => {
+            const v = typeof c === 'string' ? c : (c.value || c.preference || '');
+            if (v) { retrievalQueries.add(v); retrievalQueries.add(`${v} restaurant`); }
+        });
+        (intentProfile.dishes || []).forEach(d => {
+            const v = typeof d === 'string' ? d : (d.value || d.preference || '');
+            if (v) {
+                retrievalQueries.add(v);
+                if (v.toLowerCase().includes('bbq')) {
+                    retrievalQueries.add('Korean BBQ');
+                    retrievalQueries.add('thịt nướng');
+                    retrievalQueries.add('Samgyeopsal');
+                }
+            }
+        });
+        allDynamicPreferences.forEach(p => {
+            const v = (p.text || '').toLowerCase();
+            if (v.includes('korean bbq') || v.includes('thịt nướng') || v.includes('bbq')) {
+                retrievalQueries.add('Korean BBQ');
+                retrievalQueries.add('thịt nướng');
+                retrievalQueries.add('Samgyeopsal');
+            }
+        });
+        const queryList = Array.from(retrievalQueries);
+
+        let initialCandidates = allDbVenues.map(v => ({
             ...v,
             distFromCenterKm: Number(db.haversineKm(center.lat, center.lng, v.lat, v.lng).toFixed(2))
         }));
 
-        if (GOOGLE_KEY) {
-            const livePlaces = await fetchGooglePlacesNearby(center, radiusMeters);
-            if (livePlaces.length > 0) {
-                const existingNames = new Set(candidates.map(v => v.name.toLowerCase()));
-                for (const p of livePlaces) {
-                    if (!existingNames.has(p.name.toLowerCase())) {
-                        candidates.push({
-                            ...p,
-                            distFromCenterKm: Number(db.haversineKm(center.lat, center.lng, p.lat, p.lng).toFixed(2))
+        // Query expansion recall: ensure any DB venue matching retrieval queries enters candidates pool
+        if (queryList.length > 0) {
+            const currentIds = new Set(initialCandidates.map(c => c.id));
+            allDbVenues.forEach(v => {
+                if (!currentIds.has(v.id)) {
+                    const normV = (v.name + ' ' + v.category + ' ' + (v.tags || []).join(' ')).toLowerCase();
+                    const matchesQuery = queryList.some(q => normV.includes(q.toLowerCase()));
+                    if (matchesQuery) {
+                        initialCandidates.push({
+                            ...v,
+                            distFromCenterKm: Number(db.haversineKm(center.lat, center.lng, v.lat, v.lng).toFixed(2))
                         });
                     }
                 }
+            });
+        }
+
+        if (GOOGLE_KEY) {
+            const livePlaces = await fetchGooglePlacesNearby(center, radiusMeters);
+            if (livePlaces.length > 0) {
+                initialCandidates.push(...livePlaces.map(p => ({
+                    ...p,
+                    distFromCenterKm: Number(db.haversineKm(center.lat, center.lng, p.lat, p.lng).toFixed(2))
+                })));
+            }
+        }
+
+        // Deduplicate candidates by Place ID (if valid), then normalized name + proximity (< 100m)
+        const candidates = [];
+        for (const cand of initialCandidates) {
+            let isDup = false;
+            for (const existing of candidates) {
+                if (cand.placeId && existing.placeId && cand.placeId === existing.placeId) {
+                    isDup = true;
+                    break;
+                }
+                const n1 = (cand.name || '').toLowerCase().trim();
+                const n2 = (existing.name || '').toLowerCase().trim();
+                if (n1 === n2) {
+                    const dist = db.haversineKm(cand.lat, cand.lng, existing.lat, existing.lng);
+                    if (dist < 0.1) {
+                        isDup = true;
+                        break;
+                    }
+                }
+            }
+            if (!isDup) {
+                candidates.push(cand);
             }
         }
 
@@ -760,12 +978,24 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
             negativePreferences: (intentProfile.negativePreferences || []).filter(p => preferenceAppliesToMember(p, friend.name))
         });
 
+        // Preload reviews in parallel
+        await Promise.all(candidates.map(async (v) => {
+            v._reviews = await db.getVenueReviews(v.id, 15);
+        }));
+
         for (const venue of candidates) {
-            // Load reviews for venue
-            const reviews = await db.getVenueReviews(venue.id, 15);
+            const reviews = venue._reviews || [];
+
+            // Intent-aware review analysis (Stage A deterministic fast path)
+            const reviewAnalysis = await semanticEngine.analyzeReviewsForPreferences({
+                venue,
+                reviews,
+                preferences: allDynamicPreferences,
+                geminiCaller: null
+            });
 
             // Build evidence-backed semantic profile
-            const venueProfile = semanticEngine.buildVenueSemanticProfile(venue, reviews);
+            const venueProfile = semanticEngine.buildVenueSemanticProfile(venue, reviews, reviewAnalysis.matches);
 
             // Evaluate strict hard constraints & radius
             const constraintCheck = semanticEngine.evaluateHardConstraints(
@@ -777,7 +1007,11 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
 
             // Score semantic compatibility against intent
             const semanticMatch = semanticEngine.scoreVenueAgainstIntent({
-                intentProfile,
+                intentProfile: {
+                    ...intentProfile,
+                    preferences: allDynamicPreferences,
+                    preferenceMatches: reviewAnalysis.matches
+                },
                 venueProfile,
                 venue,
                 distanceKm: venue.distFromCenterKm
@@ -791,8 +1025,13 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
                 const travelMins = Math.max(5, Math.round((friendDist / 20) * 60));
                 const travelScore = Math.max(20, Math.min(100, Math.round(100 - (travelMins * 2.2))));
 
+                const memberPrefs = allDynamicPreferences.filter(p => preferenceAppliesToMember(p, friend.name));
                 const memberSemanticMatch = semanticEngine.scoreVenueAgainstIntent({
-                    intentProfile: intentForMember(friend),
+                    intentProfile: {
+                        ...intentForMember(friend),
+                        preferences: memberPrefs,
+                        preferenceMatches: reviewAnalysis.matches
+                    },
                     venueProfile,
                     venue,
                     distanceKm: friendDist
@@ -855,6 +1094,86 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
             });
         }
 
+        // Stage B Selective Enrichment: Enrich top candidates with Gemini AI if arbitrary preferences exist
+        const contendersToEnrich = evaluatedCandidates
+            .filter(c => c.constraintCheck.passed)
+            .sort((a, b) => b.groupScore - a.groupScore)
+            .slice(0, 5);
+        if (contendersToEnrich.length < 5) {
+            const extra = evaluatedCandidates
+                .filter(c => !c.constraintCheck.passed)
+                .sort((a, b) => b.groupScore - a.groupScore)
+                .slice(0, 5 - contendersToEnrich.length);
+            contendersToEnrich.push(...extra);
+        }
+
+        if (GEMINI_KEY && allDynamicPreferences.length > 0) {
+            await Promise.all(contendersToEnrich.map(async (cand) => {
+                const reviews = cand._reviews || await db.getVenueReviews(cand.id, 15);
+                const enrichedAnalysis = await semanticEngine.analyzeReviewsForPreferences({
+                    venue: cand,
+                    reviews,
+                    preferences: allDynamicPreferences,
+                    geminiCaller: callGemini
+                });
+                if (enrichedAnalysis && enrichedAnalysis.matches && enrichedAnalysis.matches.length > 0) {
+                    cand.venueProfile = semanticEngine.buildVenueSemanticProfile(cand, reviews, enrichedAnalysis.matches);
+                    cand.semanticMatch = semanticEngine.scoreVenueAgainstIntent({
+                        intentProfile: {
+                            ...intentProfile,
+                            preferences: allDynamicPreferences,
+                            preferenceMatches: enrichedAnalysis.matches
+                        },
+                        venueProfile: cand.venueProfile,
+                        venue: cand,
+                        distanceKm: cand.distFromCenterKm
+                    });
+                    cand.memberBreakdowns = memberList.map(friend => {
+                        const fLat = friend.lat || center.lat;
+                        const fLng = friend.lng || center.lng;
+                        const friendDist = Number(db.haversineKm(fLat, fLng, cand.lat, cand.lng).toFixed(1));
+                        const travelMins = Math.max(5, Math.round((friendDist / 20) * 60));
+                        const travelScore = Math.max(20, Math.min(100, Math.round(100 - (travelMins * 2.2))));
+                        const memberPrefs = allDynamicPreferences.filter(p => preferenceAppliesToMember(p, friend.name));
+                        const memberSemanticMatch = semanticEngine.scoreVenueAgainstIntent({
+                            intentProfile: {
+                                ...intentForMember(friend),
+                                preferences: memberPrefs,
+                                preferenceMatches: enrichedAnalysis.matches
+                            },
+                            venueProfile: cand.venueProfile,
+                            venue: cand,
+                            distanceKm: friendDist
+                        });
+                        const memberScore = Math.round(0.70 * memberSemanticMatch.semanticScore + 0.30 * travelScore);
+                        return {
+                            friendName: friend.name,
+                            score: memberScore,
+                            preferenceScore: memberSemanticMatch.semanticScore,
+                            preferenceConfidence: memberSemanticMatch.confidence,
+                            matches: memberSemanticMatch.matches,
+                            mismatches: memberSemanticMatch.mismatches,
+                            unknowns: memberSemanticMatch.unknowns,
+                            travelScore,
+                            travelMins,
+                            distKm: friendDist
+                        };
+                    });
+                    const fairness = semanticEngine.calculateFairnessScores(cand.memberBreakdowns);
+                    cand.groupScore = fairness.groupScore;
+                    cand.fairnessScore = fairness.fairnessScore || fairness.groupScore;
+                    cand.preferenceScore = cand.semanticMatch.semanticScore;
+                    cand.matches = cand.semanticMatch.matches.map(m => m.preference);
+                    cand.partialMatches = cand.semanticMatch.partialMatches.map(m => m.preference);
+                    cand.mismatches = cand.semanticMatch.mismatches.map(m => m.preference);
+                    cand.unknowns = cand.semanticMatch.unknowns;
+                    cand.detailedMatches = cand.semanticMatch.matches;
+                    cand.detailedPartialMatches = cand.semanticMatch.partialMatches;
+                    cand.detailedMismatches = cand.semanticMatch.mismatches;
+                }
+            }));
+        }
+
         // 4. Strict Shortlist (Never relax hard constraints or radius)
         const strictCandidates = evaluatedCandidates
             .filter(v => v.constraintCheck.passed)
@@ -888,12 +1207,13 @@ app.post('/api/venues/search-and-rank', async (req, res) => {
                 return `#${i+1} ${v.name} (Score: ${v.groupScore}/100, Giá: ${v.avgPrice || 'Bình dân'}, Phù hợp: [${matchStr}], Đánh đổi: [${mismatchStr}], Đánh giá thực tế: "${reviewEvidenceStr}", ${violStr})`;
             }).join('\n');
 
-            const aiPrompt = `You are an expert Group Dining Concierge.
-Write a concise 1-2 sentence recommendation rationale in Vietnamese for each venue based STRICTLY on the provided structured matches, review evidence, and trade-offs.
+            const aiPrompt = `You are an expert Group Dining Concierge in Saigon.
+Write a concise 1-2 sentence recommendation rationale in natural, engaging Vietnamese for each venue based STRICTLY on the provided structured matches, review evidence, and trade-offs.
 CRITICAL RULES:
-1. ONLY reference facts from the provided Matches, Trade-offs, and Review Evidence.
-2. DO NOT invent menu items, parking facts, noise levels, or review quotes not in the input.
-3. If a venue is an alternative with violations, state the trade-off clearly.
+1. Make it sound natural, appetizing, and specifically tailored to the group's intent. Avoid robotic boilerplate templates like "Quán đạt điểm số X/100...".
+2. Highlight why the atmosphere, cuisine style, or signature traits match the group's wishes.
+3. ONLY reference facts from the provided Matches, Trade-offs, and Review Evidence. DO NOT hallucinate facts not in the input.
+4. If a venue is an alternative with violations, state the trade-off clearly.
 
 Input Intent: "${intentProfile.rawIntent || 'Tìm quán phù hợp nhóm'}"
 
@@ -966,6 +1286,18 @@ Return JSON:
                 candidatesEvaluated: evaluatedCandidates.length,
                 strictPassed: strictCandidates.length,
                 alternativesFound: alternativeCandidates.length
+            },
+            debugTrace: {
+                rawIntent: intentProfile.rawIntent,
+                parsedIntent: intentProfile,
+                retrievalQueries: queryList,
+                candidateIds: candidates.map(c => c.id),
+                strictFilterResults: evaluatedCandidates.map(c => ({ venueId: c.id, passed: c.constraintCheck.passed, violations: c.constraintCheck.violations })),
+                reviewEvidenceIds: evaluatedCandidates.flatMap(c => (c.venueProfile?.preferenceMatches || []).flatMap(m => m.evidenceIds || [])),
+                semanticMatchMatrix: evaluatedCandidates.map(c => ({ venueId: c.id, matches: c.matches, mismatches: c.mismatches, unknowns: c.unknowns })),
+                memberScores: evaluatedCandidates.slice(0, 5).map(c => ({ venueId: c.id, memberBreakdowns: c.memberBreakdowns })),
+                groupScores: evaluatedCandidates.slice(0, 5).map(c => ({ venueId: c.id, groupScore: c.groupScore })),
+                finalRanking: strictShortlist.map(s => ({ id: s.id, name: s.name, score: s.groupScore }))
             },
             aiPowered: Boolean(GEMINI_KEY),
             database: db.dbType

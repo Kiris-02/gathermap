@@ -452,42 +452,33 @@
                                 </template>
                             </div>
 
-                            <!-- Opening Hours Real Badge & Notice -->
-                            <div class="p-2 rounded-xl border text-[11px] flex items-center justify-between transition" :class="getOpeningBadge(venue).boxClass">
-                                <div class="flex items-center space-x-1.5 min-w-0">
-                                    <i class="fa-regular fa-clock shrink-0 text-xs"></i>
-                                    <span class="truncate font-medium" x-text="getOpeningHoursDetail(venue)"></span>
-                                </div>
-                                <a :href="venue.mapsUrl || venue.directionsUrl" target="_blank" class="hover:underline font-bold shrink-0 ml-2 text-[10px]">Google Maps</a>
-                            </div>
-
                             <!-- Bottom Action Bar: Vote, Reviewer Drawer & Google Maps Navigation -->
-                            <div class="pt-2.5 border-t border-slate-800 flex items-center justify-between gap-1.5 flex-wrap">
+                            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-1.5 flex-wrap">
 
                                 <!-- NÚT SAO CHÉP KẾ HOẠCH RỦ BẠN (ZALO / MESSENGER) -->
-                                <button @click.stop="shareVenuePlan(venue)" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/35 text-xs font-bold flex items-center space-x-1 transition shadow-sm active:scale-95" title="Sao chép tin nhắn rủ bạn bè (Zalo/Messenger)">
+                                <button @click.stop="shareVenuePlan(venue)" class="px-2.5 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm active:scale-95" title="Sao chép tin nhắn rủ bạn bè (Zalo/Messenger)">
                                     <i class="fa-solid fa-paper-plane text-emerald-400 text-xs"></i>
                                     <span>Rủ bạn</span>
                                 </button>
 
                                 <div class="flex items-center space-x-1.5">
                                     <!-- NÚT BÌNH CHỌN VỚI POP ANIMATION -->
-                                    <button @click.stop="voteForVenue(venue)" :class="votedVenueId === venue.id ? 'scale-125 bg-amber-500 text-dark-950 font-black ring-2 ring-white' : 'bg-dark-950 hover:bg-slate-800 text-slate-200 border border-slate-700'" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center space-x-1 shadow-sm active:scale-95" title="Bình chọn cho quán này">
+                                    <button @click.stop="voteForVenue(venue)" :class="votedVenueId === venue.id ? 'scale-110 bg-amber-500 text-dark-950 font-black ring-2 ring-white' : 'bg-dark-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700'" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center space-x-1.5 shadow-sm active:scale-95" title="Bình chọn cho quán này">
                                         <i class="fa-solid fa-thumbs-up text-xs" :class="votedVenueId === venue.id ? 'text-dark-950' : 'text-amber-400'"></i>
                                         <span>Vote</span>
-                                        <span class="px-1.5 py-0.2 rounded text-[10px]" :class="votedVenueId === venue.id ? 'bg-dark-950 text-white font-black' : 'bg-amber-500/20 text-amber-400'" x-text="venue.votes || 0"></span>
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] bg-dark-950/80 text-amber-400 font-bold" x-text="venue.votes || 0"></span>
                                     </button>
 
                                     <!-- NÚT XEM CÁC REVIEWER TRƯỚC (BOTTOMLINE) -->
-                                    <button @click.stop="openReviewersDrawer(venue)" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/35 text-xs font-bold flex items-center space-x-1.5 transition shadow-sm active:scale-95" title="Xem đánh giá từ các reviewer trước">
-                                        <i class="fa-solid fa-comments text-indigo-400 text-xs"></i>
+                                    <button @click.stop="openReviewersDrawer(venue)" class="px-2.5 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm active:scale-95" title="Xem đánh giá từ các reviewer trước">
+                                        <i class="fa-solid fa-comments text-amber-400 text-xs"></i>
                                         <span>Reviewer</span>
-                                        <span class="bg-indigo-400/20 text-indigo-300 px-1.5 py-0.2 rounded text-[10px]" x-text="venue.reviewerCount || 3"></span>
+                                        <span class="bg-dark-950/80 text-slate-300 px-1.5 py-0.2 rounded text-[10px] font-bold" x-text="venue.reviewerCount ?? 0"></span>
                                     </button>
                                 </div>
 
                                 <!-- Direct Google Maps Navigation -->
-                                <a :href="venue.directionsUrl" target="_blank" @click.stop class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-dark-950 font-extrabold text-xs transition flex items-center space-x-1 shadow-md shadow-amber-500/20 active:scale-95" title="Chỉ đường Google Maps">
+                                <a :href="venue.directionsUrl" target="_blank" @click.stop class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-dark-950 font-black text-xs transition flex items-center space-x-1.5 shadow-md shadow-amber-500/20 active:scale-95" title="Chỉ đường Google Maps">
                                     <i class="fa-solid fa-diamond-turn-right text-xs"></i>
                                     <span>Chỉ đường</span>
                                 </a>
@@ -1083,7 +1074,7 @@
                             this.activeReviewerVenue = {
                                 ...venue,
                                 reviewers: data.reviewers,
-                                reviewerCount: data.reviewerCount || data.reviewers.length,
+                                reviewerCount: data.reviewerCount ?? (data.reviewers ? data.reviewers.length : 0),
                                 socialHighlights: data.socialHighlights || venue.socialHighlights || {}
                             };
                         }

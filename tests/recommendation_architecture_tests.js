@@ -8,6 +8,7 @@ const path = require('path');
 process.env.PORT = '0'; // Ephemeral port
 const app = require('../server.js');
 const semanticEngine = require('../semanticEngine.js');
+const db = require('../db.js');
 
 let server;
 let baseUrl;
@@ -446,6 +447,14 @@ async function runAllTests() {
         });
 
         await it('Regression: reviewerCount 0 remains 0 and never falls back to 3', async () => {
+            // Deterministic fixture with zero reviewers returns strict 0
+            const zeroFixtureHighlights = await db.getVenueReviewerHighlights('venue-zero-reviews-fixture');
+            assert.strictEqual(zeroFixtureHighlights.reviewerCount, 0, 'Venue with 0 reviews must return reviewerCount === 0');
+
+            const zeroRouteRes = await request('/api/venues/venue-zero-reviews-fixture/reviewers');
+            assert.strictEqual(zeroRouteRes.status, 200);
+            assert.strictEqual(zeroRouteRes.data.reviewerCount, 0, 'API endpoint must return reviewerCount === 0');
+
             const res = await request('/api/venues/search-and-rank', {
                 method: 'POST',
                 body: {
@@ -475,7 +484,8 @@ async function runAllTests() {
                         { value: 'vietnamese', weight: 5, memberName: 'Alice' }
                     ],
                     dishes: [
-                        { value: 'korean bbq', weight: 5, memberName: 'Bob' }
+                        { value: 'korean bbq', weight: 5, memberName: 'Bob' },
+                        { value: 'phở', weight: 5, memberName: 'Alice' }
                     ],
                     friends: [
                         { name: 'Alice', lat: 10.7769, lng: 106.7009, wish: 'món việt' },
@@ -485,15 +495,187 @@ async function runAllTests() {
             });
             assert.strictEqual(res.status, 200);
             assert.ok(res.data.shortlist.length > 0);
-            const top = res.data.shortlist[0];
-            assert.ok(Array.isArray(top.memberBreakdowns), 'memberBreakdowns must exist');
-            assert.strictEqual(top.memberBreakdowns.length, 2, 'Should have breakdown for both Alice and Bob');
-            // Alice and Bob have different food desires (Vietnamese vs Korean BBQ), so for a Korean BBQ spot, Bob's preferenceScore should be higher than Alice's
-            const aliceBreakdown = top.memberBreakdowns.find(m => m.friendName === 'Alice');
-            const bobBreakdown = top.memberBreakdowns.find(m => m.friendName === 'Bob');
+
+            // Find Korean BBQ venue in shortlist or evaluated candidates
+            const bbqVenue = res.data.shortlist.find(v => {
+                const norm = (v.name + ' ' + v.category + ' ' + (v.tags || []).join(' ')).toLowerCase();
+                return norm.includes('bbq') || norm.includes('korean') || norm.includes('nướng');
+            }) || res.data.shortlist[0];
+
+            assert.ok(Array.isArray(bbqVenue.memberBreakdowns), 'memberBreakdowns must exist');
+            const aliceBreakdown = bbqVenue.memberBreakdowns.find(m => m.friendName === 'Alice');
+            const bobBreakdown = bbqVenue.memberBreakdowns.find(m => m.friendName === 'Bob');
             assert.ok(aliceBreakdown && bobBreakdown, 'Both members must be in breakdown');
-            assert.ok(typeof aliceBreakdown.preferenceScore === 'number');
-            assert.ok(typeof bobBreakdown.preferenceScore === 'number');
+
+            // Strictly assert Bob preference score > Alice preference score on Korean BBQ venue
+            assert.ok(
+                bobBreakdown.preferenceScore > aliceBreakdown.preferenceScore,
+                `Bob (Korean BBQ, score: ${bobBreakdown.preferenceScore}) must have higher preferenceScore than Alice (Vietnamese, score: ${aliceBreakdown.preferenceScore}) for Korean BBQ venue ${bbqVenue.name}`
+            );
+            assert.notStrictEqual(bobBreakdown.preferenceScore, aliceBreakdown.preferenceScore, 'Member scores must diverge');
+        });
+
+        // =================================================================
+        // PHASE 3: INTENT-AWARE AI REVIEW ANALYSIS TESTS (Tests A through H)
+        // =================================================================
+
+        await it('Intent Test A: Elderly accessibility ("taking my parents, avoid lots of stairs" vs upstairs no elevator -> mismatch)', async () => {
+            const venue = { id: 'v-stairs-01', name: 'Rooftop Sweets', category: 'Cafe' };
+            const reviews = [
+                { id: 'r1', rating: 4, content: 'Quán ở trên lầu 2, cầu thang dốc đứng và không có thang máy, người lớn tuổi đi rất cực.' }
+            ];
+            const analysis = await semanticEngine.analyzeReviewsForPreferences({
+                venue,
+                reviews,
+                preferences: [
+                    { id: 'pref_stairs', text: 'taking my parents, avoid lots of stairs', memberName: 'Alice', polarity: 'positive' }
+                ]
+            });
+            assert.strictEqual(analysis.matches.length, 1);
+            const m = analysis.matches[0];
+            assert.strictEqual(m.status, 'mismatch', 'Must detect mismatch due to steep stairs and no elevator');
+            assert.ok(m.score <= 0.3, 'Score should be low for mismatch');
+            assert.ok(m.contradictionCount > 0);
+        });
+
+        await it('Intent Test B: No evidence ("wheelchair accessible" vs no mention -> status === "unknown", score === null)', async () => {
+            const venue = { id: 'v-no-evidence', name: 'Pastry Corner', category: 'Bakery' };
+            const reviews = [
+                { id: 'r2', rating: 5, content: 'Bánh croissant rất thơm ngon và giòn rụm, trà sữa đậm vị.' }
+            ];
+            const analysis = await semanticEngine.analyzeReviewsForPreferences({
+                venue,
+                reviews,
+                preferences: [
+                    { id: 'pref_wheelchair', text: 'wheelchair accessible', memberName: 'Bob', polarity: 'positive' }
+                ]
+            });
+            assert.strictEqual(analysis.matches.length, 1);
+            const m = analysis.matches[0];
+            assert.strictEqual(m.status, 'unknown', 'Status must be strictly unknown when reviews do not mention wheelchair');
+            assert.strictEqual(m.score, null, 'Score must be strictly null for unknown');
+        });
+
+        await it('Intent Test C: Contradiction ("very quiet" and "very loud at night" -> status === "partial")', async () => {
+            const venue = { id: 'v-noisy-quiet', name: 'Hybrid Lounge', category: 'Cafe' };
+            const reviews = [
+                { id: 'r3_1', rating: 5, content: 'Ban ngày không gian rất yên tĩnh, nhẹ nhàng đọc sách rất tốt.' },
+                { id: 'r3_2', rating: 3, content: 'Quán rất ồn ào về đêm, nhạc to như vũ trường không nghe được gì.' }
+            ];
+            const analysis = await semanticEngine.analyzeReviewsForPreferences({
+                venue,
+                reviews,
+                preferences: [
+                    { id: 'pref_quiet', text: 'very quiet', memberName: 'Group', polarity: 'positive' }
+                ]
+            });
+            assert.strictEqual(analysis.matches.length, 1);
+            const m = analysis.matches[0];
+            assert.strictEqual(m.status, 'partial', 'Contradictory reviews must yield partial status');
+            assert.ok(m.score > 0.4 && m.score < 0.8, 'Score should reflect partial compromise');
+            assert.ok(m.confidence > 0.6, 'Confidence should be calibrated');
+        });
+
+        await it('Intent Test D: Recency (old review parking easy vs recent parking removed -> mismatch / low score)', async () => {
+            const venue = { id: 'v-parking-recency', name: 'Central Dessert', category: 'Dessert' };
+            const reviews = [
+                { id: 'r4_old', rating: 5, review_date: '2022-05-10', content: 'Có chỗ gửi xe rộng rãi thoải mái ngay trước quán.' },
+                { id: 'r4_new', rating: 2, review_date: '2026-02-15', content: 'Mới đổi mặt bằng, hiện tại không còn chỗ đỗ xe phải gửi ở ngoài rất xa.' }
+            ];
+            const analysis = await semanticEngine.analyzeReviewsForPreferences({
+                venue,
+                reviews,
+                preferences: [
+                    { id: 'pref_park', text: 'easy parking', memberName: 'Charlie', polarity: 'positive' }
+                ]
+            });
+            assert.strictEqual(analysis.matches.length, 1);
+            const m = analysis.matches[0];
+            assert.strictEqual(m.status, 'mismatch', 'Recent review stating parking removed must outweigh old review');
+            assert.ok(m.score <= 0.35, 'Score should reflect recent parking issues');
+        });
+
+        await it('Intent Test E: Arbitrary concept ("good for talking privately" vs private booths -> status === "match")', async () => {
+            const venue = { id: 'v-private-booths', name: 'Secret Garden Cafe', category: 'Cafe' };
+            const reviews = [
+                { id: 'r5', rating: 5, content: 'Quán có các phòng riêng và bàn vách ngăn riêng tư, rất kín đáo để bàn công việc.' }
+            ];
+            const analysis = await semanticEngine.analyzeReviewsForPreferences({
+                venue,
+                reviews,
+                preferences: [
+                    { id: 'pref_private', text: 'good for talking privately', memberName: 'Alice', polarity: 'positive' }
+                ]
+            });
+            assert.strictEqual(analysis.matches.length, 1);
+            const m = analysis.matches[0];
+            assert.strictEqual(m.status, 'match', 'Should match arbitrary concept of private talking from reviews');
+            assert.ok(m.score >= 0.8, 'Score should be high for verified private setting');
+        });
+
+        await it('Intent Test F: Member-specific arbitrary needs (Alice: avoid stairs, Bob: big portions, Charlie: not too noisy)', async () => {
+            const venue = { id: 'v-multi-test', name: 'Hearty Feast Hall', category: 'Restaurant' };
+            const reviews = [
+                { id: 'r6_1', rating: 5, content: 'Đĩa to bự chảng, phần ăn nhiều no nê ăn không hết.' },
+                { id: 'r6_2', rating: 4, content: 'Không gian ở tầng trệt thuận tiện, nhưng quán khá đông và ồn ào.' }
+            ];
+            const preferences = [
+                { id: 'pref_alice', text: 'avoid stairs', memberName: 'Alice', polarity: 'positive' },
+                { id: 'pref_bob', text: 'big portions', memberName: 'Bob', polarity: 'positive' },
+                { id: 'pref_charlie', text: 'not too noisy', memberName: 'Charlie', polarity: 'positive' }
+            ];
+            const analysis = await semanticEngine.analyzeReviewsForPreferences({
+                venue,
+                reviews,
+                preferences
+            });
+            assert.strictEqual(analysis.matches.length, 3);
+            const aliceMatch = analysis.matches.find(m => m.preferenceId === 'pref_alice');
+            const bobMatch = analysis.matches.find(m => m.preferenceId === 'pref_bob');
+            const charlieMatch = analysis.matches.find(m => m.preferenceId === 'pref_charlie');
+
+            assert.strictEqual(bobMatch.status, 'match', 'Bob big portions should match');
+            assert.ok(bobMatch.score >= 0.85);
+
+            // Charlie noise should be partial or mismatch due to "khá đông và ồn ào"
+            assert.ok(charlieMatch.status === 'partial' || charlieMatch.status === 'mismatch');
+
+            // Member scores diverge
+            assert.notStrictEqual(bobMatch.score, charlieMatch.score, 'Member preference satisfaction must diverge');
+        });
+
+        await it('Intent Test G: Hallucination prevention (no review mentions parking -> parking = unknown, never easy)', () => {
+            const venue = { id: 'v-no-parking-data', name: 'Cozy Tea', category: 'Tea' };
+            const reviews = [
+                { id: 'r7', rating: 5, content: 'Trà olong sữa nướng đậm đà, kem cheese thơm béo.' }
+            ];
+            const profile = semanticEngine.buildVenueSemanticProfile(venue, reviews, []);
+            assert.strictEqual(profile.parkingEase, 'unknown', 'Parking must stay unknown when reviews do not mention it');
+            assert.notStrictEqual(profile.parkingEase, 'easy', 'Must NEVER hallucinate easy parking');
+        });
+
+        await it('Intent Test H: Retrieval recall ("authentic Korean BBQ" -> Korean BBQ candidates enter pool and debugTrace)', async () => {
+            const res = await request('/api/venues/search-and-rank', {
+                method: 'POST',
+                body: {
+                    center: { lat: 10.7769, lng: 106.7009 },
+                    radiusMeters: 5000,
+                    hardConstraints: {},
+                    cuisines: [{ value: 'authentic Korean BBQ', weight: 5, memberName: 'Group' }],
+                    friends: [{ name: 'Kiris', lat: 10.7769, lng: 106.7009, wish: 'authentic Korean BBQ' }]
+                }
+            });
+            assert.strictEqual(res.status, 200);
+            assert.ok(res.data.debugTrace, 'debugTrace must be exposed');
+            assert.ok(Array.isArray(res.data.debugTrace.retrievalQueries), 'retrievalQueries must be array');
+            assert.ok(
+                res.data.debugTrace.retrievalQueries.some(q => q.toLowerCase().includes('korean bbq') || q.toLowerCase().includes('bbq')),
+                'retrievalQueries must include expanded Korean BBQ queries'
+            );
+            assert.ok(
+                res.data.debugTrace.candidateIds.some(id => id.includes('bbq') || id.includes('korean')),
+                'Candidate IDs must include BBQ venue in pool'
+            );
         });
 
         await it('Regression: group preferences apply to all members equally', async () => {

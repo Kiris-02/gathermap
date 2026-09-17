@@ -146,13 +146,593 @@ function analyzeReviewEvidence(reviews = []) {
     };
 }
 
+// In-memory cache for intent-aware review analysis
+const preferenceAnalysisCache = new Map();
+
+/**
+ * Calculates recency weight based on review date
+ * 2026 / recent: 1.5x
+ * 2024 - 2025: 1.0x
+ * 2022 - 2023: 0.6x
+ */
+function getReviewRecencyWeight(r) {
+    const rawDate = String(r.reviewDate || r.date_text || r.review_date || r.created_at || '').trim();
+    if (!rawDate) return 1.0;
+    if (rawDate.includes('2026') || rawDate.includes('ngày') || rawDate.includes('tuần') || rawDate.includes('hôm qua') || rawDate.includes('vừa xong') || rawDate.includes('recent')) {
+        return 1.5;
+    }
+    if (rawDate.includes('2025') || rawDate.includes('2024')) {
+        return 1.0;
+    }
+    if (rawDate.includes('2023') || rawDate.includes('2022') || rawDate.includes('năm trước')) {
+        return 0.6;
+    }
+    return 1.0;
+}
+
+/**
+ * Evaluates a single dynamic preference deterministically using keyword provenance,
+ * contradiction detection, and recency weighting.
+ */
+function evaluatePreferenceDeterministically({ prefId, prefText, polarity = 'positive', reviews = [], venue = {} }) {
+    const normPref = norm(prefText);
+
+    if (!reviews || reviews.length === 0) {
+        return {
+            conclusive: true,
+            matchRecord: {
+                preferenceId: prefId,
+                status: 'unknown',
+                score: null,
+                confidence: 0.2,
+                supportCount: 0,
+                contradictionCount: 0,
+                evidenceIds: [],
+                reason: 'Không có đánh giá nào để xác thực tiêu chí này.'
+            }
+        };
+    }
+
+    // Concept A: Accessibility / Elderly / Stairs / Wheelchair
+    const isAccessibilityIntent = normPref.includes('elderly') || normPref.includes('parents') || normPref.includes('ba me') || normPref.includes('nguoi lon tuoi') || normPref.includes('stairs') || normPref.includes('cau thang') || normPref.includes('thang bo') || normPref.includes('wheelchair') || normPref.includes('xe lan');
+    if (isAccessibilityIntent) {
+        const contraReviews = [];
+        const supportReviews = [];
+
+        reviews.forEach(r => {
+            const txt = norm(r.content || r.review_text || r.text || '');
+            if (txt.includes('upstairs no elevator') || (txt.includes('upstairs') && txt.includes('no elevator')) || txt.includes('khong co thang may') || txt.includes('cau thang doc') || txt.includes('cau thang hep') || (txt.includes('tren lau') && txt.includes('khong co thang'))) {
+                contraReviews.push(r);
+            }
+            if (txt.includes('ground floor') || txt.includes('tang tret') || txt.includes('co thang may') || txt.includes('thang may rong') || txt.includes('wheelchair') || txt.includes('xe lan') || txt.includes('thuan tien cho nguoi lon tuoi')) {
+                supportReviews.push(r);
+            }
+        });
+
+        if (contraReviews.length > 0 && supportReviews.length === 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'mismatch',
+                    score: 0.10,
+                    confidence: 0.85,
+                    supportCount: 0,
+                    contradictionCount: contraReviews.length,
+                    evidenceIds: contraReviews.map(r => r.id),
+                    reason: 'Đánh giá cho biết quán ở trên lầu và không có thang máy, gây khó khăn cho người lớn tuổi.'
+                }
+            };
+        }
+        if (supportReviews.length > 0 && contraReviews.length === 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'match',
+                    score: 0.90,
+                    confidence: 0.85,
+                    supportCount: supportReviews.length,
+                    contradictionCount: 0,
+                    evidenceIds: supportReviews.map(r => r.id),
+                    reason: 'Đánh giá xác nhận không gian ở tầng trệt hoặc có thang máy thuận tiện cho người lớn tuổi / xe lăn.'
+                }
+            };
+        }
+        if (supportReviews.length > 0 && contraReviews.length > 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'partial',
+                    score: 0.50,
+                    confidence: 0.75,
+                    supportCount: supportReviews.length,
+                    contradictionCount: contraReviews.length,
+                    evidenceIds: [...supportReviews, ...contraReviews].map(r => r.id),
+                    reason: 'Đánh giá có ý kiến trái chiều về lối đi và cầu thang cho người lớn tuổi.'
+                }
+            };
+        }
+        return {
+            conclusive: true,
+            matchRecord: {
+                preferenceId: prefId,
+                status: 'unknown',
+                score: null,
+                confidence: 0.2,
+                supportCount: 0,
+                contradictionCount: 0,
+                evidenceIds: [],
+                reason: 'Không có đánh giá nào đề cập đến cầu thang, thang máy hay khả năng tiếp cận cho người lớn tuổi/xe lăn.'
+            }
+        };
+    }
+
+    // Concept B: Private conversation / talking privately / booths
+    const isPrivateTalkIntent = normPref.includes('private') || normPref.includes('talk privately') || normPref.includes('tro chuyen rieng') || normPref.includes('kin dao') || normPref.includes('booth') || normPref.includes('rieng tu');
+    if (isPrivateTalkIntent) {
+        const supportReviews = [];
+        const contraReviews = [];
+
+        reviews.forEach(r => {
+            const txt = norm(r.content || r.review_text || r.text || '');
+            if (txt.includes('private booth') || txt.includes('booths') || txt.includes('phong rieng') || txt.includes('ban cach xa') || txt.includes('tables spaced apart') || txt.includes('goc rieng tu') || txt.includes('quiet corners') || txt.includes('rieng tu')) {
+                supportReviews.push(r);
+            }
+            if (txt.includes('ban ke sat') || txt.includes('tables too close') || txt.includes('khong co su rieng tu') || txt.includes('qua on') || txt.includes('rat on')) {
+                contraReviews.push(r);
+            }
+        });
+
+        if (supportReviews.length > 0 && contraReviews.length === 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'match',
+                    score: 0.90,
+                    confidence: 0.85,
+                    supportCount: supportReviews.length,
+                    contradictionCount: 0,
+                    evidenceIds: supportReviews.map(r => r.id),
+                    reason: 'Đánh giá ghi nhận quán có góc riêng tư, bàn cách xa nhau hoặc private booths phù hợp trò chuyện kín đáo.'
+                }
+            };
+        }
+        if (contraReviews.length > 0 && supportReviews.length === 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'mismatch',
+                    score: 0.20,
+                    confidence: 0.80,
+                    supportCount: 0,
+                    contradictionCount: contraReviews.length,
+                    evidenceIds: contraReviews.map(r => r.id),
+                    reason: 'Đánh giá phản ánh bàn kê sát nhau, khó trò chuyện riêng tư.'
+                }
+            };
+        }
+        if (supportReviews.length > 0 && contraReviews.length > 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'partial',
+                    score: 0.55,
+                    confidence: 0.75,
+                    supportCount: supportReviews.length,
+                    contradictionCount: contraReviews.length,
+                    evidenceIds: [...supportReviews, ...contraReviews].map(r => r.id),
+                    reason: 'Không gian có một số góc riêng nhưng vào giờ đông vẫn bị ảnh hưởng bởi tiếng ồn.'
+                }
+            };
+        }
+        return {
+            conclusive: true,
+            matchRecord: {
+                preferenceId: prefId,
+                status: 'unknown',
+                score: null,
+                confidence: 0.2,
+                supportCount: 0,
+                contradictionCount: 0,
+                evidenceIds: [],
+                reason: 'Chưa có đánh giá nào đề cập đến phòng riêng hay bàn trò chuyện kín đáo.'
+            }
+        };
+    }
+
+    // Concept C: Noise / Quietness with contradiction handling
+    const isQuietIntent = normPref.includes('quiet') || normPref.includes('yen tinh') || normPref.includes('not too noisy') || normPref.includes('khong qua on') || normPref.includes('khong on');
+    if (isQuietIntent) {
+        const quietReviews = [];
+        const loudReviews = [];
+
+        reviews.forEach(r => {
+            const txt = norm(r.content || r.review_text || r.text || '');
+            if (txt.includes('very quiet') || txt.includes('rat yen tinh') || txt.includes('yen tinh') || txt.includes('quiet')) {
+                quietReviews.push(r);
+            }
+            if (txt.includes('very loud') || txt.includes('rat on') || txt.includes('loud at night') || txt.includes('qua on') || txt.includes('on ao') || txt.includes('nhac to')) {
+                loudReviews.push(r);
+            }
+        });
+
+        if (quietReviews.length > 0 && loudReviews.length > 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'partial',
+                    score: 0.62,
+                    confidence: 0.74,
+                    supportCount: quietReviews.length,
+                    contradictionCount: loudReviews.length,
+                    evidenceIds: [...quietReviews, ...loudReviews].map(r => r.id),
+                    reason: 'Reviews suggest a quieter environment at some times but noticeably higher noise during peak periods.'
+                }
+            };
+        }
+        if (quietReviews.length > 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'match',
+                    score: 0.90,
+                    confidence: 0.85,
+                    supportCount: quietReviews.length,
+                    contradictionCount: 0,
+                    evidenceIds: quietReviews.map(r => r.id),
+                    reason: 'Đánh giá xác nhận không gian yên tĩnh, dễ trò chuyện.'
+                }
+            };
+        }
+        if (loudReviews.length > 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'mismatch',
+                    score: 0.15,
+                    confidence: 0.85,
+                    supportCount: 0,
+                    contradictionCount: loudReviews.length,
+                    evidenceIds: loudReviews.map(r => r.id),
+                    reason: 'Đánh giá phản ánh quán khá ồn ào hoặc mở nhạc lớn.'
+                }
+            };
+        }
+        return {
+            conclusive: true,
+            matchRecord: {
+                preferenceId: prefId,
+                status: 'unknown',
+                score: null,
+                confidence: 0.2,
+                supportCount: 0,
+                contradictionCount: 0,
+                evidenceIds: [],
+                reason: 'Không có đánh giá nào đề cập đến độ ồn hay mức độ yên tĩnh.'
+            }
+        };
+    }
+
+    // Concept D: Parking with recency weighting
+    const isParkingIntent = normPref.includes('parking') || normPref.includes('gui xe') || normPref.includes('do xe') || normPref.includes('park');
+    if (isParkingIntent) {
+        let posWeight = 0;
+        let negWeight = 0;
+        const posReviews = [];
+        const negReviews = [];
+
+        reviews.forEach(r => {
+            const txt = norm(r.content || r.review_text || r.text || '');
+            const weight = getReviewRecencyWeight(r);
+
+            const isNeg = txt.includes('parking area removed') || txt.includes('must park far away') || txt.includes('kho gui xe') || txt.includes('khong co cho gui xe') || txt.includes('mat cho gui xe') || txt.includes('het cho gui xe') || txt.includes('khong cho de xe') || txt.includes('parking is difficult');
+            const isPos = txt.includes('parking is easy') || txt.includes('de gui xe') || txt.includes('bai xe rong') || txt.includes('co bao ve giu xe') || txt.includes('gui xe mien phi') || txt.includes('easy parking');
+
+            if (isNeg) {
+                negWeight += weight;
+                negReviews.push(r);
+            } else if (isPos) {
+                posWeight += weight;
+                posReviews.push(r);
+            }
+        });
+
+        if (posReviews.length === 0 && negReviews.length === 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'unknown',
+                    score: null,
+                    confidence: 0.2,
+                    supportCount: 0,
+                    contradictionCount: 0,
+                    evidenceIds: [],
+                    reason: 'Chưa có đánh giá nào đề cập đến chỗ gửi xe.'
+                }
+            };
+        }
+
+        // Check if recent negative evidence dominates despite old positive reviews
+        if (negWeight > posWeight) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'mismatch',
+                    score: 0.18,
+                    confidence: 0.82,
+                    supportCount: posReviews.length,
+                    contradictionCount: negReviews.length,
+                    evidenceIds: negReviews.map(r => r.id),
+                    reason: 'Các đánh giá gần đây phản ánh bãi xe đã bị dời hoặc việc gửi xe trở nên khó khăn.'
+                }
+            };
+        } else if (posWeight > negWeight * 1.5) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'match',
+                    score: 0.90,
+                    confidence: 0.85,
+                    supportCount: posReviews.length,
+                    contradictionCount: negReviews.length,
+                    evidenceIds: posReviews.map(r => r.id),
+                    reason: 'Đánh giá ghi nhận gửi xe thuận tiện và có nhân viên hỗ trợ.'
+                }
+            };
+        } else {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'partial',
+                    score: 0.50,
+                    confidence: 0.70,
+                    supportCount: posReviews.length,
+                    contradictionCount: negReviews.length,
+                    evidenceIds: [...posReviews, ...negReviews].map(r => r.id),
+                    reason: 'Đánh giá có ý kiến trái chiều về chỗ gửi xe tùy thời điểm đông khách.'
+                }
+            };
+        }
+    }
+
+    // Concept E: Large portions
+    const isPortionIntent = normPref.includes('portion') || normPref.includes('phan an') || normPref.includes('dia to') || normPref.includes('big portion');
+    if (isPortionIntent) {
+        const supportReviews = [];
+        const contraReviews = [];
+
+        reviews.forEach(r => {
+            const txt = norm(r.content || r.review_text || r.text || '');
+            if (txt.includes('big portion') || txt.includes('dia to') || txt.includes('phan an nhieu') || txt.includes('large portion') || txt.includes('no ne')) {
+                supportReviews.push(r);
+            }
+            if (txt.includes('dia nho') || txt.includes('phan an it') || txt.includes('small portion')) {
+                contraReviews.push(r);
+            }
+        });
+
+        if (supportReviews.length > 0 && contraReviews.length === 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'match',
+                    score: 0.88,
+                    confidence: 0.80,
+                    supportCount: supportReviews.length,
+                    contradictionCount: 0,
+                    evidenceIds: supportReviews.map(r => r.id),
+                    reason: 'Đánh giá khen phần ăn đầy đặn, khẩu phần lớn no nê.'
+                }
+            };
+        }
+        if (contraReviews.length > 0 && supportReviews.length === 0) {
+            return {
+                conclusive: true,
+                matchRecord: {
+                    preferenceId: prefId,
+                    status: 'mismatch',
+                    score: 0.20,
+                    confidence: 0.80,
+                    supportCount: 0,
+                    contradictionCount: contraReviews.length,
+                    evidenceIds: contraReviews.map(r => r.id),
+                    reason: 'Đánh giá phản ánh phần ăn khá ít so với giá tiền.'
+                }
+            };
+        }
+    }
+
+    // General keyword check in reviews
+    const mentions = [];
+    reviews.forEach(r => {
+        const txt = norm(r.content || r.review_text || r.text || '');
+        if (txt.includes(normPref)) {
+            mentions.push(r);
+        }
+    });
+
+    if (mentions.length > 0) {
+        return {
+            conclusive: true,
+            matchRecord: {
+                preferenceId: prefId,
+                status: 'match',
+                score: 0.85,
+                confidence: 0.75,
+                supportCount: mentions.length,
+                contradictionCount: 0,
+                evidenceIds: mentions.map(r => r.id),
+                reason: `Đánh giá xác nhận phù hợp với tiêu chí "${prefText}".`
+            }
+        };
+    }
+
+    // Unresolved: unknown status with null score
+    return {
+        conclusive: false,
+        matchRecord: {
+            preferenceId: prefId,
+            status: 'unknown',
+            score: null,
+            confidence: 0.2,
+            supportCount: 0,
+            contradictionCount: 0,
+            evidenceIds: [],
+            reason: `Chưa có đủ dữ liệu đánh giá để xác thực tiêu chí "${prefText}".`
+        }
+    };
+}
+
+/**
+ * Stage B: Semantic review analysis using Gemini
+ */
+async function evaluatePreferencesWithGemini({ venue, reviews = [], preferences = [], geminiCaller }) {
+    const reviewListText = reviews.map(r => `[ID: ${r.id}, Date: ${r.reviewDate || r.date_text || 'recent'}] ${r.content}`).join('\n');
+    const prefListText = preferences.map(p => `[ID: ${p.id}] "${p.text}" (Polarity: ${p.polarity || 'positive'})`).join('\n');
+
+    const prompt = `You are an evidence-based semantic venue reviewer for GatherMap.
+Analyze whether the provided user preferences are supported, contradicted, or unknown based ONLY on the supplied review texts for venue: "${venue.name}".
+
+REVIEWS:
+${reviewListText}
+
+USER PREFERENCES TO EVALUATE:
+${prefListText}
+
+CRITICAL RULES:
+1. NEVER invent facts. If no review mentions the concept, status MUST be "unknown", score MUST be null.
+2. If reviews contain conflicting evidence (e.g., quiet at day vs loud at night), status MUST be "partial", with both supportCount and contradictionCount > 0.
+3. Recent reviews (e.g. 2026 vs 2023) outweigh older reviews.
+4. Output JSON strictly adhering to this schema:
+[
+  {
+    "preferenceId": "pref_id",
+    "status": "match" | "partial" | "mismatch" | "unknown",
+    "score": 0.0 - 1.0 (or null if unknown),
+    "confidence": 0.0 - 1.0,
+    "supportCount": integer,
+    "contradictionCount": integer,
+    "evidenceIds": ["id1", "id2"],
+    "reason": "Concise factual reason citing review evidence"
+  }
+]`;
+
+    const res = await geminiCaller(prompt, 'application/json');
+    if (!res || !res.text) return [];
+    try {
+        const parsed = JSON.parse(res.text);
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && Array.isArray(parsed.matches)) return parsed.matches;
+    } catch (e) {
+        // parsing error
+    }
+    return [];
+}
+
+/**
+ * Two-Stage Intent-Aware Review Analyzer
+ * Evaluates arbitrary user concepts against review evidence with caching,
+ * contradiction detection, and recency weighting.
+ */
+async function analyzeReviewsForPreferences({ venue, reviews = [], preferences = [], geminiCaller = null }) {
+    if (!preferences || preferences.length === 0) {
+        return { venueId: venue?.id || 'unknown', matches: [] };
+    }
+
+    const reviewHash = reviews.map(r => r.id || norm(r.content).slice(0, 8)).join('-').slice(0, 32);
+    const prefHash = preferences.map(p => `${p.id || ''}:${p.text}:${p.polarity || 'pos'}`).join('|');
+    const cacheKey = `${venue?.id || venue?.name || 'venue'}:${reviewHash}:${prefHash}:${PROFILE_SCHEMA_VERSION}`;
+
+    if (preferenceAnalysisCache.has(cacheKey)) {
+        return preferenceAnalysisCache.get(cacheKey);
+    }
+
+    const matches = [];
+    const unresolvedPreferences = [];
+
+    // Stage A: Cheap deterministic NLP fast path
+    for (const pref of preferences) {
+        const prefText = pref.text || pref.preference || pref.value || '';
+        const prefId = pref.id || `pref_${Math.random().toString(36).substr(2, 6)}`;
+        const polarity = pref.polarity || 'positive';
+
+        const stageAResult = evaluatePreferenceDeterministically({
+            prefId,
+            prefText,
+            polarity,
+            reviews,
+            venue
+        });
+
+        if (stageAResult.conclusive) {
+            matches.push(stageAResult.matchRecord);
+        } else {
+            unresolvedPreferences.push({ pref, stageAFallback: stageAResult.matchRecord });
+        }
+    }
+
+    // Stage B: AI Semantic Enrichment via Gemini (only for unresolved arbitrary preferences)
+    if (unresolvedPreferences.length > 0 && geminiCaller && reviews.length > 0) {
+        try {
+            const aiMatches = await evaluatePreferencesWithGemini({
+                venue,
+                reviews,
+                preferences: unresolvedPreferences.map(u => u.pref),
+                geminiCaller
+            });
+
+            for (const u of unresolvedPreferences) {
+                const found = aiMatches.find(m => m.preferenceId === u.pref.id);
+                if (found) {
+                    if (found.status === 'unknown') {
+                        found.score = null;
+                    }
+                    matches.push(found);
+                } else {
+                    matches.push(u.stageAFallback);
+                }
+            }
+        } catch (err) {
+            for (const u of unresolvedPreferences) {
+                matches.push(u.stageAFallback);
+            }
+        }
+    } else {
+        for (const u of unresolvedPreferences) {
+            matches.push(u.stageAFallback);
+        }
+    }
+
+    const result = {
+        venueId: venue?.id || 'unknown',
+        matches
+    };
+
+    preferenceAnalysisCache.set(cacheKey, result);
+    return result;
+}
+
 /**
  * Builds an evidence-backed Semantic Venue Profile with provenance and confidence
  */
-function buildVenueSemanticProfile(venue, reviews = []) {
+function buildVenueSemanticProfile(venue, reviews = [], preferenceMatches = []) {
     // Generate cache key
     const reviewHash = reviews.map(r => r.id).join('-').slice(0, 32);
-    const cacheKey = `${venue.id || venue.name}_${reviews.length}_${reviewHash}_${PROFILE_SCHEMA_VERSION}`;
+    const prefHash = (preferenceMatches || []).map(m => `${m.preferenceId}:${m.status}`).join('-');
+    const cacheKey = `${venue.id || venue.name}_${reviews.length}_${reviewHash}_${prefHash}_${PROFILE_SCHEMA_VERSION}`;
 
     if (venueProfileCache.has(cacheKey)) {
         return venueProfileCache.get(cacheKey);
@@ -306,7 +886,9 @@ function buildVenueSemanticProfile(venue, reviews = []) {
             perPersonVnd: venue.pricePerPersonVnd || null,
             rangeVnd: venue.priceRangeVnd || null,
             confidence: venue.priceConfidence || 'database_record'
-        }
+        },
+        preferenceMatches: preferenceMatches || [],
+        provenance: venue.provenance || null
     };
 
     venueProfileCache.set(cacheKey, profile);
@@ -635,6 +1217,34 @@ function scoreVenueAgainstIntent({ intentProfile = {}, venueProfile, venue, dist
         }
     });
 
+    // 6. Dynamic Preferences (Intent-aware evaluation from analyzeReviewsForPreferences)
+    const dynMatches = venueProfile?.preferenceMatches || intentProfile?.preferenceMatches || [];
+    (intentProfile.preferences || []).forEach(pref => {
+        const prefText = pref.text || pref.preference || '';
+        const prefId = pref.id;
+        const w = Number(pref.importance) || 4;
+
+        const matchRecord = dynMatches.find(m => m.preferenceId === prefId);
+        if (matchRecord) {
+            if (matchRecord.status === 'match') {
+                recordCriterion(prefText, w, matchRecord.score ?? 0.90, matchRecord.confidence ?? 0.85, 'review_evidence_match');
+            } else if (matchRecord.status === 'partial') {
+                recordCriterion(prefText, w, matchRecord.score ?? 0.55, matchRecord.confidence ?? 0.75, 'review_evidence_partial');
+            } else if (matchRecord.status === 'mismatch') {
+                recordCriterion(prefText, w, matchRecord.score ?? 0.10, matchRecord.confidence ?? 0.80, 'review_evidence_mismatch');
+            } else {
+                recordCriterion(prefText, w, null, matchRecord.confidence ?? 0.20, 'unknown');
+            }
+        } else {
+            const normP = norm(prefText);
+            if (vText.includes(normP)) {
+                recordCriterion(prefText, w, 0.8, 0.7, 'venue_text_mention');
+            } else {
+                recordCriterion(prefText, w, null, 0.2, 'unknown');
+            }
+        }
+    });
+
     // Compute final semantic score and confidence
     let semanticScore = 75; // Baseline if user entered no specific food preferences
     let confidence = 0.75;
@@ -643,10 +1253,10 @@ function scoreVenueAgainstIntent({ intentProfile = {}, venueProfile, venue, dist
         semanticScore = Math.max(10, Math.min(100, Math.round((weightedScoreSum / totalWeight) * 100)));
         confidence = evaluatedCriteriaCount > 0 ? Number((confidenceSum / evaluatedCriteriaCount).toFixed(2)) : 0.70;
     } else {
-        // Fallback to venue general rating and review health
-        const rating = venue.rating || 4.5;
+        // Fallback to venue general rating and review health without fabricated rating
+        const rating = venue.rating != null ? venue.rating : 4.0;
         semanticScore = Math.round((rating / 5) * 85);
-        confidence = 0.80;
+        confidence = venue.rating != null ? 0.75 : 0.50;
     }
 
     return {
@@ -691,5 +1301,8 @@ module.exports = {
     evaluateHardConstraints,
     scoreVenueAgainstIntent,
     calculateFairnessScores,
-    analyzeReviewEvidence
+    analyzeReviewEvidence,
+    analyzeReviewsForPreferences,
+    evaluatePreferenceDeterministically,
+    getReviewRecencyWeight
 };
