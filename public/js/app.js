@@ -24,7 +24,7 @@ function gatherApp() {
                 await this.fetchPresets();
                 await this.initOutingSession();
 
-                if (!this.shortlist || this.shortlist.length === 0) {
+                if (!this.sessionLoaded && (!this.shortlist || this.shortlist.length === 0)) {
                     await this.calculateCenter();
                     await this.executeSearchAndRank();
                 }

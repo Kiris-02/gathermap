@@ -14,6 +14,7 @@
 const venueRepository = require('../repositories/venue-repository');
 const reviewRepository = require('../repositories/review-repository');
 const outingRepository = require('../repositories/outing-repository');
+const { generateUniqueOutingId } = require('./outing-service');
 const semanticEngine = require('../../semanticEngine');
 const { calcDistanceKm } = require('../algorithms/geometric-median');
 const { buildDirectionsUrl, buildSearchUrl } = require('./places-service');
@@ -38,7 +39,7 @@ async function searchAndRankVenues(params) {
         friends = []
     } = params;
 
-    const outingId = inputOutingId || ('EAT-' + Math.floor(1000 + Math.random() * 9000));
+    const outingId = inputOutingId || (await generateUniqueOutingId());
     const radiusKm = radiusMeters / 1000;
 
     // 1. Build Unified Intent Profile

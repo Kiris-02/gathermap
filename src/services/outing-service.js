@@ -3,13 +3,32 @@
  * Coordinates outing creation, participant tracking, deduplicated voting, and shareable invitation text.
  */
 
+const crypto = require('crypto');
 const outingRepository = require('../repositories/outing-repository');
 const { calcDistanceKm } = require('../algorithms/geometric-median');
 const { buildDirectionsUrl } = require('./places-service');
 const { dbType } = require('../repositories/db-client');
 
+const CODE_CHARSET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+async function generateUniqueOutingId() {
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const bytes = crypto.randomBytes(6);
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+            code += CODE_CHARSET[bytes[i] % CODE_CHARSET.length];
+        }
+        const candidateId = `EAT-${code}`;
+        const existing = await outingRepository.getOuting(candidateId);
+        if (!existing) {
+            return candidateId;
+        }
+    }
+    return `EAT-${Date.now().toString(36).toUpperCase()}`;
+}
+
 async function createOuting({ name = 'Weekend Hangout', mode = 'representative', centerLat = 10.7769, centerLng = 106.7009, radiusKm = 3.0 }) {
-    const outingId = 'EAT-' + Math.floor(1000 + Math.random() * 9000);
+    const outingId = await generateUniqueOutingId();
     await outingRepository.saveOuting({
         id: outingId,
         name,
@@ -90,6 +109,7 @@ function generateShareText({ venue, friends = [], groupScore, outingCode = 'EAT-
 }
 
 module.exports = {
+    generateUniqueOutingId,
     createOuting,
     getOutingById,
     castVote,

@@ -51,6 +51,26 @@ window.createMapController = function() {
                 })
             };
 
+            const attachTileListeners = (layer, styleName) => {
+                let errorCount = 0;
+                layer.on('tileerror', () => {
+                    errorCount++;
+                    if (errorCount >= 4 && this.currentMapStyle === styleName) {
+                        this.mapTileError = true;
+                    }
+                });
+                layer.on('tileload', () => {
+                    errorCount = 0;
+                    if (this.currentMapStyle === styleName) {
+                        this.mapTileError = false;
+                    }
+                });
+            };
+
+            attachTileListeners(this.tileLayers.osm, 'osm');
+            attachTileListeners(this.tileLayers.dark, 'dark');
+            attachTileListeners(this.tileLayers.street, 'street');
+
             this.currentMapStyle = 'dark';
             this.tileLayers.dark.addTo(this.map);
 
@@ -62,8 +82,20 @@ window.createMapController = function() {
             }, 250);
         },
 
+        retryMapTiles() {
+            this.mapTileError = false;
+            if (this.map && this.tileLayers && this.tileLayers[this.currentMapStyle]) {
+                const current = this.tileLayers[this.currentMapStyle];
+                if (this.map.hasLayer(current)) {
+                    this.map.removeLayer(current);
+                    current.addTo(this.map);
+                }
+            }
+        },
+
         switchMapStyle(style) {
             if (!this.map || !this.tileLayers || this.currentMapStyle === style) return;
+            this.mapTileError = false;
             if (this.tileLayers[this.currentMapStyle] && this.map.hasLayer(this.tileLayers[this.currentMapStyle])) {
                 this.map.removeLayer(this.tileLayers[this.currentMapStyle]);
             }

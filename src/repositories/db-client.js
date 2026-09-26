@@ -28,7 +28,7 @@ if (isSupabaseConfigured) {
 }
 
 // Always ensure SQLite is available as local storage & deterministic test engine
-const dbPath = path.join(__dirname, '..', '..', 'gathermap.db');
+const dbPath = process.env.SQLITE_DB_PATH || path.join(__dirname, '..', '..', 'gathermap.db');
 try {
     sqliteDb = new Database(dbPath);
     initSqliteSchema(sqliteDb);
@@ -128,9 +128,74 @@ function initSqliteSchema(db) {
         CREATE INDEX IF NOT EXISTS idx_participants_outing ON participants(outing_id);
     `);
 
-    // Safe forward-compatible migrations on existing SQLite databases
+    // Migration 1: Safe migration of legacy INTEGER id in votes to TEXT PRIMARY KEY without data loss
     try {
-        sqliteDb.exec(`ALTER TABLE votes ADD COLUMN voter_id TEXT;`);
+        const columns = db.pragma('table_info(votes)');
+        const idCol = columns.find(c => c.name === 'id');
+        if (idCol && idCol.type && idCol.type.toUpperCase().includes('INT')) {
+            db.transaction(() => {
+                db.exec(`
+                    CREATE TABLE IF NOT EXISTS votes_new_text_pk (
+                        id TEXT PRIMARY KEY,
+                        outing_id TEXT NOT NULL,
+                        venue_id TEXT NOT NULL,
+                        voter_name TEXT NOT NULL,
+                        voter_id TEXT,
+                        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(outing_id, voter_name, venue_id)
+                    );
+                    INSERT OR IGNORE INTO votes_new_text_pk (id, outing_id, venue_id, voter_name, voter_id, created_at)
+                    SELECT 'vote-' || CAST(id AS TEXT), outing_id, venue_id, voter_name, voter_id, created_at FROM votes;
+                    DROP TABLE votes;
+                    ALTER TABLE votes_new_text_pk RENAME TO votes;
+                    CREATE INDEX IF NOT EXISTS idx_votes_outing ON votes(outing_id);
+                `);
+            })();
+        }
+    } catch (_) {}
+
+    // Migration 2: Ensure voter_id column exists
+    try {
+        db.exec(`ALTER TABLE votes ADD COLUMN voter_id TEXT;`);
+    } catch (_) {}
+
+    // Seed: Ensure venues table is populated from initial-venues.json if empty
+    try {
+        const countRow = db.prepare('SELECT count(*) as count FROM venues').get();
+        if (!countRow || countRow.count === 0) {
+            const initialVenues = require('../data/initial-venues.json');
+            const insertStmt = db.prepare(`
+                INSERT OR IGNORE INTO venues (
+                    id, name, category, type, is_alley, alley_note, address, place_id,
+                    lat, lng, rating, reviews_count, price_per_person_vnd, avg_price,
+                    tags, attributes, unknowns
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            const insertMany = db.transaction((venues) => {
+                for (const v of venues) {
+                    insertStmt.run(
+                        v.id,
+                        v.name,
+                        v.category || 'Ăn uống',
+                        v.type || 'restaurant',
+                        v.isAlley ? 1 : 0,
+                        v.alleyNote || '',
+                        v.address || '',
+                        v.placeId || '',
+                        Number(v.lat),
+                        Number(v.lng),
+                        v.rating != null ? Number(v.rating) : 4.5,
+                        v.reviewsCount != null ? Number(v.reviewsCount) : 100,
+                        v.pricePerPersonVnd != null ? Number(v.pricePerPersonVnd) : 60000,
+                        v.avgPrice || '35k - 80k VND',
+                        JSON.stringify(v.tags || []),
+                        JSON.stringify(v.attributes || v.traits || {}),
+                        JSON.stringify(v.unknowns || [])
+                    );
+                }
+            });
+            insertMany(initialVenues);
+        }
     } catch (_) {}
 }
 

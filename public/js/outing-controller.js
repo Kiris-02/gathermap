@@ -28,25 +28,55 @@ window.createOutingController = function() {
         },
 
         applyLoadedSession(sessionData) {
-            const outing = sessionData.outing;
-            if (outing.friends && Array.isArray(outing.friends) && outing.friends.length > 0) {
-                this.friends = outing.friends;
+            const outing = sessionData.outing || sessionData;
+
+            // Harmonized friends/participants loading
+            const friendsList = outing.friends || outing.participants || sessionData.friends || sessionData.participants;
+            if (Array.isArray(friendsList) && friendsList.length > 0) {
+                this.friends = friendsList.map((f, idx) => ({
+                    id: f.id || `friend-${idx}`,
+                    name: f.name || 'Friend',
+                    lat: Number(f.lat),
+                    lng: Number(f.lng),
+                    wish: f.wish || '',
+                    isMe: Boolean(f.isMe || f.is_me)
+                }));
                 this.renderFriendMarkers();
             }
-            if (outing.center_lat && outing.center_lng) {
-                this.centerCoords = { lat: Number(outing.center_lat), lng: Number(outing.center_lng) };
+
+            // Harmonized center coordinates
+            const cLat = outing.centerLat ?? outing.center_lat ?? (outing.center?.lat ?? sessionData.centerLat);
+            const cLng = outing.centerLng ?? outing.center_lng ?? (outing.center?.lng ?? sessionData.centerLng);
+            if (cLat != null && cLng != null) {
+                this.centerCoords = { lat: Number(cLat), lng: Number(cLng) };
                 this.renderCenterMarker();
             }
-            if (outing.radius_meters) {
-                this.searchRadiusMeters = Number(outing.radius_meters);
+
+            // Harmonized search radius
+            const rMeters = outing.radiusMeters ?? outing.radius_meters ?? (outing.radiusKm != null ? Math.round(outing.radiusKm * 1000) : (outing.radius_km != null ? Math.round(outing.radius_km * 1000) : null));
+            if (rMeters != null) {
+                this.searchRadiusMeters = Number(rMeters);
                 this.updateRadiusCircle();
             }
 
-            // Sync votes
-            if (Array.isArray(sessionData.votes)) {
-                this.syncVoteCountsFromList(sessionData.votes);
+            // Restore saved recommendations / shortlist
+            const savedShortlist = sessionData.shortlist || sessionData.recommendations || outing.shortlist || outing.recommendations;
+            if (Array.isArray(savedShortlist) && savedShortlist.length > 0) {
+                this.shortlist = savedShortlist;
+                this.emptyStateReason = null;
+                this.renderVenueMarkers();
+                if (this.shortlist.length > 0) {
+                    this.selectVenue(this.shortlist[0]);
+                }
             }
 
+            // Sync votes
+            const votes = sessionData.votes || outing.votes;
+            if (Array.isArray(votes)) {
+                this.syncVoteCountsFromList(votes);
+            }
+
+            this.sessionLoaded = true;
             this.showToast(`✨ Đã kết nối vào kèo: #${this.outingCode}`, 'success');
             this.startLiveVotePolling();
         },
@@ -104,12 +134,18 @@ window.createOutingController = function() {
                 }
             } catch (err) {
                 console.error('Vote failed, rolling back:', err);
-                // Rollback optimistic update
+                // Rollback optimistic update correctly for both toggle-off and vote-change
                 if (isTogglingOff) {
                     venue.votes = (venue.votes || 0) + 1;
                     this.myVotedVenueId = venue.id;
                 } else {
                     venue.votes = Math.max(0, (venue.votes || 1) - 1);
+                    if (previousVotedVenueId) {
+                        const prevVenue = this.shortlist.find(v => v.id === previousVotedVenueId);
+                        if (prevVenue) {
+                            prevVenue.votes = (prevVenue.votes || 0) + 1;
+                        }
+                    }
                     this.myVotedVenueId = previousVotedVenueId;
                 }
                 this.showToast(`⚠️ Không thể lưu bình chọn: ${err.message}`, 'error');

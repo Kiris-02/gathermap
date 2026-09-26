@@ -4,9 +4,14 @@
  */
 
 const { getSupabaseClient, getSqliteDb, isSupabaseConfigured } = require('./db-client');
+const venueRepository = require('./venue-repository');
+const { calcDistanceKm } = require('../algorithms/geometric-median');
 
-async function saveOuting({ id, name = 'Weekend Hangout', mode = 'representative', centerLat = 10.7769, centerLng = 106.7009, radiusKm = 3.0 }) {
-    const outingId = id || ('EAT-' + Math.floor(1000 + Math.random() * 9000));
+async function saveOuting({ id, name = 'Weekend Hangout', mode = 'representative', centerLat, centerLng, radiusKm }) {
+    if (!id) {
+        throw new Error('Outing id is required to save');
+    }
+    const outingId = id;
     const cLat = centerLat != null ? Number(centerLat) : 10.7769;
     const cLng = centerLng != null ? Number(centerLng) : 106.7009;
     const rKm = radiusKm != null ? Number(radiusKm) : 3.0;
@@ -29,21 +34,96 @@ async function saveOuting({ id, name = 'Weekend Hangout', mode = 'representative
     const sqliteDb = getSqliteDb();
     if (sqliteDb) {
         try {
-            sqliteDb.prepare(`
-                INSERT INTO outings (id, name, mode, center_lat, center_lng, radius_km, status)
-                VALUES (?, ?, ?, ?, ?, ?, 'active')
-                ON CONFLICT(id) DO UPDATE SET
-                    center_lat = excluded.center_lat,
-                    center_lng = excluded.center_lng,
-                    radius_km = excluded.radius_km,
-                    status = 'active'
-            `).run(outingId, name, mode, cLat, cLng, rKm);
+            const existing = sqliteDb.prepare('SELECT id FROM outings WHERE id = ?').get(outingId);
+            if (!existing) {
+                sqliteDb.prepare(`
+                    INSERT INTO outings (id, name, mode, center_lat, center_lng, radius_km, status)
+                    VALUES (?, ?, ?, ?, ?, ?, 'active')
+                `).run(outingId, name, mode, cLat, cLng, rKm);
+            } else {
+                sqliteDb.prepare(`
+                    UPDATE outings SET
+                        name = COALESCE(?, name),
+                        mode = COALESCE(?, mode),
+                        center_lat = COALESCE(?, center_lat),
+                        center_lng = COALESCE(?, center_lng),
+                        radius_km = COALESCE(?, radius_km),
+                        status = 'active'
+                    WHERE id = ?
+                `).run(name, mode, centerLat != null ? cLat : null, centerLng != null ? cLng : null, radiusKm != null ? rKm : null, outingId);
+            }
         } catch (e) {
             console.error('SQLite saveOuting error:', e.message);
         }
     }
 
     return outingId;
+}
+
+async function getRecommendations(outingId, participants = [], votesMap = {}) {
+    if (!outingId) return [];
+    let recRows = [];
+
+    const client = getSupabaseClient();
+    if (isSupabaseConfigured && client) {
+        try {
+            const { data } = await client.from('recommendations')
+                .select('*')
+                .eq('outing_id', outingId)
+                .order('group_score', { ascending: false });
+            if (data && data.length > 0) recRows = data;
+        } catch (_) {}
+    }
+
+    if (recRows.length === 0) {
+        const sqliteDb = getSqliteDb();
+        if (sqliteDb) {
+            try {
+                recRows = sqliteDb.prepare(`
+                    SELECT venue_id, group_score, avg_score, lowest_score, ai_rationale
+                    FROM recommendations
+                    WHERE outing_id = ?
+                    ORDER BY group_score DESC
+                `).all(outingId);
+            } catch (_) {}
+        }
+    }
+
+    if (!recRows || recRows.length === 0) return [];
+
+    const shortlist = [];
+    for (const r of recRows) {
+        const venue = await venueRepository.getVenueById(r.venue_id || r.venueId);
+        if (venue) {
+            const memberBreakdowns = participants.map(p => {
+                const distKm = calcDistanceKm({ lat: p.lat, lng: p.lng }, { lat: venue.lat, lng: venue.lng });
+                const travelMins = Math.max(3, Math.round(distKm * 3.2));
+                return {
+                    friendName: p.name || 'Friend',
+                    distanceKm: Number(distKm.toFixed(1)),
+                    travelMins,
+                    travelScore: Math.max(0, Math.min(100, Math.round(100 - distKm * 12))),
+                    score: Math.round(r.group_score || r.groupScore || 85)
+                };
+            });
+
+            shortlist.push({
+                ...venue,
+                groupScore: r.group_score ?? r.groupScore,
+                fairnessScore: r.group_score ?? r.groupScore,
+                avgScore: r.avg_score ?? r.avgScore,
+                lowestScore: r.lowest_score ?? r.lowestScore,
+                minScore: r.lowest_score ?? r.lowestScore,
+                aiRationale: r.ai_rationale ?? r.aiRationale,
+                memberBreakdowns,
+                votes: (votesMap[venue.id] || []).length,
+                voters: votesMap[venue.id] || [],
+                directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}`,
+                searchUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name + ' ' + (venue.address || ''))}`
+            });
+        }
+    }
+    return shortlist;
 }
 
 async function getOuting(id) {
@@ -101,9 +181,20 @@ async function getOuting(id) {
         votesMap[vid].push(v.voter_name || 'Guest');
     });
 
+    const recommendations = await getRecommendations(id, participants, votesMap);
+
     return {
         ...outing,
+        center_lat: outing.centerLat,
+        center_lng: outing.centerLng,
+        center: { lat: outing.centerLat, lng: outing.centerLng },
+        radius_km: outing.radiusKm,
+        radiusMeters: Math.round(outing.radiusKm * 1000),
+        radius_meters: Math.round(outing.radiusKm * 1000),
         participants,
+        friends: participants,
+        recommendations,
+        shortlist: recommendations,
         votes: votesList,
         votesMap
     };
@@ -216,11 +307,43 @@ async function saveRecommendations(outingId, recommendations = []) {
     const sqliteDb = getSqliteDb();
     if (sqliteDb) {
         try {
+            const ensureVenueStmt = sqliteDb.prepare(`
+                INSERT OR IGNORE INTO venues (
+                    id, name, category, type, is_alley, alley_note, address, place_id,
+                    lat, lng, rating, reviews_count, price_per_person_vnd, avg_price,
+                    tags, attributes, unknowns
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+
             const stmt = sqliteDb.prepare(`
                 INSERT OR REPLACE INTO recommendations (id, outing_id, venue_id, group_score, avg_score, lowest_score, ai_rationale)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             `);
             for (const r of recommendations) {
+                if (r.name && r.lat != null && r.lng != null) {
+                    try {
+                        ensureVenueStmt.run(
+                            r.id,
+                            r.name,
+                            r.category || 'Ăn uống',
+                            r.type || 'restaurant',
+                            r.isAlley ? 1 : 0,
+                            r.alleyNote || '',
+                            r.address || '',
+                            r.placeId || '',
+                            Number(r.lat),
+                            Number(r.lng),
+                            r.rating != null ? Number(r.rating) : 4.5,
+                            r.reviewsCount != null ? Number(r.reviewsCount) : 100,
+                            r.pricePerPersonVnd != null ? Number(r.pricePerPersonVnd) : 60000,
+                            r.avgPrice || '35k - 80k VND',
+                            JSON.stringify(r.tags || []),
+                            JSON.stringify(r.attributes || r.traits || {}),
+                            JSON.stringify(r.unknowns || [])
+                        );
+                    } catch (_) {}
+                }
+
                 const recId = `rec-${outingId}-${r.id}`;
                 stmt.run(
                     recId,
@@ -249,9 +372,6 @@ async function recordVote(outingId, venueId, voterName = 'Guest', voterId = null
         throw new Error('outingId and venueId are required to record a vote');
     }
 
-    // Ensure outing exists
-    await saveOuting({ id: outingId });
-
     const effectiveVoterKey = voterId ? String(voterId) : String(voterName).trim();
     let action = 'voted';
     let currentVotedVenue = null;
@@ -259,6 +379,15 @@ async function recordVote(outingId, venueId, voterName = 'Guest', voterId = null
     // Check existing votes in SQLite
     const sqliteDb = getSqliteDb();
     if (sqliteDb) {
+        // Ensure outing exists without resetting existing center/radius
+        const existingOuting = sqliteDb.prepare('SELECT id FROM outings WHERE id = ?').get(outingId);
+        if (!existingOuting) {
+            sqliteDb.prepare(`
+                INSERT INTO outings (id, name, mode, center_lat, center_lng, radius_km, status)
+                VALUES (?, 'Weekend Hangout', 'representative', 10.7769, 106.7009, 3.0, 'active')
+            `).run(outingId);
+        }
+
         const existingVote = sqliteDb.prepare(`
             SELECT id, venue_id FROM votes
             WHERE outing_id = ? AND (voter_name = ? OR voter_id = ?)
@@ -267,24 +396,48 @@ async function recordVote(outingId, venueId, voterName = 'Guest', voterId = null
         if (existingVote) {
             if (existingVote.venue_id === venueId) {
                 // Toggle off
-                sqliteDb.prepare('DELETE FROM votes WHERE id = ?').run(existingVote.id);
+                if (existingVote.id != null) {
+                    sqliteDb.prepare('DELETE FROM votes WHERE id = ?').run(existingVote.id);
+                } else {
+                    sqliteDb.prepare('DELETE FROM votes WHERE outing_id = ? AND (voter_name = ? OR voter_id = ?)').run(outingId, effectiveVoterKey, effectiveVoterKey);
+                }
                 action = 'unvoted';
                 currentVotedVenue = null;
             } else {
                 // Change vote
-                sqliteDb.prepare(`
-                    UPDATE votes SET venue_id = ?, voter_name = ?, voter_id = ?, created_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                `).run(venueId, voterName, effectiveVoterKey, existingVote.id);
+                if (existingVote.id != null) {
+                    sqliteDb.prepare(`
+                        UPDATE votes SET venue_id = ?, voter_name = ?, voter_id = ?, created_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    `).run(venueId, voterName, effectiveVoterKey, existingVote.id);
+                } else {
+                    sqliteDb.prepare(`
+                        UPDATE votes SET venue_id = ?, voter_name = ?, voter_id = ?, created_at = CURRENT_TIMESTAMP
+                        WHERE outing_id = ? AND (voter_name = ? OR voter_id = ?)
+                    `).run(venueId, voterName, effectiveVoterKey, outingId, effectiveVoterKey, effectiveVoterKey);
+                }
                 action = 'changed';
                 currentVotedVenue = venueId;
             }
         } else {
-            // New vote - let SQLite AUTOINCREMENT assign integer PK
-            sqliteDb.prepare(`
-                INSERT INTO votes (outing_id, venue_id, voter_name, voter_id)
-                VALUES (?, ?, ?, ?)
-            `).run(outingId, venueId, voterName, effectiveVoterKey);
+            // New vote - always populate with non-null string ID
+            const voteId = 'vote-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 8);
+            try {
+                sqliteDb.prepare(`
+                    INSERT INTO votes (id, outing_id, venue_id, voter_name, voter_id)
+                    VALUES (?, ?, ?, ?, ?)
+                `).run(voteId, outingId, venueId, voterName, effectiveVoterKey);
+            } catch (err) {
+                // Fallback for legacy tables requiring integer PK
+                if (err.message && err.message.includes('datatype mismatch')) {
+                    sqliteDb.prepare(`
+                        INSERT INTO votes (outing_id, venue_id, voter_name, voter_id)
+                        VALUES (?, ?, ?, ?)
+                    `).run(outingId, venueId, voterName, effectiveVoterKey);
+                } else {
+                    throw err;
+                }
+            }
             action = 'voted';
             currentVotedVenue = venueId;
         }
@@ -382,6 +535,7 @@ module.exports = {
     saveParticipants,
     getParticipants,
     saveRecommendations,
+    getRecommendations,
     recordVote,
     getVotes,
     getRawVotesList

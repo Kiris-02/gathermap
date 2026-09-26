@@ -27,6 +27,7 @@ window.createInitialState = function() {
     return {
         // Session / Outing identifiers
         outingCode: urlOutingCode || '',
+        sessionLoaded: false,
         voterId: voterId,
         voterName: voterName,
         copied: false,
@@ -55,6 +56,7 @@ window.createInitialState = function() {
         customCenterAddress: '',
         lastResolvedCenterAddress: '',
         centerCoords: { lat: 10.7782, lng: 106.6912 }, // Ho Chi Minh City Center
+        mapTileError: false,
 
         // Group Members
         friends: [

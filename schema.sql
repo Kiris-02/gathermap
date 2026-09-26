@@ -99,3 +99,41 @@ CREATE INDEX IF NOT EXISTS idx_participants_outing ON participants(outing_id);
 CREATE INDEX IF NOT EXISTS idx_recommendations_outing ON recommendations(outing_id);
 CREATE INDEX IF NOT EXISTS idx_votes_outing ON votes(outing_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_venue ON reviews(venue_id);
+
+-- Row Level Security (RLS) Policies
+ALTER TABLE outings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read outings" ON outings;
+DROP POLICY IF EXISTS "Service write outings" ON outings;
+CREATE POLICY "Public read outings" ON outings FOR SELECT USING (status = 'active');
+CREATE POLICY "Service write outings" ON outings FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+ALTER TABLE participants ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read participants" ON participants;
+DROP POLICY IF EXISTS "Service write participants" ON participants;
+CREATE POLICY "Public read participants" ON participants FOR SELECT USING (true);
+CREATE POLICY "Service write participants" ON participants FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+ALTER TABLE venues ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read venues" ON venues;
+DROP POLICY IF EXISTS "Service write venues" ON venues;
+CREATE POLICY "Public read venues" ON venues FOR SELECT USING (true);
+CREATE POLICY "Service write venues" ON venues FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+ALTER TABLE recommendations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read recommendations" ON recommendations;
+DROP POLICY IF EXISTS "Service write recommendations" ON recommendations;
+CREATE POLICY "Public read recommendations" ON recommendations FOR SELECT USING (true);
+CREATE POLICY "Service write recommendations" ON recommendations FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read reviews" ON reviews;
+DROP POLICY IF EXISTS "Service write reviews" ON reviews;
+CREATE POLICY "Public read reviews" ON reviews FOR SELECT USING (true);
+CREATE POLICY "Service write reviews" ON reviews FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read votes" ON votes;
+DROP POLICY IF EXISTS "Service write votes" ON votes;
+CREATE POLICY "Public read votes" ON votes FOR SELECT USING (true);
+CREATE POLICY "Service write votes" ON votes FOR ALL TO service_role USING (true) WITH CHECK (true);
+
