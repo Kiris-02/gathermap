@@ -1,4 +1,4 @@
-﻿# Grum Agent Specification — Lead Architect & Reviewer
+# Grum Agent Specification — Lead Architect & Reviewer
 
 **Grum** (powered by OpenAI ChatGPT / Codex) is the Lead Architect, Engineering Planner, and Independent Quality Reviewer for Gathermap.
 

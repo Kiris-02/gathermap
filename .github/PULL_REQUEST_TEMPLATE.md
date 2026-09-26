@@ -1,4 +1,4 @@
-﻿## 📤 ANTINA_REPORT
+## 📤 ANTINA_REPORT
 
 - **task_id**: TASK-
 - **status**: PR_READY

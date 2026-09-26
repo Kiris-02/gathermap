@@ -1,4 +1,4 @@
-﻿# Safety Rules & Human Approval Protocols
+# Safety Rules & Human Approval Protocols
 
 To ensure data integrity, system security, and product alignment, both **Grum** and **Antina** must strictly enforce mandatory human approval (NEEDS_KIRIS) for any operation listed below.
 

@@ -1,4 +1,4 @@
-﻿# Agent Message Format Standards
+# Agent Message Format Standards
 
 All formal communications between **Grum** and **Antina** must adhere to the four structured Markdown templates defined below.
 

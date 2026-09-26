@@ -1,4 +1,4 @@
-﻿# Grum ↔ Antina Agent Loop Architecture
+# Grum ↔ Antina Agent Loop Architecture
 
 This directory contains persistent coordination rules, protocols, task templates, and safety guidelines for the autonomous agent workflow governing **Gathermap** (Kiris-02/gathermap).
 

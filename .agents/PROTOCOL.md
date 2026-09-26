@@ -1,4 +1,4 @@
-﻿# Grum ↔ Antina Coordination Protocol
+# Grum ↔ Antina Coordination Protocol
 
 This document defines the strict operational rules governing task creation, implementation, code review, and quality assurance for the Grum ↔ Antina agent loop.
 

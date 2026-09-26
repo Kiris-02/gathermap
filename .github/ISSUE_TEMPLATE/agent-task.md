@@ -1,4 +1,4 @@
-﻿---
+---
 name: Agent Engineering Task
 about: Engineering task template issued by Grum for Antina
 title: '[TASK] '

@@ -1,4 +1,4 @@
-﻿# Antina Agent Specification — Implementation & Testing Agent
+# Antina Agent Specification — Implementation & Testing Agent
 
 **Antina** (powered by Google Antigravity) is the Lead Implementation, Testing, and Debugging Agent for Gathermap.
 
