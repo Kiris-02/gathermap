@@ -3,8 +3,15 @@ node_modules/
 .DS_Store
 *.log
 *.bin
+*.db
+*.sqlite
+*.sqlite3
+gathermap.db
+gathermap_savory_legacy.db
 *.test.db
 test-*.db
 temp-*.db
+tests/*.db
+temp-browser-profile-*
 test.txt
-gathermap_savory_legacy.db
+

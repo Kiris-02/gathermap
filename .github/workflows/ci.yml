@@ -1,0 +1,38 @@
+name: GatherMap CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'refactor/**'
+  pull_request:
+    branches:
+      - main
+      - 'refactor/**'
+
+jobs:
+  test:
+    name: Test Suite & Browser E2E
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium with dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Deterministic & E2E Test Suite
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm test

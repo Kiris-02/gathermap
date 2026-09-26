@@ -46,6 +46,7 @@ function initSqliteSchema(db) {
             center_lng REAL NOT NULL,
             radius_km REAL NOT NULL DEFAULT 3.0,
             status TEXT NOT NULL DEFAULT 'active',
+            share_token_hash TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -159,6 +160,31 @@ function initSqliteSchema(db) {
         db.exec(`ALTER TABLE votes ADD COLUMN voter_id TEXT;`);
     } catch (_) {}
 
+    // Migration 3: Ensure share_token_hash column exists on outings
+    try {
+        const outingCols = db.pragma('table_info(outings)');
+        const tokenCol = outingCols.find(c => c.name === 'share_token_hash');
+        if (!tokenCol) {
+            db.exec(`ALTER TABLE outings ADD COLUMN share_token_hash TEXT;`);
+        }
+    } catch (_) {}
+
+    // Migration 4: Sequential backfill of share_token_hash for existing outings without a token
+    try {
+        const outingsWithoutToken = db.prepare('SELECT id FROM outings WHERE share_token_hash IS NULL').all();
+        if (outingsWithoutToken.length > 0) {
+            const crypto = require('crypto');
+            const updateStmt = db.prepare('UPDATE outings SET share_token_hash = ? WHERE id = ?');
+            db.transaction((rows) => {
+                for (const row of rows) {
+                    const rawToken = crypto.randomBytes(24).toString('base64url');
+                    const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
+                    updateStmt.run(hash, row.id);
+                }
+            })(outingsWithoutToken);
+        }
+    } catch (_) {}
+
     // Seed: Ensure venues table is populated from initial-venues.json if empty
     try {
         const countRow = db.prepare('SELECT count(*) as count FROM venues').get();
@@ -195,6 +221,38 @@ function initSqliteSchema(db) {
                 }
             });
             insertMany(initialVenues);
+        }
+    } catch (_) {}
+
+    // Seed: Ensure reviews table is populated from initial-reviews.json if empty
+    try {
+        const revCountRow = db.prepare('SELECT count(*) as count FROM reviews').get();
+        if (!revCountRow || revCountRow.count === 0) {
+            const initialReviews = require('../data/initial-reviews.json');
+            const insertRevStmt = db.prepare(`
+                INSERT OR IGNORE INTO reviews (
+                    id, venue_id, source, author_name, author_avatar, rating,
+                    content, sentiment, tags, likes_count, review_date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            const insertManyReviews = db.transaction((revs) => {
+                for (const r of revs) {
+                    insertRevStmt.run(
+                        r.id,
+                        r.venue_id,
+                        r.source || 'google',
+                        r.author_name || 'Khách hàng',
+                        r.author_avatar || null,
+                        r.rating != null ? Number(r.rating) : 5.0,
+                        r.content || '',
+                        r.sentiment || 'positive',
+                        JSON.stringify(r.tags || []),
+                        r.likes_count != null ? Number(r.likes_count) : 0,
+                        r.review_date || null
+                    );
+                }
+            });
+            insertManyReviews(initialReviews);
         }
     } catch (_) {}
 }

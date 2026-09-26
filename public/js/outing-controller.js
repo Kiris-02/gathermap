@@ -11,15 +11,23 @@ window.createOutingController = function() {
         async initOutingSession() {
             if (this.outingCode) {
                 try {
-                    const sessionData = await window.ApiClient.get(`/api/outings/${this.outingCode}`);
+                    const tokenParam = this.shareToken ? `?token=${encodeURIComponent(this.shareToken)}` : '';
+                    const sessionData = await window.ApiClient.get(`/api/outings/${this.outingCode}${tokenParam}`, {
+                        shareToken: this.shareToken
+                    });
                     if (sessionData && sessionData.outing) {
                         this.applyLoadedSession(sessionData);
                         return;
                     }
                 } catch (err) {
                     console.warn(`Outing ${this.outingCode} could not be loaded (${err.message}). Starting fresh session.`);
-                    this.showToast('ℹ️ Không tìm thấy kèo cũ, đã tạo kèo mới cho bạn.', 'info');
+                    if (err.status === 401 || err.status === 403) {
+                        this.showToast('🔒 Bạn không có quyền xem kèo này (cần link chia sẻ có mã xác thực).', 'error');
+                    } else {
+                        this.showToast('ℹ️ Không tìm thấy kèo cũ, đã tạo kèo mới cho bạn.', 'info');
+                    }
                     this.outingCode = '';
+                    this.shareToken = '';
                 }
             }
 
@@ -81,12 +89,19 @@ window.createOutingController = function() {
             this.startLiveVotePolling();
         },
 
-        setOutingCodeAndSyncUrl(code) {
-            if (!code || this.outingCode === code) return;
+        setOutingCodeAndSyncUrl(code, token = null) {
+            if (!code) return;
             this.outingCode = code;
+            if (token) {
+                this.shareToken = token;
+                window._currentShareToken = token;
+            }
             try {
                 const newUrl = new URL(window.location.href);
                 newUrl.searchParams.set('outing', code);
+                if (this.shareToken) {
+                    newUrl.searchParams.set('token', this.shareToken);
+                }
                 window.history.replaceState({}, '', newUrl.toString());
             } catch (_) {}
         },
@@ -164,13 +179,11 @@ window.createOutingController = function() {
                 }
 
                 try {
-                    const res = await fetch(`/api/outings/${this.outingCode}`);
-                    if (!res.ok) {
-                        this.consecutivePollErrors++;
-                        return;
-                    }
+                    const tokenParam = this.shareToken ? `?token=${encodeURIComponent(this.shareToken)}` : '';
+                    const data = await window.ApiClient.get(`/api/outings/${this.outingCode}${tokenParam}`, {
+                        shareToken: this.shareToken
+                    });
                     this.consecutivePollErrors = 0;
-                    const data = await res.json();
                     if (data && Array.isArray(data.votes)) {
                         this.syncVoteCountsFromList(data.votes);
                     }
@@ -205,15 +218,22 @@ window.createOutingController = function() {
                     v.votes = serverCount;
                 }
             });
+
+            this.votesMap = counts;
+            this.votesList = votesList;
         },
 
         copyShareLink() {
-            const shareUrl = window.location.origin + (this.outingCode ? `/?outing=${encodeURIComponent(this.outingCode)}` : '');
+            const params = new URLSearchParams();
+            if (this.outingCode) params.set('outing', this.outingCode);
+            if (this.shareToken) params.set('token', this.shareToken);
+            const queryStr = params.toString() ? `?${params.toString()}` : '';
+            const shareUrl = `${window.location.origin}/${queryStr}`;
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(shareUrl).then(() => {
                     this.copied = true;
                     setTimeout(() => { this.copied = false; }, 2500);
-                    this.showToast('📋 Đã sao chép link chia sẻ vào clipboard!', 'success');
+                    this.showToast('📋 Đã sao chép link chia sẻ (kèm mã bảo mật) vào clipboard!', 'success');
                 }).catch(() => {
                     this.showToast('⚠️ Không thể tự động sao chép. Hãy copy đường dẫn từ thanh địa chỉ.', 'warning');
                 });
@@ -226,7 +246,8 @@ window.createOutingController = function() {
                     venue,
                     friends: this.friends,
                     groupScore: venue.groupScore || 90,
-                    outingCode: this.outingCode
+                    outingCode: this.outingCode,
+                    shareToken: this.shareToken
                 });
 
                 if (shareRes && shareRes.message) {

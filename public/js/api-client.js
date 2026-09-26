@@ -19,12 +19,19 @@ window.ApiClient = {
 
         const timer = setTimeout(() => controller.abort(), timeoutMs);
 
+        const shareToken = options.shareToken || window._currentShareToken || (window.Alpine && window.Alpine.store ? window.Alpine.store('app')?.shareToken : '');
+
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+        };
+        if (shareToken && !headers['x-share-token']) {
+            headers['x-share-token'] = shareToken;
+        }
+
         const config = {
             method: options.method || 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(options.headers || {})
-            },
+            headers,
             signal: combinedSignal
         };
 

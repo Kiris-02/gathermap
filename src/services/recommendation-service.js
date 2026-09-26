@@ -14,7 +14,7 @@
 const venueRepository = require('../repositories/venue-repository');
 const reviewRepository = require('../repositories/review-repository');
 const outingRepository = require('../repositories/outing-repository');
-const { generateUniqueOutingId } = require('./outing-service');
+const { generateUniqueOutingId, generateShareToken } = require('./outing-service');
 const semanticEngine = require('../../semanticEngine');
 const { calcDistanceKm } = require('../algorithms/geometric-median');
 const { buildDirectionsUrl, buildSearchUrl } = require('./places-service');
@@ -39,7 +39,26 @@ async function searchAndRankVenues(params) {
         friends = []
     } = params;
 
-    const outingId = inputOutingId || (await generateUniqueOutingId());
+    let outingId = inputOutingId;
+    let shareToken = params.shareToken || null;
+    let shareTokenHash = null;
+
+    if (!outingId) {
+        outingId = await generateUniqueOutingId();
+        const tokenObj = generateShareToken();
+        shareToken = tokenObj.rawToken;
+        shareTokenHash = tokenObj.tokenHash;
+    } else {
+        const existingOuting = await outingRepository.getOuting(outingId);
+        if (existingOuting && existingOuting.share_token_hash) {
+            shareTokenHash = existingOuting.share_token_hash;
+        } else {
+            const tokenObj = generateShareToken();
+            shareToken = shareToken || tokenObj.rawToken;
+            shareTokenHash = tokenObj.tokenHash;
+        }
+    }
+
     const radiusKm = radiusMeters / 1000;
 
     // 1. Build Unified Intent Profile
@@ -274,7 +293,8 @@ async function searchAndRankVenues(params) {
         mode,
         centerLat: center.lat,
         centerLng: center.lng,
-        radiusKm
+        radiusKm,
+        shareTokenHash
     });
     await outingRepository.saveParticipants(outingId, memberList);
     await outingRepository.saveRecommendations(outingId, strictShortlist);
@@ -290,6 +310,7 @@ async function searchAndRankVenues(params) {
 
     return {
         outingId,
+        shareToken,
         shortlist: strictShortlist,
         nearbyAlternatives,
         totalStrictEligible: strictCandidates.length,

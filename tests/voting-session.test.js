@@ -2,7 +2,7 @@
  * Voting & Session Lifecycle Integration Test Suite
  * Tests session loading, vote deduplication (toggle off / vote change),
  * clean database schema (fresh DB & legacy DB backward compatibility),
- * and data contract harmonization for shared outing links.
+ * data contract harmonization, and cryptographic share token access control.
  */
 const assert = require('assert');
 const http = require('http');
@@ -65,26 +65,24 @@ async function runVotingSessionTests() {
         process.stdout.write(`  ⏳ ${name} ... `);
         try {
             await fn();
-            process.stdout.write('✅ PASS\n');
+            console.log('✅ PASS');
             passed++;
         } catch (err) {
-            process.stdout.write(`❌ FAIL: ${err.message}\n`);
+            console.log(`❌ FAIL: ${err.message}`);
+            console.error(err);
             failed++;
         }
     }
 
     try {
-        // --- SUITE A: SCHEMA & DATABASE TESTING (FRESH DB & LEGACY DB) ---
+        // --- SUITE A: CLEAN DATABASE SCHEMA & BACKWARD COMPATIBILITY ---
 
-        // Test 1: Fresh empty SQLite database initialization & voting
+        // Test 1: Fresh empty SQLite DB
         await runTest('Fresh empty SQLite DB: schema initializes with TEXT PK and votes function without NULL id', async () => {
-            const freshDbPath = path.join(__dirname, 'fresh-empty-test.test.db');
+            const freshDbPath = path.join(__dirname, 'fresh-test-schema.test.db');
             if (fs.existsSync(freshDbPath)) fs.unlinkSync(freshDbPath);
 
-            const dbClientModule = require('../src/repositories/db-client');
             const freshDb = new Database(freshDbPath);
-
-            // Create schema using identical initSqliteSchema logic
             freshDb.exec(`
                 CREATE TABLE IF NOT EXISTS outings (
                     id TEXT PRIMARY KEY,
@@ -94,6 +92,7 @@ async function runVotingSessionTests() {
                     center_lng REAL NOT NULL,
                     radius_km REAL NOT NULL DEFAULT 3.0,
                     status TEXT NOT NULL DEFAULT 'active',
+                    share_token_hash TEXT,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                 );
 
@@ -108,14 +107,12 @@ async function runVotingSessionTests() {
                 );
             `);
 
-            // Verify table info: id must be TEXT
             const cols = freshDb.pragma('table_info(votes)');
             const idCol = cols.find(c => c.name === 'id');
-            assert(idCol, 'Column id must exist in votes table');
-            assert.strictEqual(idCol.type.toUpperCase(), 'TEXT', 'id column must be TEXT');
+            assert.strictEqual(idCol.type.toUpperCase(), 'TEXT', 'id must be TEXT');
+            assert.strictEqual(idCol.pk, 1, 'id must be PRIMARY KEY');
 
-            // Insert new vote with generated voteId
-            const voteId = 'vote-test-' + Date.now();
+            const voteId = 'vote-test-uuid-001';
             freshDb.prepare(`
                 INSERT INTO votes (id, outing_id, venue_id, voter_name, voter_id)
                 VALUES (?, ?, ?, ?, ?)
@@ -150,7 +147,6 @@ async function runVotingSessionTests() {
 
             const legacyDb = new Database(legacyDbPath);
 
-            // Create legacy table with INTEGER PRIMARY KEY AUTOINCREMENT
             legacyDb.exec(`
                 CREATE TABLE votes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -164,7 +160,6 @@ async function runVotingSessionTests() {
                 INSERT INTO votes (outing_id, venue_id, voter_name) VALUES ('EAT-LEGACY', 'v2_matcha_specialty', 'Bob');
             `);
 
-            // Apply forward migration as implemented in db-client.js
             const cols = legacyDb.pragma('table_info(votes)');
             const idCol = cols.find(c => c.name === 'id');
             assert(idCol.type.toUpperCase().includes('INT'), 'Legacy DB starts with INTEGER id');
@@ -187,7 +182,6 @@ async function runVotingSessionTests() {
                 `);
             })();
 
-            // Verify migration results: both historical records preserved
             const migratedCols = legacyDb.pragma('table_info(votes)');
             const migratedIdCol = migratedCols.find(c => c.name === 'id');
             assert.strictEqual(migratedIdCol.type.toUpperCase(), 'TEXT', 'id must now be TEXT');
@@ -217,8 +211,6 @@ async function runVotingSessionTests() {
         // Test 4: Prevent outing creation or voting from overwriting existing outing coordinates/radius
         await runTest('Outing integrity: voting or duplicate saves never overwrite original center and radius', async () => {
             const uniqueId = await generateUniqueOutingId();
-
-            // Create initial outing with distinct custom coordinates and radius
             const customCenter = { lat: 10.7325, lng: 106.7118 }; // District 7
             const customRadiusMeters = 4500;
 
@@ -234,9 +226,19 @@ async function runVotingSessionTests() {
                 })
             });
             assert.strictEqual(resCreate.status, 200);
+            const shareToken = resCreate.data.shareToken;
+            assert(shareToken, 'search-and-rank must return a valid shareToken');
 
-            // Now cast a vote on this outing
-            const resVote = await req(`/api/outings/${uniqueId}/vote`, {
+            // Verify access control: Without token -> 401
+            const resNoToken = await req(`/api/outings/${uniqueId}`);
+            assert.strictEqual(resNoToken.status, 401, 'Fetching outing without token must return 401');
+
+            // Verify access control: Invalid token -> 403
+            const resBadToken = await req(`/api/outings/${uniqueId}?token=bad_invalid_token_12345`);
+            assert.strictEqual(resBadToken.status, 403, 'Fetching outing with bad token must return 403');
+
+            // Cast a vote with valid token
+            const resVote = await req(`/api/outings/${uniqueId}/vote?token=${shareToken}`, {
                 method: 'POST',
                 body: JSON.stringify({
                     venueId: 'v1_phu_nhuan_chay',
@@ -246,18 +248,22 @@ async function runVotingSessionTests() {
             });
             assert.strictEqual(resVote.status, 200);
 
-            // Fetch outing to verify center and radius were NOT reset to default (10.7769, 106.7009, 3.0)
-            const resGet = await req(`/api/outings/${uniqueId}`);
+            // Fetch outing with valid token: verify center and radius were NOT reset to default (10.7769, 106.7009, 3.0)
+            const resGet = await req(`/api/outings/${uniqueId}`, {
+                headers: { 'x-share-token': shareToken }
+            });
             assert.strictEqual(resGet.status, 200);
             const outing = resGet.data.outing;
             assert.strictEqual(Number(outing.centerLat.toFixed(4)), 10.7325, 'centerLat must remain preserved');
             assert.strictEqual(Number(outing.centerLng.toFixed(4)), 106.7118, 'centerLng must remain preserved');
             assert.strictEqual(Number(outing.radiusKm), 4.5, 'radiusKm must remain 4.5');
+            assert.strictEqual(resGet.data.share_token_hash, undefined, 'share_token_hash must NEVER be exposed in API responses');
         });
 
         // --- SUITE C: SHARED LINK RESTORATION & CONTRACT HARMONIZATION ---
 
         const testSessionId = await generateUniqueOutingId();
+        let testSessionToken = '';
 
         // Test 5: Search and rank creates outing and persists recommendations
         await runTest('Unified outing creation via search-and-rank persists shortlist and participants', async () => {
@@ -277,15 +283,16 @@ async function runVotingSessionTests() {
             assert.strictEqual(res.status, 200);
             assert(res.data.shortlist && res.data.shortlist.length > 0, 'Expected non-empty shortlist');
             assert.strictEqual(res.data.outingId, testSessionId, 'Outing ID must match request');
+            assert(res.data.shareToken, 'Response must include shareToken');
+            testSessionToken = res.data.shareToken;
         });
 
         // Test 6: Fetch session details by outing ID with harmonized contracts
         await runTest('Fetch session details by outing ID returns harmonized camelCase and snake_case contracts', async () => {
-            const res = await req(`/api/outings/${testSessionId}`);
+            const res = await req(`/api/outings/${testSessionId}?token=${testSessionToken}`);
             assert.strictEqual(res.status, 200);
             const data = res.data;
 
-            // Check top-level and nested outing
             assert(data.outing, 'Expected outing object');
             const outing = data.outing;
 
@@ -315,12 +322,12 @@ async function runVotingSessionTests() {
 
         // --- SUITE D: VOTING, VOTE CHANGE, RETRACTION & ERROR ROLLBACK ---
 
-        const venue1Id = 'v1_phu_nhuan_chay';
-        const venue2Id = 'v2_matcha_specialty';
+        const venue1Id = 'hcm-vnu-veg-01';
+        const venue2Id = 'hcm-vnu-bbq-01';
 
         // Test 7: Cast a new vote
         await runTest('Cast a new vote for venue 1', async () => {
-            const res = await req(`/api/outings/${testSessionId}/vote`, {
+            const res = await req(`/api/outings/${testSessionId}/vote?token=${testSessionToken}`, {
                 method: 'POST',
                 body: JSON.stringify({
                     venueId: venue1Id,
@@ -337,7 +344,7 @@ async function runVotingSessionTests() {
 
         // Test 8: Toggle off vote by voting for the same venue again
         await runTest('Toggle off vote by voting again for the same venue', async () => {
-            const res = await req(`/api/outings/${testSessionId}/vote`, {
+            const res = await req(`/api/outings/${testSessionId}/vote?token=${testSessionToken}`, {
                 method: 'POST',
                 body: JSON.stringify({
                     venueId: venue1Id,
@@ -351,15 +358,14 @@ async function runVotingSessionTests() {
             assert.strictEqual(res.data.action, 'unvoted', 'Second click should unvote (toggle off)');
 
             // Verify vote was removed
-            const session = await req(`/api/outings/${testSessionId}`);
+            const session = await req(`/api/outings/${testSessionId}?token=${testSessionToken}`);
             const aliceVotes = session.data.votes.filter(v => v.voter_id === 'voter_alice_001' || v.voter_name === 'Alice');
             assert.strictEqual(aliceVotes.length, 0, 'Alice should have 0 votes after toggle');
         });
 
         // Test 9: Vote change from venue 1 to venue 2
         await runTest('Vote change: cast vote 1, then vote for venue 2', async () => {
-            // Vote for venue 1
-            const res1 = await req(`/api/outings/${testSessionId}/vote`, {
+            const res1 = await req(`/api/outings/${testSessionId}/vote?token=${testSessionToken}`, {
                 method: 'POST',
                 body: JSON.stringify({
                     venueId: venue1Id,
@@ -370,7 +376,7 @@ async function runVotingSessionTests() {
             assert.strictEqual(res1.data.action, 'voted');
 
             // Now vote for venue 2 (should move vote)
-            const res2 = await req(`/api/outings/${testSessionId}/vote`, {
+            const res2 = await req(`/api/outings/${testSessionId}/vote?token=${testSessionToken}`, {
                 method: 'POST',
                 body: JSON.stringify({
                     venueId: venue2Id,
@@ -381,15 +387,14 @@ async function runVotingSessionTests() {
             assert.strictEqual(res2.status, 200);
             assert(res2.data.action === 'voted' || res2.data.action === 'changed');
 
-            // Verify Alice has exactly 1 vote and it is for venue 2
-            const session = await req(`/api/outings/${testSessionId}`);
+            const session = await req(`/api/outings/${testSessionId}?token=${testSessionToken}`);
             const aliceVotes = session.data.votes.filter(v => (v.voter_id === 'voter_alice_001' || v.voter_name === 'Alice') && (v.venue_id === venue2Id || v.venueId === venue2Id));
             assert.strictEqual(aliceVotes.length, 1, 'Alice should have exactly 1 vote on venue 2');
         });
 
         // Test 10: Validation rejects missing venueId
         await runTest('Validation rejects missing venueId with 400', async () => {
-            const res = await req(`/api/outings/${testSessionId}/vote`, {
+            const res = await req(`/api/outings/${testSessionId}/vote?token=${testSessionToken}`, {
                 method: 'POST',
                 body: JSON.stringify({
                     voterName: 'Alice'
@@ -401,22 +406,23 @@ async function runVotingSessionTests() {
 
         // Test 11: Non-existent outing polling resilience
         await runTest('Polling non-existent outing returns 404 gracefully', async () => {
-            const res = await req('/api/outings/non_existent_outing_99999');
+            const res = await req('/api/outings/non_existent_outing_99999?token=dummy_token_123');
             assert.strictEqual(res.status, 404);
             assert(res.data.error);
         });
 
         // Test 12: Viral share plan text generation
-        await runTest('Generate viral share plan contains host and outing query parameter', async () => {
+        await runTest('Generate viral share plan contains host, outing and share token parameters', async () => {
             const res = await req('/api/outings/generate-share-text', {
                 method: 'POST',
                 body: JSON.stringify({
                     outingCode: testSessionId,
+                    shareToken: testSessionToken,
                     venue: {
-                        name: 'Bếp Chay Yên Tĩnh',
-                        address: '123 Phan Xích Long, Q. Phú Nhuận',
-                        lat: 10.7960,
-                        lng: 106.6920
+                        name: 'Hum Vegetarian',
+                        address: '32 Võ Văn Tần, Q.3',
+                        lat: 10.7779,
+                        lng: 106.6908
                     },
                     friends: [
                         { name: 'Alice' },
@@ -427,7 +433,28 @@ async function runVotingSessionTests() {
 
             assert.strictEqual(res.status, 200);
             assert(res.data.message.includes(testSessionId), 'Message should contain the outing code');
-            assert(res.data.message.includes('?outing=' + testSessionId), 'Message should contain ?outing= query parameter link');
+            assert(res.data.message.includes('?outing=' + testSessionId), 'Message should contain ?outing= parameter');
+            assert(res.data.message.includes('&token=' + testSessionToken), 'Message should contain &token= parameter');
+        });
+
+        // Test 13: Authorized updateOutingSettings
+        await runTest('Authorized outing settings update via PUT /api/outings/:id', async () => {
+            const updateRes = await req(`/api/outings/${testSessionId}?token=${testSessionToken}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    name: 'Tiệc Tất Niên Nhóm',
+                    radiusKm: 5.5
+                })
+            });
+
+            assert.strictEqual(updateRes.status, 200);
+            assert.strictEqual(updateRes.data.name, 'Tiệc Tất Niên Nhóm');
+            assert.strictEqual(Number(updateRes.data.radiusKm), 5.5);
+
+            // Fetch to verify persistence
+            const verifyGet = await req(`/api/outings/${testSessionId}?token=${testSessionToken}`);
+            assert.strictEqual(verifyGet.data.name, 'Tiệc Tất Niên Nhóm');
+            assert.strictEqual(Number(verifyGet.data.radiusKm), 5.5);
         });
 
     } finally {

@@ -105,9 +105,9 @@ window.createRecommendationController = function() {
 
                 if (currentReqId !== this.searchRequestId) return;
 
-                // Sync outing code if assigned/created by backend
+                // Sync outing code and share token if assigned/created by backend
                 if (data.outingId) {
-                    this.setOutingCodeAndSyncUrl(data.outingId);
+                    this.setOutingCodeAndSyncUrl(data.outingId, data.shareToken);
                 }
 
                 this.shortlist = data.shortlist || [];

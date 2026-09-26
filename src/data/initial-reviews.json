@@ -1,0 +1,1569 @@
+[
+  {
+    "id": "rev-dallas-01",
+    "venue_id": "hcm-q10-dallas-cakes",
+    "source": "tiktok",
+    "author_name": "Mê Bánh Ngọt Sài Gòn",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh kem bắp ở Dallas thì không cần bàn cãi nữa rồi. Kem tươi thơm thoang thoảng mùi bắp non, ngọt dịu nhẹ cắn trúng hạt bắp giòn rụm đã miệng xỉu!",
+    "sentiment": "positive",
+    "tags": [
+      "Bánh Kem Bắp",
+      "Dallas Quận 10"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-05"
+  },
+  {
+    "id": "rev-dallas-02",
+    "venue_id": "hcm-q10-dallas-cakes",
+    "source": "google",
+    "author_name": "Trần Quỳnh Anh (Local Guide L7)",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Bánh ngọt thanh vừa vặn cho người sợ ngọt. Tiệm ngay mặt tiền đường 3/2 dễ tìm, đóng gói bánh mang về rất tỉ mỉ kèm túi đá khô.",
+    "sentiment": "positive",
+    "tags": [
+      "Ít ngọt",
+      "Bánh Kem Tươi"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-22"
+  },
+  {
+    "id": "rev-unclelu-01",
+    "venue_id": "hcm-q10-uncle-lus-cheesecake",
+    "source": "tiktok",
+    "author_name": "Hội Mê Cheesecake Sài Gòn",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Cốt bánh mềm xốp như mây, lắc nhẹ là rung rinh núng nính cưng xỉu. Vị phô mai thơm dịu không bị chua gắt, để tủ lạnh ăn càng béo!",
+    "sentiment": "positive",
+    "tags": [
+      "Uncle Lu",
+      "Bánh Phô Mai"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-01"
+  },
+  {
+    "id": "rev-bbang-01",
+    "venue_id": "hcm-q10-bbang-house",
+    "source": "facebook",
+    "author_name": "Check-in Bánh Ngọt Sài Gòn",
+    "author_avatar": null,
+    "rating": 4.7,
+    "content": "Bánh ra lò liên tục thơm nức mũi cả góc đường Sư Vạn Hạnh. Bánh mì bơ tỏi phô mai đẫm sốt mà vỏ ngoài vẫn giữ độ giòn.",
+    "sentiment": "positive",
+    "tags": [
+      "Bánh Tươi",
+      "Sư Vạn Hạnh"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-18"
+  },
+  {
+    "id": "rev-gami-01",
+    "venue_id": "hcm-q10-gami-craft-bakery",
+    "source": "tiktok",
+    "author_name": "Góc Cafe Nhỏ Xinh",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Soft cookies ở GAMI ngon xỉu! Bẻ đôi chiếc cookie nhân marshmallow kéo sợi dẻo quẹo ăn kèm ly trà hoa cúc thanh mát cực kỳ thư giãn.",
+    "sentiment": "positive",
+    "tags": [
+      "Cookies",
+      "GAMI Bakery"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-04"
+  },
+  {
+    "id": "rev-rm-01",
+    "venue_id": "hcm-q10-robin-mouquet",
+    "source": "google",
+    "author_name": "Trịnh Bảo Ngọc (Local Guide L7)",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh Mille-feuille đỉnh nhất Quận 10! Vỏ bánh mỏng tang giòn xốp cắn rôm rốp mà kem bơ vani mát mịn không hề bị ngọt gắt.",
+    "sentiment": "positive",
+    "tags": [
+      "Mille-feuille",
+      "Bánh Pháp"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-19"
+  },
+  {
+    "id": "rev-morico-01",
+    "venue_id": "hcm-q10-morico-vanhanhmall",
+    "source": "tiktok",
+    "author_name": "Nghiện Trà Xanh Sài Gòn",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Ly Parfait matcha ở Morico đúng là đỉnh của chóp! Kem matcha đắng nhẹ thơm lừng, warabi mochi dai dẻo nhúng mật mía ăn mê xỉu!",
+    "sentiment": "positive",
+    "tags": [
+      "Matcha",
+      "Morico Q10"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-02"
+  },
+  {
+    "id": "rev-chewy-01",
+    "venue_id": "hcm-q10-chewy-junior",
+    "source": "tiktok",
+    "author_name": "Ăn Vặt Học Đường",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Cắn một miếng vỏ bánh su dai dai mà kem phô mai tuôn trào trong miệng ngập béo. Vị việt quất chua chua ngọt ngọt ăn hoài không ngấy!",
+    "sentiment": "positive",
+    "tags": [
+      "Chewy Junior",
+      "Su Kem Dẻo"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-25"
+  },
+  {
+    "id": "rev-bp-01",
+    "venue_id": "hcm-q10-beard-papas",
+    "source": "google",
+    "author_name": "Lê Minh Khang (Local Guide L6)",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Vỏ bánh Pie Choux giòn rụm thơm mùi bơ, kem vani mát lạnh thơm chuẩn hạt vani chứ không phải mùi hương liệu. Đáng đồng tiền bát gạo.",
+    "sentiment": "positive",
+    "tags": [
+      "Beard Papas",
+      "Pie Choux"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-14"
+  },
+  {
+    "id": "rev-tlj-01",
+    "venue_id": "hcm-q10-tous-les-jours",
+    "source": "google",
+    "author_name": "Ngô Thanh Hằng (Local Guide L7)",
+    "author_avatar": null,
+    "rating": 4.7,
+    "content": "Bánh kem tươi ở đây mềm mướt không bị ngọt gắt, vị sữa tươi thanh mát. Không gian lầu 1 yên tĩnh, vừa ăn bánh vừa nhâm nhi trà rất thích.",
+    "sentiment": "positive",
+    "tags": [
+      "Cloud Cake",
+      "Tous Les Jours"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-17"
+  },
+  {
+    "id": "rev-givral-01",
+    "venue_id": "hcm-q10-givral-nguyentriphuong",
+    "source": "facebook",
+    "author_name": "Ẩm Thực Sài Gòn Xưa & Nay",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh bắp Givral là hương vị gắn liền với bao thế hệ người Sài Gòn. Kem sữa thơm béo vị bắp tự nhiên, bánh su kem ăn hoài không biết ngán.",
+    "sentiment": "positive",
+    "tags": [
+      "Givral 70 năm",
+      "Bánh Bắp"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-11"
+  },
+  {
+    "id": "rev-bro-01",
+    "venue_id": "hcm-q10-brodard-nguyentriphuong",
+    "source": "google",
+    "author_name": "Đặng Ngọc Thảo (Local Guide L6)",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Bánh Tiramisu ở Brodard làm rất chuẩn vị Ý-Pháp, thơm nồng mùi cà phê và rượu nhẹ, phô mai béo mịn tan ngay trong miệng.",
+    "sentiment": "positive",
+    "tags": [
+      "Brodard",
+      "Tiramisu"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-09"
+  },
+  {
+    "id": "rev-seor-01",
+    "venue_id": "hcm-q10-seor-bingsu",
+    "source": "tiktok",
+    "author_name": "Mê Đồ Ngọt Giải Nhiệt",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bingsu xoài phô mai ở đây một tô to đùng 2 người ăn không hết. Xoài ngọt lịm phô mai béo mặn hòa quyện với tuyết sữa phê chữ ê kéo dài!",
+    "sentiment": "positive",
+    "tags": [
+      "Seor Bingsu",
+      "Xoài Phô Mai"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-03"
+  },
+  {
+    "id": "rev-yijia-01",
+    "venue_id": "hcm-q10-yijia-dessert",
+    "source": "tiktok",
+    "author_name": "Thánh Ăn Vặt Chợ Lớn",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Trái dừa hấp tuyết yến bưng ra còn bốc khói nghi ngút thơm lừng mùi sữa tươi dừa non. Ăn thanh mát ngọt dịu cực kỳ dưỡng da!",
+    "sentiment": "positive",
+    "tags": [
+      "Dừa Tuyết Yến",
+      "Yi Jia"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-01"
+  },
+  {
+    "id": "rev-yp-01",
+    "venue_id": "hcm-q10-che-thai-y-phuong",
+    "source": "tiktok",
+    "author_name": "Sài Gòn Món Ngọt",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Chè Thái ở Ý Phương thì đẳng cấp khỏi bàn! Múc muỗng chè ngập sầu riêng béo ngậy hòa cùng thạch giòn sần sật ăn đã cái nư!",
+    "sentiment": "positive",
+    "tags": [
+      "Chè Thái",
+      "Ý Phương"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-02"
+  },
+  {
+    "id": "rev-bb-01",
+    "venue_id": "hcm-q10-bo-bong-benh",
+    "source": "tiktok",
+    "author_name": "Hội Mê Bánh Bento",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh bento ở đây trang trí xinh xỉu! Cốt bánh mềm ẩm, kem cheese thơm nồng béo béo chua nhẹ ăn một hơi hết cả hộp bánh!",
+    "sentiment": "positive",
+    "tags": [
+      "Bento Cake",
+      "Bơ Bồng Bềnh"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-04"
+  },
+  {
+    "id": "rev-mf-01",
+    "venue_id": "hcm-q10-meet-fresh",
+    "source": "google",
+    "author_name": "Lâm Bội Nghi (Local Guide L7)",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Khoai dẻo ở Meet Fresh là chuẩn vị nhất Sài Gòn. Thạch thảo mộc thơm mát trôi tuột xuống cổ họng, rưới thêm chút sữa tươi béo ngậy siêu ngon.",
+    "sentiment": "positive",
+    "tags": [
+      "Meet Fresh",
+      "Khoai Dẻo"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-15"
+  },
+  {
+    "id": "rev-kl-01",
+    "venue_id": "hcm-q10-tiem-banh-kim-loan",
+    "source": "facebook",
+    "author_name": "Hội Ghiền Bông Lan Trứng Muối",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Bông lan trứng muối Kim Loan lúc nào cũng đẫm sốt bơ vàng ươm, trứng muối dẻo bùi không bị tanh, chà bông xốp mềm ngon tuyệt.",
+    "sentiment": "positive",
+    "tags": [
+      "Kim Loan",
+      "Bông Lan Trứng Muối"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-14"
+  },
+  {
+    "id": "rev-dome-01",
+    "venue_id": "hcm-q10-the-dome-kissa",
+    "source": "tiktok",
+    "author_name": "Cà Phê & Sách Sài Gòn",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Một góc trú ẩn bình yên giữa lòng Quận 10. Bánh crepe than tre ngọt thanh nhẹ nhàng, nhâm nhi tách trà ấm nghe nhạc jazz thư thái vô cùng.",
+    "sentiment": "positive",
+    "tags": [
+      "Trà Bánh",
+      "The Dome Kissa"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-02"
+  },
+  {
+    "id": "rev-cmkv-01",
+    "venue_id": "hcm-q10-che-mam-khanh-vy",
+    "source": "tiktok",
+    "author_name": "Ăn Vặt Sinh Viên Sài Gòn",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Rủ hội bạn đi ăn chè mâm 16 chén ở Sư Vạn Hạnh là vui banh nóc! Nước cốt dừa béo ngậy chan ngập chén chè đậu trắng, ăn no căng bụng!",
+    "sentiment": "positive",
+    "tags": [
+      "Chè Mâm",
+      "Khánh Vy Q10"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-02-28"
+  },
+  {
+    "id": "rev-cc-01",
+    "venue_id": "hcm-q10-cheese-coffee-suvanhanh",
+    "source": "tiktok",
+    "author_name": "Cà Phê Bánh Ngọt Sài Gòn",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Miếng Basque Cheesecake ở Cheese Coffee béo ngậy mượt mà, viền nướng cháy thơm phức mùi caramel. Uống cùng ly trà cam quế là tròn vị!",
+    "sentiment": "positive",
+    "tags": [
+      "Basque Cheesecake",
+      "Cheese Coffee"
+    ],
+    "likes_count": 0,
+    "review_date": "2026-03-01"
+  },
+  {
+    "id": "rev-q10-phela-1",
+    "venue_id": "hcm-q10-cafe-phela-truongson",
+    "source": "tiktok",
+    "author_name": "Trang Hí Tea Lover",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Ô long sữa chảo ở đây vị trà thơm nức mũi, lớp trân châu ô long dẻo dai nhai sướng miệng cực kỳ. Chi nhánh Cư Xá Bắc Hải ngồi siêu thoáng!",
+    "sentiment": "positive",
+    "tags": [
+      "o-long-sua-chao",
+      "tra-dam-vi",
+      "cu-xa-bac-hai"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q10-phela-ltk-1",
+    "venue_id": "hcm-q10-cafe-phela-lythuongkiet",
+    "source": "google",
+    "author_name": "Minh Quân Local Guide",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Chi nhánh này không gian rộng rãi hơn bên Bắc Hải, máy lạnh mát rượi. Trà Gấm thơm ngát hoa nhài, kem sữa béo mặn vừa phải.",
+    "sentiment": "positive",
+    "tags": [
+      "tra-gam",
+      "khong-gian-dep",
+      "ly-thuong-kiet"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q10-phuclong-1",
+    "venue_id": "hcm-q10-cafe-phuclong-suvanhanh",
+    "source": "foody",
+    "author_name": "Linh Đan Foodie",
+    "author_avatar": null,
+    "rating": 4.7,
+    "content": "Trà sữa Phúc Long ở Sư Vạn Hạnh luôn giữ đúng phong độ: vị trà đậm gắt đặc trưng, uống xong tỉnh cả người. Miếng đào giòn ngọt thơm!",
+    "sentiment": "positive",
+    "tags": [
+      "tra-dao",
+      "tra-sua-phuc-long",
+      "su-van-hanh"
+    ],
+    "likes_count": 0,
+    "review_date": "5 ngày trước"
+  },
+  {
+    "id": "rev-q10-koithe-1",
+    "venue_id": "hcm-q10-cafe-koithe-suvanhanh",
+    "source": "tiktok",
+    "author_name": "Vy Boba Check",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Trân châu hoàng kim nhỏ xíu nhai dai mềm thần thánh! Lục trà Macchiato rạch nắp uống một ngụm là dính ngay vệt râu trắng kinh điển.",
+    "sentiment": "positive",
+    "tags": [
+      "macchiato",
+      "tran-chau-hoang-kim",
+      "koi-the"
+    ],
+    "likes_count": 0,
+    "review_date": "Gần đây"
+  },
+  {
+    "id": "rev-q10-katinat-ntp-1",
+    "venue_id": "hcm-q10-cafe-katinat-nguyentriphuong",
+    "source": "google",
+    "author_name": "Phương Thảo Review",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Món Bơ già dừa non ở Katinat Nguyễn Tri Phương đỉnh chóp, bơ sánh béo kết hợp dừa sần sật. View kính nhìn xuống đường phố buổi tối siêu chill!",
+    "sentiment": "positive",
+    "tags": [
+      "bo-gia-dua-non",
+      "song-ao",
+      "katinat"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q10-katinat-ct-1",
+    "venue_id": "hcm-q10-cafe-katinat-caothang",
+    "source": "foody",
+    "author_name": "Duy Khánh Photographer",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Chi nhánh Cao Thắng này có ánh sáng tự nhiên chụp ảnh góc nào cũng ra thần thái. Trà ô long dâu thơm ngát, vị chua ngọt dễ chịu.",
+    "sentiment": "positive",
+    "tags": [
+      "check-in-dep",
+      "tra-dau",
+      "cao-thang"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q10-chidori-1",
+    "venue_id": "hcm-q10-cafe-chidori-suvanhanh",
+    "source": "tiktok",
+    "author_name": "An Yên Vibe",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Không gian cứu rỗi những ngày mệt mỏi! Giường nệm thơm tho sạch sẽ, rèm che kín đáo, vừa nhâm nhi matcha kem vừa ngả lưng chợp mắt cực thích.",
+    "sentiment": "positive",
+    "tags": [
+      "yen-tinh",
+      "giuong-nam",
+      "chidori"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q10-threeoclock-1",
+    "venue_id": "hcm-q10-cafe-threeoclock-cmt8",
+    "source": "google",
+    "author_name": "Sinh Viên Bách Khoa",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Quán ruột mùa thi cử! Mở 24/7, wifi vèo vèo, bàn ghế cao chuẩn công thái học ngồi lâu không đau lưng, trà cam quế uống đêm ấm bụng vô cùng.",
+    "sentiment": "positive",
+    "tags": [
+      "24-7",
+      "o-cam-day-du",
+      "chay-deadline"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q10-winnies-1",
+    "venue_id": "hcm-q10-cafe-winnies-suvanhanh",
+    "source": "tiktok",
+    "author_name": "Bé Mèo Sống Ảo",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Ly trà sữa quả trứng siêu to khổng lồ mang về làm bình nước cưng xỉu! Trà sữa thơm mùi sữa tươi thanh, trân châu mềm dẻo nhai rất thích.",
+    "sentiment": "positive",
+    "tags": [
+      "tra-sua-qua-trung",
+      "pastel",
+      "song-ao"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q10-thealley-1",
+    "venue_id": "hcm-q10-cafe-thealley-3thang2",
+    "source": "foody",
+    "author_name": "Nguyễn Hải Đăng",
+    "author_avatar": null,
+    "rating": 4.7,
+    "content": "Trân châu đường đen Deerioca ở đây chuẩn không cần chỉnh: đáy ly ấm nóng, trân châu ngọt đậm thơm mật mía quyện với sữa tươi thanh trùng béo ngậy.",
+    "sentiment": "positive",
+    "tags": [
+      "duong-den",
+      "deerioca",
+      "the-alley"
+    ],
+    "likes_count": 0,
+    "review_date": "2 tuần trước"
+  },
+  {
+    "id": "rev-q10-bobapop-1",
+    "venue_id": "hcm-q10-cafe-bobapop-suvanhanh",
+    "source": "google",
+    "author_name": "Thanh Trúc Student",
+    "author_avatar": null,
+    "rating": 4.6,
+    "content": "Quán trà sữa tuổi thơ luôn! Trà gạo rang thơm lừng, lớp sủi bọt mặn mà béo ngậy. Giá cả siêu mềm cho sinh viên.",
+    "sentiment": "positive",
+    "tags": [
+      "gia-re",
+      "tra-gao-rang",
+      "bobapop"
+    ],
+    "likes_count": 0,
+    "review_date": "5 ngày trước"
+  },
+  {
+    "id": "rev-q10-ticos-1",
+    "venue_id": "hcm-q10-cafe-ticos-suvanhanh",
+    "source": "tiktok",
+    "author_name": "GenZ Workaholic",
+    "author_avatar": null,
+    "rating": 4.9,
+    "content": "Ticos Sư Vạn Hạnh 4 tầng lầu cực rộng, bàn dài có ổ cắm từng ghế. Bạc xỉu kem trứng ở đây béo ngọt thơm ngậy đỉnh của chóp!",
+    "sentiment": "positive",
+    "tags": [
+      "24-7",
+      "bac-xiu-kem-trung",
+      "ticos"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q10-cuxa-1",
+    "venue_id": "hcm-q10-cafe-cuxa-trabanh",
+    "source": "google",
+    "author_name": "Hoàng Yến Chill",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Một góc bình yên hiếm có giữa lòng Quận 10. Trà cúc thơm dịu ngọt thanh, nghe tiếng lá xào xạc và nhạc Trịnh du dương làm tan biến hết stress.",
+    "sentiment": "positive",
+    "tags": [
+      "binh-yen",
+      "cu-xa-bac-hai",
+      "tra-cuc"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q10-hebe-1",
+    "venue_id": "hcm-q10-cafe-hebe-tea",
+    "source": "foody",
+    "author_name": "Mai Phương",
+    "author_avatar": null,
+    "rating": 4.7,
+    "content": "Trà sữa Alisan ở Hebe có vị thơm rất sang, không bị ngọt khé cổ. Lớp phô mai tươi dẻo béo ngậy mặn mặn cực kỳ cuốn.",
+    "sentiment": "positive",
+    "tags": [
+      "alisan",
+      "pho-mai-tuoi",
+      "hebe-tea"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q10-lavida-1",
+    "venue_id": "hcm-q10-cafe-lavida-suvanhanh",
+    "source": "google",
+    "author_name": "Đức Trí",
+    "author_avatar": null,
+    "rating": 4.5,
+    "content": "Lớp phô mai macchiato dày cui béo ngậy uống cực đã. Giá cả bình dân, nhân viên pha chế nhanh nhẹn.",
+    "sentiment": "positive",
+    "tags": [
+      "kem-cheese",
+      "phuc-vu-nhanh",
+      "su-van-hanh"
+    ],
+    "likes_count": 0,
+    "review_date": "2 tuần trước"
+  },
+  {
+    "id": "rev-q10-vanhanhmall-1",
+    "venue_id": "hcm-q10-mall-van-hanh",
+    "source": "google",
+    "author_name": "Hoàng Bách Local Guide",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "TTTM đỉnh nhất Quận 10 không bàn cãi! Đủ mọi thứ từ thời trang Uniqlo, siêu thị Co.opXtra đến tầng ẩm thực bạt ngàn món ngon lẩu nướng trà sữa.",
+    "sentiment": "positive",
+    "tags": [
+      "van-hanh-mall",
+      "all-in-one",
+      "cgv"
+    ],
+    "likes_count": 0,
+    "review_date": "1 ngày trước"
+  },
+  {
+    "id": "rev-q10-vanhanhmall-2",
+    "venue_id": "hcm-q10-mall-van-hanh",
+    "source": "tiktok",
+    "author_name": "Sài Gòn Đi Đâu",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Cuối tuần rủ nhóm bạn đến Vạn Hạnh Mall là chuẩn bài nhất. Gửi xe hầm rộng, máy lạnh mát rượi, ăn trưa xong lên tầng 6 xem phim CGV.",
+    "sentiment": "positive",
+    "tags": [
+      "giai-tri",
+      "hen-ho",
+      "xem-phim"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q10-vincom32-1",
+    "venue_id": "hcm-q10-mall-vincom-3thang2",
+    "source": "google",
+    "author_name": "Lê Minh Tuấn",
+    "author_avatar": null,
+    "rating": 4.6,
+    "content": "Vincom 3 Tháng 2 nay được tân trang lại rất đẹp và sáng sủa. Rạp BHD màn hình xịn, âm thanh sống động, bắp rang bơ ngon.",
+    "sentiment": "positive",
+    "tags": [
+      "vincom",
+      "bhd-star",
+      "3-thang-2"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q10-satramart-1",
+    "venue_id": "hcm-q10-mall-satramart-saigon",
+    "source": "google",
+    "author_name": "Cô Ba Quận 10",
+    "author_avatar": null,
+    "rating": 4.6,
+    "content": "Siêu thị Sài Gòn gắn bó mấy chục năm nay. Ngay góc đường Thành Thái - 3/2 cực kỳ thuận tiện, bãi xe máy rộng thênh thang, hàng hóa dồi dào tươi ngon.",
+    "sentiment": "positive",
+    "tags": [
+      "satramart",
+      "sieu-thi-sai-gon",
+      "thuan-tien"
+    ],
+    "likes_count": 0,
+    "review_date": "2 tuần trước"
+  },
+  {
+    "id": "rev-q10-coopphutho-1",
+    "venue_id": "hcm-q10-mall-coopmart-phutho",
+    "source": "google",
+    "author_name": "Đặng Văn Lâm",
+    "author_avatar": null,
+    "rating": 4.5,
+    "content": "Siêu thị Co.opmart quen thuộc ở khu Lữ Gia - Bắc Hải. Rộng rãi, sạch sẽ, nhân viên niềm nở, có quầy đồ ăn làm sẵn rất tiện.",
+    "sentiment": "positive",
+    "tags": [
+      "coopmart",
+      "phu-tho",
+      "tien-loi"
+    ],
+    "likes_count": 0,
+    "review_date": "3 tuần trước"
+  },
+  {
+    "id": "rev-q10-viettel-1",
+    "venue_id": "hcm-q10-mall-viettel-complex",
+    "source": "google",
+    "author_name": "Trần Anh Vũ",
+    "author_avatar": null,
+    "rating": 4.7,
+    "content": "Tòa nhà Viettel Complex ngay gần vòng xoay Dân Chủ, sảnh trệt có nhiều quán cà phê đẹp và yên tĩnh. Hầm xe thông thoáng, an ninh chuyên nghiệp.",
+    "sentiment": "positive",
+    "tags": [
+      "sang-trong",
+      "viettel-complex",
+      "cmt8"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q10-tnl-32-1",
+    "venue_id": "hcm-q10-cafe-trung-nguyen-3thang2",
+    "source": "google",
+    "author_name": "Đặng Lê Coffee Guide",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Chi nhánh Trung Nguyên Legend 219 Ba Tháng Hai là một trong những quán cà phê yên tĩnh nhất Q10. Tầng lầu nhìn xuống tán cây xanh mát, cà phê phin số 8 đậm thơm đúng chất!",
+    "sentiment": "positive",
+    "tags": [
+      "trung-nguyen",
+      "yen-tinh",
+      "view-dep"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q10-tnl-svh-1",
+    "venue_id": "hcm-q10-cafe-trung-nguyen-suvanhanh",
+    "source": "foody",
+    "author_name": "Khánh Linh",
+    "author_avatar": null,
+    "rating": 4.8,
+    "content": "Quán Trung Nguyên rộng rãi trên đường Sư Vạn Hạnh, kính lớn view đẹp nhìn ra đường phố. Cà phê sữa đá thơm béo chuẩn vị, menu đồ uống rất đầy đủ.",
+    "sentiment": "positive",
+    "tags": [
+      "trung-nguyen",
+      "su-van-hanh",
+      "full-menu"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q10-tnl-cmt8-1",
+    "venue_id": "hcm-q10-cafe-trung-nguyen-cmt8",
+    "source": "google",
+    "author_name": "Nguyễn Văn Hùng",
+    "author_avatar": null,
+    "rating": 4.7,
+    "content": "Quán nằm ngay đoạn CMT8 gần Cư Xá Bắc Hải, không gian rất yên tĩnh, view tầng lầu nhìn ra phố rất thoáng. Nhân viên lịch sự.",
+    "sentiment": "positive",
+    "tags": [
+      "trung-nguyen",
+      "cmt8",
+      "yen-tinh"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q3-tnl-nkkn-1",
+    "venue_id": "hcm-q3-cafe-trung-nguyen-nam-ky-khoi-nghia",
+    "source": "google",
+    "author_name": "Trần Bảo Long VIP",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Biệt thự cà phê Trung Nguyên đẹp nhất Sài Gòn! Không gian sân vườn cây xanh rợp bóng, có hồ nước róc rách cực kỳ peaceful, view đẹp mê hồn và full menu từ cà phê đến món ăn.",
+    "sentiment": "positive",
+    "tags": [
+      "trung-nguyen",
+      "top-1",
+      "view-dep",
+      "peaceful"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q1-taka-1",
+    "venue_id": "hcm-q1-mall-saigon-centre-takashimaya",
+    "source": "google",
+    "author_name": "Minh Thư Foodie",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Tầng B2 Takashimaya là thiên đường bánh ngọt và trà sữa ở Sài Gòn, tiệm nào cũng ngon chuẩn vị Nhật, giữ xe dưới hầm rất an ninh.",
+    "sentiment": "positive",
+    "tags": [
+      "takashimaya",
+      "banh-ngot",
+      "quan-1"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q1-vincom-1",
+    "venue_id": "hcm-q1-mall-vincom-dong-khoi",
+    "source": "google",
+    "author_name": "Hoàng Long",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Tầng B3 Vincom ngập tràn quán trà sữa và đồ tráng miệng, không gian mát mẻ tụ tập bạn bè trung tâm Quận 1 cực tiện.",
+    "sentiment": "positive",
+    "tags": [
+      "vincom",
+      "dong-khoi"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q1-marou-1",
+    "venue_id": "hcm-q1-sweet-maison-marou-calmette",
+    "source": "tiktok",
+    "author_name": "An Nhiên Sweet",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh chocolate ở Maison Marou ngon đỉnh chóp, vị đắng thanh không ngọt gắt, ngồi ngắm thợ làm bánh thơm lừng mùi cacao!",
+    "sentiment": "positive",
+    "tags": [
+      "chocolate",
+      "tart",
+      "calmette"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q1-bakes-1",
+    "venue_id": "hcm-q1-sweet-bakes-saigon",
+    "source": "instagram",
+    "author_name": "Thảo My Pastry",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh Canelé ở Bakes vỏ giòn caramel mà bên trong ẩm mềm ngon nhất Sài Gòn, trà trái cây thanh nhẹ cực hợp ăn kèm.",
+    "sentiment": "positive",
+    "tags": [
+      "canele",
+      "croissant",
+      "french-pastry"
+    ],
+    "likes_count": 0,
+    "review_date": "Hôm qua"
+  },
+  {
+    "id": "rev-q1-morico-1",
+    "venue_id": "hcm-q1-sweet-morico-le-loi",
+    "source": "tiktok",
+    "author_name": "Matcha Holic",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Matcha ở Morico chuẩn bột Uji nhập khẩu, vị đắng dịu hậu ngọt thơm bùi, ly parfait ăn kèm bánh dẻo mochi quá đã.",
+    "sentiment": "positive",
+    "tags": [
+      "matcha",
+      "parfait",
+      "uji-tea"
+    ],
+    "likes_count": 0,
+    "review_date": "5 ngày trước"
+  },
+  {
+    "id": "rev-q1-tlj-1",
+    "venue_id": "hcm-q1-sweet-tous-les-jours-hai-ba-trung",
+    "source": "google",
+    "author_name": "Đức Thịnh",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh bắp ở Tous Les Jours là chân ái, kem nhẹ thanh không ngấy, hạt bắp tươi giòn ngọt tự nhiên.",
+    "sentiment": "positive",
+    "tags": [
+      "banh-bap",
+      "tous-les-jours"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q1-workshop-1",
+    "venue_id": "hcm-q1-cafe-the-workshop-coffee",
+    "source": "google",
+    "author_name": "Phạm Tấn",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Quán cà phê specialty đầu tiên và chất lượng nhất nhì Sài Gòn, không gian tầng 2 thoáng đãng, pha Pour Over cực kỳ điệu nghệ.",
+    "sentiment": "positive",
+    "tags": [
+      "specialty-coffee",
+      "pour-over"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q1-cheese-1",
+    "venue_id": "hcm-q1-cafe-cheese-coffee-cong-quynh",
+    "source": "tiktok",
+    "author_name": "Hải Yến",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Trà cam quế ở Cheese Cống Quỳnh đậm đà thơm ấm, quán decor tông đen vàng sang xịn mịn chụp góc nào cũng đẹp.",
+    "sentiment": "positive",
+    "tags": [
+      "cheese-coffee",
+      "tra-cam-que"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q1-phela-1",
+    "venue_id": "hcm-q1-cafe-phe-la-le-thi-rieng",
+    "source": "tiktok",
+    "author_name": "Bảo Châu",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Trà Phê La Lê Thị Riêng đậm vị trà Mộc Châu chính hiệu, trân châu dẻo thơm, chi nhánh ngay trung tâm đi đâu cũng tiện.",
+    "sentiment": "positive",
+    "tags": [
+      "phe-la",
+      "o-long-sua-chao"
+    ],
+    "likes_count": 0,
+    "review_date": "5 ngày trước"
+  },
+  {
+    "id": "rev-q1-phuclong-1",
+    "venue_id": "hcm-q1-cafe-phuc-long-ngo-duc-ke",
+    "source": "google",
+    "author_name": "Khánh Linh",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Trà sữa Phúc Long ở đây vị trà đậm đà chuẩn chỉ, vị trí ngay góc Ngô Đức Kế đi bộ ra sông Sài Gòn cực gần.",
+    "sentiment": "positive",
+    "tags": [
+      "phuc-long",
+      "tra-dao"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q1-trb-1",
+    "venue_id": "hcm-q1-cafe-the-running-bean",
+    "source": "instagram",
+    "author_name": "Lê Na",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Waffle ở Running Bean giòn rụm ăn kèm kem gelato ngọt thanh xuất sắc, quán đẹp yên tĩnh ngồi bàn bạc công việc rất thoải mái.",
+    "sentiment": "positive",
+    "tags": [
+      "waffle",
+      "gelato",
+      "running-bean"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q1-highlands-1",
+    "venue_id": "hcm-q1-cafe-highlands-ham-nghi",
+    "source": "google",
+    "author_name": "Tuấn Anh",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Không gian rộng nhất trong các chi nhánh Highlands ở Q1, đồ uống ra nhanh và bảo vệ dắt xe cực kỳ niềm nở.",
+    "sentiment": "positive",
+    "tags": [
+      "highlands",
+      "ham-nghi"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q1-lusine-1",
+    "venue_id": "hcm-q1-sweet-lusine-le-thanh-ton",
+    "source": "google",
+    "author_name": "Diệu My",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh Red Velvet ở L'Usine ngon chuẩn vị Mỹ, kem phô mai chua ngọt mịn màng, không gian yên tĩnh và nhiều cảm hứng.",
+    "sentiment": "positive",
+    "tags": [
+      "cupcake",
+      "red-velvet"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q3-romea-1",
+    "venue_id": "hcm-q3-mall-romea-shopping-center",
+    "source": "google",
+    "author_name": "Trần Quân",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "RomeA vị trí rất đẹp ở Quận 3, trung tâm thương mại vừa phải không ồn ào, có nhiều quán cafe và đồ tráng miệng ngon.",
+    "sentiment": "positive",
+    "tags": [
+      "romea",
+      "quan-3"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q3-oromia-1",
+    "venue_id": "hcm-q3-cafe-oromia-coffee-lounge",
+    "source": "tiktok",
+    "author_name": "Ngọc Mai Travel",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Quán sân vườn cá Koi đẹp bậc nhất Quận 3, bánh mousse chua ngọt mềm tan, không gian yên tĩnh dễ chịu vô cùng.",
+    "sentiment": "positive",
+    "tags": [
+      "oromia",
+      "san-vuon-ca-koi"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q3-laviet-1",
+    "venue_id": "hcm-q3-cafe-la-viet-coffee-ba-huyen",
+    "source": "google",
+    "author_name": "Lâm Phong",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Cà phê Là Việt chi nhánh Q3 không gian cực thoáng, hạt Arabica Đà Lạt rang thơm lừng, bàn làm việc có ổ điện đầy đủ.",
+    "sentiment": "positive",
+    "tags": [
+      "la-viet",
+      "specialty-coffee"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q3-chewy-1",
+    "venue_id": "hcm-q3-sweet-chewy-junior-cao-thang",
+    "source": "tiktok",
+    "author_name": "Phương Thảo",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh su kem Chewy Junior ăn từ bé đến giờ vẫn mê, vỏ dai dai nhân kem mát lạnh béo ngậy không hề ngấy xíu nào.",
+    "sentiment": "positive",
+    "tags": [
+      "su-kem",
+      "chewy-junior"
+    ],
+    "likes_count": 0,
+    "review_date": "5 ngày trước"
+  },
+  {
+    "id": "rev-q3-bingsu-1",
+    "venue_id": "hcm-q3-sweet-sul-bingsu-tu-xuong",
+    "source": "tiktok",
+    "author_name": "Bình Bingsu",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bingsu xoài ở đây đá bào sữa mịn tan ngay đầu lưỡi, xoài tươi ngọt lịm kèm viên kem phô mai béo ngậy ăn dính dã man.",
+    "sentiment": "positive",
+    "tags": [
+      "bingsu-xoai",
+      "kem-tuyet"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q3-givral-1",
+    "venue_id": "hcm-q3-sweet-givral-bakery-tran-quoc-toan",
+    "source": "google",
+    "author_name": "Hương Giang",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh bắp Givral thơm lừng mùi bơ sữa và ngọt tự nhiên, bánh su kem ăn tuổi thơ gắn liền bao thế hệ người Sài Gòn.",
+    "sentiment": "positive",
+    "tags": [
+      "givral",
+      "banh-bap"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q3-chidori-1",
+    "venue_id": "hcm-q3-cafe-chidori-coffee-in-bed",
+    "source": "tiktok",
+    "author_name": "Thanh Hằng",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Quán cà phê giường nằm cực kỳ yên tĩnh và sạch sẽ, có nệm và gối êm ru, nước uống Hojicha chuẩn vị Nhật thơm ngọt dịu.",
+    "sentiment": "positive",
+    "tags": [
+      "chidori",
+      "coffee-in-bed"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q3-koi-1",
+    "venue_id": "hcm-q3-cafe-koi-the-cao-thang",
+    "source": "tiktok",
+    "author_name": "Trang Bùi",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Lục trà macchiato của KOI không bao giờ làm thất vọng, lớp kem béo mặn uống cùng trân châu hoàng kim dai giòn sướng miệng.",
+    "sentiment": "positive",
+    "tags": [
+      "koi-the",
+      "macchiato"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q3-brodard-1",
+    "venue_id": "hcm-q3-sweet-brodard-bakery-nguyen-dinh-chieu",
+    "source": "google",
+    "author_name": "Nguyễn Hải",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh Brodard kem tươi thanh nhẹ ăn bao nhiêu năm vẫn giữ nguyên hương vị tinh tế, nhân viên đóng gói rất cẩn thận.",
+    "sentiment": "positive",
+    "tags": [
+      "brodard",
+      "mousse"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q3-tch-1",
+    "venue_id": "hcm-q3-cafe-the-coffee-house-cao-thang",
+    "source": "google",
+    "author_name": "Đặng Quang",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Chi nhánh Cao Thắng này cực rộng rãi, bàn dài cho nhóm học tập có ổ điện khắp nơi, nhân viên vui vẻ thân thiện.",
+    "sentiment": "positive",
+    "tags": [
+      "the-coffee-house",
+      "hop-nhom"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q3-cohai-1",
+    "venue_id": "hcm-q3-sweet-tiem-banh-co-hai-ky-dong",
+    "source": "tiktok",
+    "author_name": "Lan Anh Foodie",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bông lan trứng muối sốt phô mai ở đây béo ngậy đẫm sốt, trứng muối bùi bùi dẻo quánh ăn miếng nào sướng miếng đó.",
+    "sentiment": "positive",
+    "tags": [
+      "bong-lan-trung-muoi",
+      "ky-dong"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q3-caztus-1",
+    "venue_id": "hcm-q3-cafe-caztus-ice-blended-vo-thi-sau",
+    "source": "google",
+    "author_name": "Nhật Huy",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Đá xay ở Caztus chất lượng xay cực mịn không bị dăm đá, kem whipping béo ngậy ngọt vừa phải, ngồi làm bài rất hợp.",
+    "sentiment": "positive",
+    "tags": [
+      "caztus",
+      "da-xay"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q3-openshare-1",
+    "venue_id": "hcm-q3-cafe-the-open-share-cafe",
+    "source": "google",
+    "author_name": "Thanh Trúc",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Quán nằm trong hẻm yên bình, bánh tart phô mai nướng thơm nức vỏ giòn tan, nhân viên phục vụ rất nhỏ nhẹ tinh tế.",
+    "sentiment": "positive",
+    "tags": [
+      "open-share",
+      "tart-pho-mai"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q5-hvp-1",
+    "venue_id": "hcm-q5-mall-hung-vuong-plaza",
+    "source": "google",
+    "author_name": "Trương Gia Hào",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Hùng Vương Plaza sau khi làm mới lại cực kỳ đẹp và nhiều quán ăn ngon, tầng ẩm thực có đủ các thương hiệu trà sữa và tráng miệng.",
+    "sentiment": "positive",
+    "tags": [
+      "hung-vuong-plaza",
+      "cho-lon"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q5-garden-1",
+    "venue_id": "hcm-q5-mall-the-garden-mall",
+    "source": "google",
+    "author_name": "Lý Nhã Kỳ",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "The Garden Mall không gian rất thoáng và mát, khu phố sách đẹp lung linh, tầng trệt có nhiều quán trà sữa và dimsum ngon.",
+    "sentiment": "positive",
+    "tags": [
+      "the-garden-mall",
+      "thuan-kieu"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q5-haky-1",
+    "venue_id": "hcm-q5-sweet-che-ha-ky",
+    "source": "tiktok",
+    "author_name": "Food in Saigon",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Chè Hà Ký là quán ruột của dân Chợ Lớn mấy chục năm nay, chè mè đen bùi ngậy quy linh cao thanh nhiệt ngọt dịu không đâu sánh bằng.",
+    "sentiment": "positive",
+    "tags": [
+      "che-ha-ky",
+      "che-hoa"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q5-nhaden-1",
+    "venue_id": "hcm-q5-sweet-che-cot-dien-nha-den",
+    "source": "tiktok",
+    "author_name": "Quang Khải",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Chè hột gà trà ở quán Nhà Đèn quả trứng ngấm trà đen tuyền thơm ngát, ăn nóng hổi trong đêm gió mát cực kỳ thỏa mãn.",
+    "sentiment": "positive",
+    "tags": [
+      "che-nha-den",
+      "che-hot-ga"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q5-tuongphong-1",
+    "venue_id": "hcm-q5-sweet-che-tuong-phong",
+    "source": "google",
+    "author_name": "Trần Mỹ Linh",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Đậu hũ hạnh nhân ở Tường Phong thơm nồng mùi hạnh nhân chuẩn vị Chợ Lớn, ăn lạnh cực kỳ mướt mát thanh giọng.",
+    "sentiment": "positive",
+    "tags": [
+      "dau-hu-hanh-nhan",
+      "tuong-phong"
+    ],
+    "likes_count": 0,
+    "review_date": "5 ngày trước"
+  },
+  {
+    "id": "rev-q5-dhv-1",
+    "venue_id": "hcm-q5-sweet-dong-hung-vien",
+    "source": "google",
+    "author_name": "Vương Kiến Quốc",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh pía Triều Châu của Đông Hưng Viên vỏ bánh ngàn lớp mềm mịn, nhân khoai môn trứng muối thơm bùi không bị ngọt khé cổ.",
+    "sentiment": "positive",
+    "tags": [
+      "dong-hung-vien",
+      "banh-pia"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q5-balu-1",
+    "venue_id": "hcm-q5-cafe-ba-lu-vot-phung-hung",
+    "source": "tiktok",
+    "author_name": "Sài Gòn Phố",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Cà phê vợt Ba Lù rang bằng củi nên có mùi khói thơm rất riêng, bạc xỉu béo ngọt chấm với bánh tiêu nóng hổi ăn sáng cực cuốn!",
+    "sentiment": "positive",
+    "tags": [
+      "ca-phe-vot",
+      "ba-lu"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q5-cheewawa-1",
+    "venue_id": "hcm-q5-cafe-cheewawa-nguyen-tri-phuong",
+    "source": "tiktok",
+    "author_name": "Hồng Phúc",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Trà sữa khoai môn ở Cheewawa có viên khoai dẻo nhai bùi béo thích mê, giá cả rất vừa túi tiền sinh viên.",
+    "sentiment": "positive",
+    "tags": [
+      "cheewawa",
+      "tra-sua"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q5-alley-1",
+    "venue_id": "hcm-q5-cafe-the-alley-hai-thuong-lan-ong",
+    "source": "google",
+    "author_name": "Văn Thuận",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Trân châu đường đen ở The Alley lúc nào cũng ấm nóng dẻo quánh, sữa tươi Meiji thanh mát lắc đều uống thơm lừng.",
+    "sentiment": "positive",
+    "tags": [
+      "the-alley",
+      "tran-chau-duong-den"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q5-tart-1",
+    "venue_id": "hcm-q5-sweet-tai-yang-king-tart",
+    "source": "tiktok",
+    "author_name": "Mỹ Uyên",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh tart trứng ở Tai Yang King đỉnh cao thật sự, vỏ bánh giòn tan từng lớp mà nhân trứng béo ngậy mềm mịn như tan trong miệng.",
+    "sentiment": "positive",
+    "tags": [
+      "tart-trung",
+      "tai-yang-king"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q5-nhulan-1",
+    "venue_id": "hcm-q5-sweet-nhu-lan-hai-thuong",
+    "source": "google",
+    "author_name": "Đỗ Minh",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh bông lan và bánh su kem Như Lan chi nhánh Chợ Lớn lúc nào cũng mới tinh, ăn béo thơm mùi bơ truyền thống.",
+    "sentiment": "positive",
+    "tags": [
+      "nhu-lan",
+      "banh-ngot"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q5-cheese-1",
+    "venue_id": "hcm-q5-cafe-cheese-coffee-su-van-hanh",
+    "source": "tiktok",
+    "author_name": "Thanh Trúc",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Cheese chi nhánh Q5 nằm ngay góc đường lớn cực dễ tìm, trà cam quế đậm đà bánh mousse socola ăn rất ưng ý.",
+    "sentiment": "positive",
+    "tags": [
+      "cheese-coffee",
+      "tra-cam-que"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q7-crescent-1",
+    "venue_id": "hcm-q7-mall-crescent-mall",
+    "source": "google",
+    "author_name": "Lê Minh Tuấn",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Crescent Mall là TTTM đẹp nhất Sài Gòn, nhiều tiệm bánh ngọt và quán cafe view hồ Bán Nguyệt cực chill, gửi xe thoải mái.",
+    "sentiment": "positive",
+    "tags": [
+      "crescent-mall",
+      "ho-ban-nguyet"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q7-vivocity-1",
+    "venue_id": "hcm-q7-mall-sc-vivocity",
+    "source": "google",
+    "author_name": "Ngọc Bích",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "VivoCity có đầy đủ các thương hiệu trà sữa và tráng miệng, không gian mát rượi sạch sẽ và bãi đậu xe ô tô xe máy rất tiện lợi.",
+    "sentiment": "positive",
+    "tags": [
+      "vivocity",
+      "quan-7"
+    ],
+    "likes_count": 0,
+    "review_date": "5 ngày trước"
+  },
+  {
+    "id": "rev-q7-pb-1",
+    "venue_id": "hcm-q7-sweet-paris-baguette-grand-view",
+    "source": "tiktok",
+    "author_name": "Thu Trang PMH",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh kem dâu tươi ở Paris Baguette Grand View kem thanh mát không ngấy, ngồi vỉa hè ngắm cây xanh Phú Mỹ Hưng cực kỳ thư thái.",
+    "sentiment": "positive",
+    "tags": [
+      "paris-baguette",
+      "phu-my-hung"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q7-artisan-1",
+    "venue_id": "hcm-q7-sweet-artisan-bakery-ha-huy-tap",
+    "source": "google",
+    "author_name": "Kim Min Soo",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh mì mè đen ở Artisan dai thơm chuẩn vị quê nhà Hàn Quốc, tiệm bánh sạch sẽ và nhân viên luôn thân thiện.",
+    "sentiment": "positive",
+    "tags": [
+      "artisan-bakery",
+      "banh-me-den"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q7-morico-1",
+    "venue_id": "hcm-q7-sweet-morico-crescent-mall",
+    "source": "google",
+    "author_name": "Thanh Trâm",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Matcha ở Morico Crescent Mall giữ vững phong độ đỉnh cao, không gian yên tĩnh và mát mẻ nghỉ chân rất lý tưởng.",
+    "sentiment": "positive",
+    "tags": [
+      "morico",
+      "matcha-parfait"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q7-sulbing-1",
+    "venue_id": "hcm-q7-sweet-sulbing-nguyen-thi-thap",
+    "source": "tiktok",
+    "author_name": "Gia Bảo",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bingsu dưa lưới ở đây nửa quả dưa đầy ắp từng viên tròn mọng nước, kem tuyết sữa béo ngậy ăn mùa nóng là hết bài.",
+    "sentiment": "positive",
+    "tags": [
+      "bingsu",
+      "dua-luoi"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q7-ollin-1",
+    "venue_id": "hcm-q7-cafe-ollin-cafe-nguyen-thi-thap",
+    "source": "google",
+    "author_name": "Minh Đăng",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Ollin Cafe Quận 7 bãi đậu ô tô xe máy thoải mái nhất khu vực, quán trần cao thoáng đãng đồ uống và bánh ngọt đều rất ngon.",
+    "sentiment": "positive",
+    "tags": [
+      "ollin-cafe",
+      "nha-kinh"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q7-gongcha-1",
+    "venue_id": "hcm-q7-cafe-gong-cha-nguyen-thi-thap",
+    "source": "tiktok",
+    "author_name": "Khánh Huyền",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Milk foam Alisan của Gong Cha bao năm nay vẫn là số 1, lớp kem sánh mịn thơm lừng uống cùng trân châu trắng dai sần sật.",
+    "sentiment": "positive",
+    "tags": [
+      "gong-cha",
+      "milk-foam"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  },
+  {
+    "id": "rev-q7-sb-1",
+    "venue_id": "hcm-q7-cafe-starbucks-panorama-pmh",
+    "source": "google",
+    "author_name": "Daniel Nguyen",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Starbucks Panorama có view công viên xanh ngắt cực kỳ yên tĩnh, nhân viên pha chế đúng chuẩn và bãi đỗ xe rất thoáng.",
+    "sentiment": "positive",
+    "tags": [
+      "starbucks",
+      "panorama"
+    ],
+    "likes_count": 0,
+    "review_date": "4 ngày trước"
+  },
+  {
+    "id": "rev-q7-phela-1",
+    "venue_id": "hcm-q7-cafe-phe-la-nguyen-thi-thap",
+    "source": "tiktok",
+    "author_name": "Thảo Vy",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Phê La Nguyễn Thị Thập không gian 2 tầng ngồi cực đã, trà sữa đậm đà mùi khói Mộc Châu, nhân viên nhiệt tình.",
+    "sentiment": "positive",
+    "tags": [
+      "phe-la",
+      "nguyen-thi-thap"
+    ],
+    "likes_count": 0,
+    "review_date": "2 ngày trước"
+  },
+  {
+    "id": "rev-q7-tlj-1",
+    "venue_id": "hcm-q7-sweet-tous-les-jours-sky-garden",
+    "source": "google",
+    "author_name": "Park Ji Hoon",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Bánh ở chi nhánh Sky Garden lúc nào cũng tươi mới và ngon, vị kem bắp ngọt nhẹ béo ngậy đúng khẩu vị yêu thích.",
+    "sentiment": "positive",
+    "tags": [
+      "tous-les-jours",
+      "sky-garden"
+    ],
+    "likes_count": 0,
+    "review_date": "3 ngày trước"
+  },
+  {
+    "id": "rev-q7-tch-1",
+    "venue_id": "hcm-q7-cafe-the-coffee-house-nguyen-thi-thap",
+    "source": "google",
+    "author_name": "Đức Trí",
+    "author_avatar": null,
+    "rating": 5,
+    "content": "Quán rộng rãi máy lạnh chạy tốt, nước uống pha đều tay, nhân viên giữ xe lẫn pha chế đều rất lịch sự.",
+    "sentiment": "positive",
+    "tags": [
+      "the-coffee-house",
+      "nguyen-thi-thap"
+    ],
+    "likes_count": 0,
+    "review_date": "1 tuần trước"
+  }
+]

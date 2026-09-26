@@ -11,6 +11,30 @@ const { dbType } = require('../repositories/db-client');
 
 const CODE_CHARSET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
+function generateShareToken() {
+    const rawToken = crypto.randomBytes(24).toString('base64url');
+    const tokenHash = hashShareToken(rawToken);
+    return { rawToken, tokenHash };
+}
+
+function hashShareToken(token) {
+    if (!token) return '';
+    return crypto.createHash('sha256').update(String(token)).digest('hex');
+}
+
+function verifyShareToken(providedToken, storedHash) {
+    if (!providedToken || !storedHash) return false;
+    const providedHash = hashShareToken(providedToken);
+    try {
+        const bufA = Buffer.from(providedHash, 'hex');
+        const bufB = Buffer.from(storedHash, 'hex');
+        if (bufA.length !== bufB.length) return false;
+        return crypto.timingSafeEqual(bufA, bufB);
+    } catch (_) {
+        return false;
+    }
+}
+
 async function generateUniqueOutingId() {
     for (let attempt = 0; attempt < 5; attempt++) {
         const bytes = crypto.randomBytes(6);
@@ -29,16 +53,19 @@ async function generateUniqueOutingId() {
 
 async function createOuting({ name = 'Weekend Hangout', mode = 'representative', centerLat = 10.7769, centerLng = 106.7009, radiusKm = 3.0 }) {
     const outingId = await generateUniqueOutingId();
+    const { rawToken, tokenHash } = generateShareToken();
     await outingRepository.saveOuting({
         id: outingId,
         name,
         mode,
         centerLat,
         centerLng,
-        radiusKm
+        radiusKm,
+        shareTokenHash: tokenHash
     });
     return {
         id: outingId,
+        shareToken: rawToken,
         name,
         mode,
         status: 'active',
@@ -62,7 +89,7 @@ async function getVotesForOuting(outingId) {
     };
 }
 
-function generateShareText({ venue, friends = [], groupScore, outingCode = 'EAT-2026', host = 'gathermap.onrender.com', protocol = 'https' }) {
+function generateShareText({ venue, friends = [], groupScore, outingCode = 'EAT-2026', shareToken = '', host = 'gathermap.onrender.com', protocol = 'https' }) {
     if (!venue) {
         throw new Error('Venue data required');
     }
@@ -78,7 +105,8 @@ function generateShareText({ venue, friends = [], groupScore, outingCode = 'EAT-
         : (venue.category || 'Món ngon bản địa');
 
     const mapsUrl = buildDirectionsUrl(venue);
-    const appUrl = `${protocol}://${host}/?outing=${outingCode}`;
+    const tokenParam = shareToken ? `&token=${encodeURIComponent(shareToken)}` : '';
+    const appUrl = `${protocol}://${host}/?outing=${encodeURIComponent(outingCode)}${tokenParam}`;
 
     const message = [
         '🎉 KÈO ĂN UỐNG ĐÃ CHỐT BẰNG GATHERMAP!',
@@ -108,10 +136,18 @@ function generateShareText({ venue, friends = [], groupScore, outingCode = 'EAT-
     };
 }
 
+async function updateOutingSettings(outingId, updates) {
+    return await outingRepository.updateOutingSettings(outingId, updates);
+}
+
 module.exports = {
     generateUniqueOutingId,
+    generateShareToken,
+    hashShareToken,
+    verifyShareToken,
     createOuting,
     getOutingById,
+    updateOutingSettings,
     castVote,
     getVotesForOuting,
     generateShareText

@@ -6,6 +6,10 @@ window.createInitialState = function() {
     // 1. Resolve Outing ID from URL or default
     const urlParams = new URLSearchParams(window.location.search);
     const urlOutingCode = urlParams.get('outing');
+    const urlShareToken = urlParams.get('token');
+    if (urlShareToken) {
+        window._currentShareToken = urlShareToken;
+    }
     
     // 2. Resolve or generate persistent Voter ID & Name
     let voterId = '';
@@ -27,6 +31,7 @@ window.createInitialState = function() {
     return {
         // Session / Outing identifiers
         outingCode: urlOutingCode || '',
+        shareToken: urlShareToken || '',
         sessionLoaded: false,
         voterId: voterId,
         voterName: voterName,
@@ -44,6 +49,8 @@ window.createInitialState = function() {
         locating: false,
         searchingCenter: false,
         votedVenueId: null,
+        votesMap: {},
+        votesList: [],
         emptyStateReason: null, // null | 'no_data' | 'filter_empty' | 'hard_constraint_filtered' | 'api_error'
 
         // Modals & Panels
