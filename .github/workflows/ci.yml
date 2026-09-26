@@ -72,10 +72,14 @@ jobs:
           CI: 'true'
           SQLITE_DB_PATH: 'tests/ci-test.db'
         run: npm run test:legacy
-      - name: Run Radius State Synchronization Test
-        run: npm run test:radius
 
-      - name: Suite 8 - Playwright Dual-Browser E2E Map & UI Suite
+      - name: Suite 8 - Supabase Migration Fixture & Dedup Archive Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:fixture
+
+      - name: Suite 9 - Playwright Dual-Browser E2E Map & UI Suite
         env:
           CI: 'true'
           SQLITE_DB_PATH: 'tests/ci-test.db'

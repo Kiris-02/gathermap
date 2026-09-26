@@ -134,3 +134,62 @@ WHERE voter_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_votes_outing_voter_name_legacy 
 ON votes(outing_id, voter_name) 
 WHERE voter_id IS NULL;
+
+-- 8. Strict Row Level Security & Access Control for votes_dedup_archive (Private Audit Table)
+-- Ensure RLS is active
+ALTER TABLE public.votes_dedup_archive ENABLE ROW LEVEL SECURITY;
+
+-- Clean up any prior policies on re-run
+DROP POLICY IF EXISTS "Public votes_dedup_archive" ON public.votes_dedup_archive;
+DROP POLICY IF EXISTS "Public read votes_dedup_archive" ON public.votes_dedup_archive;
+DROP POLICY IF EXISTS "Service write votes_dedup_archive" ON public.votes_dedup_archive;
+DROP POLICY IF EXISTS "Service manage votes_dedup_archive" ON public.votes_dedup_archive;
+
+-- Policy granting backend service_role full management access; NO client policies (anon/authenticated denied by default)
+CREATE POLICY "Service manage votes_dedup_archive" ON public.votes_dedup_archive 
+FOR ALL TO service_role 
+USING (true) WITH CHECK (true);
+
+-- Revoke all direct client privileges from anon and authenticated roles
+REVOKE ALL ON TABLE public.votes_dedup_archive FROM anon, authenticated;
+
+-- Revoke sequence permissions from anon and authenticated, grant to service_role
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_class WHERE relkind = 'S' AND relname = 'votes_dedup_archive_archive_id_seq'
+    ) THEN
+        EXECUTE 'REVOKE ALL ON SEQUENCE public.votes_dedup_archive_archive_id_seq FROM anon, authenticated';
+        EXECUTE 'GRANT ALL ON SEQUENCE public.votes_dedup_archive_archive_id_seq TO service_role';
+    END IF;
+END $$;
+
+-- Grant required administrative access exclusively to service_role
+GRANT ALL ON TABLE public.votes_dedup_archive TO service_role;
+
+-- 9. Comprehensive verification of all private tables (outings, participants, recommendations, votes, votes_dedup_archive)
+-- Re-verify RLS enabled and drop any legacy public read policies from old migrations
+ALTER TABLE public.outings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recommendations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public outings" ON public.outings;
+DROP POLICY IF EXISTS "Public read outings" ON public.outings;
+DROP POLICY IF EXISTS "Public participants" ON public.participants;
+DROP POLICY IF EXISTS "Public read participants" ON public.participants;
+DROP POLICY IF EXISTS "Public recommendations" ON public.recommendations;
+DROP POLICY IF EXISTS "Public read recommendations" ON public.recommendations;
+DROP POLICY IF EXISTS "Public votes" ON public.votes;
+DROP POLICY IF EXISTS "Public read votes" ON public.votes;
+
+REVOKE ALL ON TABLE public.outings FROM anon, authenticated;
+REVOKE ALL ON TABLE public.participants FROM anon, authenticated;
+REVOKE ALL ON TABLE public.recommendations FROM anon, authenticated;
+REVOKE ALL ON TABLE public.votes FROM anon, authenticated;
+
+GRANT ALL ON TABLE public.outings TO service_role;
+GRANT ALL ON TABLE public.participants TO service_role;
+GRANT ALL ON TABLE public.recommendations TO service_role;
+GRANT ALL ON TABLE public.votes TO service_role;
+
