@@ -9,21 +9,31 @@ const Database = require('better-sqlite3');
 require('dotenv').config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY && SUPABASE_URL.startsWith('http'));
-
+let isSupabaseConfigured = false;
 let supabaseClient = null;
 let sqliteDb = null;
 
-if (isSupabaseConfigured) {
-    try {
-        supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: false }
-        });
-        console.log('✅ Connected to Supabase Cloud Database:', SUPABASE_URL);
-    } catch (err) {
-        console.warn('⚠️ Supabase connection failed, falling back to SQLite:', err.message);
+if (SUPABASE_URL && SUPABASE_URL.startsWith('http')) {
+    if (SUPABASE_SERVICE_ROLE_KEY) {
+        try {
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+                auth: { persistSession: false }
+            });
+            isSupabaseConfigured = true;
+            console.log('✅ Connected to Supabase Cloud Database (service_role):', SUPABASE_URL);
+        } catch (err) {
+            console.warn('⚠️ Supabase service_role connection failed, falling back to SQLite:', err.message);
+            supabaseClient = null;
+            isSupabaseConfigured = false;
+        }
+    } else {
+        console.warn('⚠️ Warning: SUPABASE_URL is set, but SUPABASE_SERVICE_ROLE_KEY is missing.');
+        console.warn('   Under strict Row Level Security (RLS), the backend requires SUPABASE_SERVICE_ROLE_KEY for private session storage.');
+        console.warn('   Disabling Supabase cloud persistence and falling back safely to local SQLite storage.');
+        isSupabaseConfigured = false;
+        supabaseClient = null;
     }
 }
 
@@ -106,7 +116,7 @@ function initSqliteSchema(db) {
             voter_name TEXT NOT NULL,
             voter_id TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(outing_id, voter_name, venue_id)
+            FOREIGN KEY(outing_id) REFERENCES outings(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS reviews (
@@ -145,7 +155,7 @@ function initSqliteSchema(db) {
                         voter_name TEXT NOT NULL,
                         voter_id TEXT,
                         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(outing_id, voter_name, venue_id)
+                        FOREIGN KEY(outing_id) REFERENCES outings(id) ON DELETE CASCADE
                     );
                     INSERT OR IGNORE INTO votes_new_text_pk (id, outing_id, venue_id, voter_name, voter_id, created_at)
                     SELECT 'vote-' || CAST(id AS TEXT), outing_id, venue_id, voter_name, voter_id, created_at FROM votes;
@@ -177,6 +187,39 @@ function initSqliteSchema(db) {
     } catch (_) {}
     try {
         db.exec(`ALTER TABLE recommendations ADD COLUMN member_breakdowns TEXT;`);
+    } catch (_) {}
+
+    // Migration 5: Replace old UNIQUE(outing_id, voter_name, venue_id) with stable voter identity indexes
+    try {
+        const tableSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='votes'").get();
+        if (tableSql && tableSql.sql && tableSql.sql.includes('UNIQUE(outing_id, voter_name, venue_id)')) {
+            db.transaction(() => {
+                db.exec(`
+                    CREATE TABLE votes_voter_id_clean (
+                        id TEXT PRIMARY KEY,
+                        outing_id TEXT NOT NULL,
+                        venue_id TEXT NOT NULL,
+                        voter_name TEXT NOT NULL,
+                        voter_id TEXT,
+                        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY(outing_id) REFERENCES outings(id) ON DELETE CASCADE
+                    );
+                    INSERT OR IGNORE INTO votes_voter_id_clean (id, outing_id, venue_id, voter_name, voter_id, created_at)
+                    SELECT id, outing_id, venue_id, voter_name, voter_id, created_at FROM votes;
+                    DROP TABLE votes;
+                    ALTER TABLE votes_voter_id_clean RENAME TO votes;
+                    CREATE INDEX IF NOT EXISTS idx_votes_outing ON votes(outing_id);
+                `);
+            })();
+        }
+    } catch (_) {}
+
+    // Ensure non-colliding unique partial indexes exist in SQLite
+    try {
+        db.exec(`
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_votes_voter_id ON votes(outing_id, voter_id) WHERE voter_id IS NOT NULL;
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_votes_legacy_name ON votes(outing_id, voter_name) WHERE voter_id IS NULL;
+        `);
     } catch (_) {}
 
     // Seed: Ensure venues table is populated from initial-venues.json if empty
@@ -252,8 +295,15 @@ function initSqliteSchema(db) {
 }
 
 module.exports = {
-    isSupabaseConfigured,
-    dbType: isSupabaseConfigured ? 'Supabase Cloud Database (PostgreSQL)' : 'Local SQLite Database (gathermap.db)',
+    get isSupabaseConfigured() {
+        return isSupabaseConfigured;
+    },
+    set isSupabaseConfigured(val) {
+        isSupabaseConfigured = val;
+    },
+    get dbType() {
+        return isSupabaseConfigured ? 'Supabase Cloud Database (PostgreSQL)' : 'Local SQLite Database (gathermap.db)';
+    },
     getSupabaseClient: () => supabaseClient,
     getSqliteDb: () => sqliteDb
 };

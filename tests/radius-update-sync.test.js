@@ -120,6 +120,33 @@ async function runRadiusSyncTests() {
             assert.strictEqual(outing.radiusKm, 5.0, 'Reloaded radius must be 5.0 km');
         });
 
+        // Test 4: Downstream search failure recovery: Radius is preserved in DB and reload restores updated radius
+        await test('Downstream search failure recovery: radius is preserved on server and reload recovers state', async () => {
+            // 4a. Update radius to 4.0 km via PUT
+            const putRes = await fetch(`${baseUrl}/api/outings/${outingId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-share-token': rawToken
+                },
+                body: JSON.stringify({ radiusKm: 4.0 })
+            });
+            assert.strictEqual(putRes.status, 200);
+            const putData = await putRes.json();
+            assert.strictEqual(putData.radiusKm, 4.0);
+
+            // 4b. Simulate downstream failure on search: verify database retained 4.0 km
+            const dbCheck = await outingRepository.getOuting(outingId);
+            assert.strictEqual(dbCheck.radiusKm, 4.0, 'Server database must retain 4.0 km even if search fails');
+
+            // 4c. Verify GET reload restores 4.0 km
+            const reloadRes = await fetch(`${baseUrl}/api/outings/${outingId}`, {
+                headers: { 'x-share-token': rawToken }
+            });
+            const reloadData = await reloadRes.json();
+            assert.strictEqual(reloadData.radiusKm, 4.0, 'Reload must restore 4.0 km');
+        });
+
     } finally {
         server.close();
         if (fs.existsSync(testDbPath)) {

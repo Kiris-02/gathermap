@@ -176,12 +176,22 @@ async function runE2ESharedLinkTests() {
         await hostPage.screenshot({ path: hostDesktopFile, fullPage: false });
         copyToArtifacts('after_desktop_1440x900.png');
 
-        // Host updates radius to 2000m via setRadius(2000)
-        console.log(`\n--- STEP 2B: HOST UPDATES RADIUS TO 2000M ---`);
-        await hostPage.evaluate(async () => {
-            const data = document.querySelector('body')._x_dataStack[0];
-            await data.setRadius(2000);
-        });
+        // Host updates radius to 2000m via real DOM interaction
+        console.log(`\n--- STEP 2B: HOST UPDATES RADIUS TO 2000M VIA REAL DOM INTERACTION ---`);
+        const wishesButton = hostPage.locator('button', { hasText: 'Wishes' });
+        await wishesButton.click();
+        await hostPage.waitForSelector('text=Tâm điểm & Bán kính tìm kiếm', { timeout: 5000 });
+
+        // Click the "2 km" radius button inside the modal
+        const radius2KmButton = hostPage.locator('button', { hasText: '2 km' });
+        await radius2KmButton.click();
+
+        // Close the modal
+        const closeButton = hostPage.locator('button[title="Đóng"]').first();
+        if (await closeButton.isVisible()) {
+            await closeButton.click();
+        }
+
         await hostPage.waitForFunction(() => {
             const body = document.querySelector('body');
             return body && body._x_dataStack && body._x_dataStack[0]?.ranking === false && body._x_dataStack[0]?.shortlist?.length > 0;

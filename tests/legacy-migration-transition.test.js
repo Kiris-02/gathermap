@@ -281,6 +281,74 @@ async function runTests() {
             assert.strictEqual(res.data.currentVotedVenue, 'v-legacy-2');
         });
 
+        // --- TEST 8: Supabase-only legacy token reissue (authoritative backend check) ---
+        await test('Supabase-only legacy outing reissues token without local SQLite dependency', async () => {
+            const dbClient = require('../src/repositories/db-client');
+            const origGetSupabaseClient = dbClient.getSupabaseClient;
+            const origIsConfigured = dbClient.isSupabaseConfigured;
+
+            let supabaseTokenHash = null;
+            const mockSupabase = {
+                from: (table) => {
+                    if (table === 'outings') {
+                        return {
+                            select: () => ({
+                                eq: (f, v) => ({
+                                    maybeSingle: async () => ({
+                                        data: {
+                                            id: 'EAT-SUPA-ONLY-LEGACY',
+                                            name: 'Cloud-Only Legacy Outing',
+                                            share_token_hash: supabaseTokenHash
+                                        },
+                                        error: null
+                                    })
+                                })
+                            }),
+                            update: (patch) => ({
+                                eq: (f, v) => ({
+                                    is: (f2, v2) => ({
+                                        select: async () => {
+                                            if (supabaseTokenHash === null) {
+                                                supabaseTokenHash = patch.share_token_hash;
+                                                return { data: [{ id: v }], error: null };
+                                            }
+                                            return { data: [], error: null };
+                                        }
+                                    }),
+                                    select: async () => {
+                                        supabaseTokenHash = patch.share_token_hash;
+                                        return { data: [{ id: v }], error: null };
+                                    }
+                                })
+                            })
+                        };
+                    }
+                    if (table === 'participants') return { select: () => ({ eq: async () => ({ data: [], error: null }) }) };
+                    if (table === 'recommendations') return { select: () => ({ eq: () => ({ order: async () => ({ data: [], error: null }) }) }) };
+                    if (table === 'votes') return { select: () => ({ eq: async () => ({ data: [], error: null }) }) };
+                }
+            };
+
+            try {
+                dbClient.getSupabaseClient = () => mockSupabase;
+                dbClient.isSupabaseConfigured = true;
+
+                // Reissue token for outing that exists ONLY on Supabase
+                const supaResult = await outingService.reissueLegacyOutingShareToken({ outingId: 'EAT-SUPA-ONLY-LEGACY', force: false });
+                assert.strictEqual(supaResult.success, true);
+                assert.ok(supaResult.shareToken, 'Must generate raw share token');
+                assert.ok(supaResult.tokenHash, 'Must generate token hash');
+                assert.strictEqual(supabaseTokenHash, supaResult.tokenHash, 'Supabase remote record received hash');
+
+                // Duplicate reissue without force is safely rejected
+                const dupResult = await outingService.reissueLegacyOutingShareToken({ outingId: 'EAT-SUPA-ONLY-LEGACY', force: false });
+                assert.strictEqual(dupResult.success, false);
+                assert.strictEqual(dupResult.reason, 'already_secured');
+            } finally {
+                dbClient.getSupabaseClient = origGetSupabaseClient;
+                dbClient.isSupabaseConfigured = origIsConfigured;
+            }
+        });
     } finally {
         if (server) server.close();
         if (fs.existsSync(legacyDbPath)) {
