@@ -66,6 +66,8 @@ jobs:
           CI: 'true'
           SQLITE_DB_PATH: 'tests/ci-test.db'
         run: npm run test:legacy
+      - name: Run Radius State Synchronization Test
+        run: npm run test:radius
 
       - name: Suite 7 - Playwright Dual-Browser E2E Map & UI Suite
         env:
