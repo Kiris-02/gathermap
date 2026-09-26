@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/recommendation_architecture_tests.js && node tests/pipeline.test.js"
+    "test": "node tests/recommendation_architecture_tests.js && node tests/pipeline.test.js && node tests/voting-session.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

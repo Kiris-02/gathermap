@@ -1,0 +1,63 @@
+/* ==========================================================================
+   GatherMap Leaflet Map Theme Styles
+   Safe theming without destructive !important overrides on Leaflet internal panes
+   ========================================================================== */
+
+/* Dark Theme for Leaflet Controls & Tooltips */
+.leaflet-bar {
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
+    overflow: hidden;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+.leaflet-bar a {
+    background-color: #0f172a !important;
+    color: #f1f5f9 !important;
+    border-bottom: 1px solid #1e293b !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.leaflet-bar a:hover {
+    background-color: #1e293b !important;
+    color: #f59e0b !important;
+}
+
+.leaflet-tooltip {
+    background: #0b0f19 !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+}
+
+.leaflet-tooltip-top:before {
+    border-top-color: #0b0f19 !important;
+}
+
+.leaflet-tooltip-bottom:before {
+    border-bottom-color: #0b0f19 !important;
+}
+
+/* Marker Pin SVG Styling */
+.friend-pin, .venue-pin {
+    display: block;
+    line-height: 0;
+    pointer-events: auto;
+}
+
+.friend-pin svg, .venue-pin svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
+    pointer-events: none;
+    transition: transform 0.15s ease-out;
+}
+
+.venue-pin:hover svg {
+    transform: scale(1.12);
+}

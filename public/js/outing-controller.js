@@ -1,0 +1,225 @@
+/**
+ * GatherMap Outing Controller
+ * Manages outing session lifecycle, URL syncing, voting deduplication, live polling, and sharing.
+ */
+window.createOutingController = function() {
+    return {
+        pollTimer: null,
+        consecutivePollErrors: 0,
+        myVotedVenueId: null,
+
+        async initOutingSession() {
+            if (this.outingCode) {
+                try {
+                    const sessionData = await window.ApiClient.get(`/api/outings/${this.outingCode}`);
+                    if (sessionData && sessionData.outing) {
+                        this.applyLoadedSession(sessionData);
+                        return;
+                    }
+                } catch (err) {
+                    console.warn(`Outing ${this.outingCode} could not be loaded (${err.message}). Starting fresh session.`);
+                    this.showToast('ℹ️ Không tìm thấy kèo cũ, đã tạo kèo mới cho bạn.', 'info');
+                    this.outingCode = '';
+                }
+            }
+
+            // Start live vote polling
+            this.startLiveVotePolling();
+        },
+
+        applyLoadedSession(sessionData) {
+            const outing = sessionData.outing;
+            if (outing.friends && Array.isArray(outing.friends) && outing.friends.length > 0) {
+                this.friends = outing.friends;
+                this.renderFriendMarkers();
+            }
+            if (outing.center_lat && outing.center_lng) {
+                this.centerCoords = { lat: Number(outing.center_lat), lng: Number(outing.center_lng) };
+                this.renderCenterMarker();
+            }
+            if (outing.radius_meters) {
+                this.searchRadiusMeters = Number(outing.radius_meters);
+                this.updateRadiusCircle();
+            }
+
+            // Sync votes
+            if (Array.isArray(sessionData.votes)) {
+                this.syncVoteCountsFromList(sessionData.votes);
+            }
+
+            this.showToast(`✨ Đã kết nối vào kèo: #${this.outingCode}`, 'success');
+            this.startLiveVotePolling();
+        },
+
+        setOutingCodeAndSyncUrl(code) {
+            if (!code || this.outingCode === code) return;
+            this.outingCode = code;
+            try {
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('outing', code);
+                window.history.replaceState({}, '', newUrl.toString());
+            } catch (_) {}
+        },
+
+        async voteForVenue(venue) {
+            if (!venue) return;
+            if (!this.outingCode) {
+                this.showToast('⚠️ Vui lòng bấm Let\'s Go để bắt đầu kèo trước khi bình chọn.', 'warning');
+                return;
+            }
+
+            const previousVotedVenueId = this.myVotedVenueId;
+            const isTogglingOff = previousVotedVenueId === venue.id;
+
+            // Optimistic UI updates
+            if (isTogglingOff) {
+                venue.votes = Math.max(0, (venue.votes || 1) - 1);
+                this.myVotedVenueId = null;
+                this.showToast(`Đã thu hồi phiếu cho "${venue.name}"`, 'info');
+            } else {
+                if (previousVotedVenueId) {
+                    const prevVenue = this.shortlist.find(v => v.id === previousVotedVenueId);
+                    if (prevVenue) {
+                        prevVenue.votes = Math.max(0, (prevVenue.votes || 1) - 1);
+                    }
+                }
+                venue.votes = (venue.votes || 0) + 1;
+                this.myVotedVenueId = venue.id;
+                this.votedVenueId = venue.id;
+                setTimeout(() => { this.votedVenueId = null; }, 500);
+                this.showToast(`🗳️ +1 phiếu cho "${venue.name}"! (Tổng: ${venue.votes})`, 'success');
+            }
+
+            try {
+                const res = await window.ApiClient.post(`/api/outings/${this.outingCode}/vote`, {
+                    venueId: venue.id,
+                    voterId: this.voterId,
+                    voterName: this.voterName || 'You'
+                });
+
+                if (res && res.action === 'unvoted') {
+                    this.myVotedVenueId = null;
+                } else if (res && res.action) {
+                    this.myVotedVenueId = venue.id;
+                }
+            } catch (err) {
+                console.error('Vote failed, rolling back:', err);
+                // Rollback optimistic update
+                if (isTogglingOff) {
+                    venue.votes = (venue.votes || 0) + 1;
+                    this.myVotedVenueId = venue.id;
+                } else {
+                    venue.votes = Math.max(0, (venue.votes || 1) - 1);
+                    this.myVotedVenueId = previousVotedVenueId;
+                }
+                this.showToast(`⚠️ Không thể lưu bình chọn: ${err.message}`, 'error');
+            }
+        },
+
+        startLiveVotePolling() {
+            if (this.pollTimer) clearInterval(this.pollTimer);
+            this.consecutivePollErrors = 0;
+
+            this.pollTimer = setInterval(async () => {
+                if (!this.outingCode || !this.shortlist || this.shortlist.length === 0) return;
+                if (this.consecutivePollErrors >= 5) {
+                    // Back off polling if server returns continuous errors
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/outings/${this.outingCode}`);
+                    if (!res.ok) {
+                        this.consecutivePollErrors++;
+                        return;
+                    }
+                    this.consecutivePollErrors = 0;
+                    const data = await res.json();
+                    if (data && Array.isArray(data.votes)) {
+                        this.syncVoteCountsFromList(data.votes);
+                    }
+                } catch (e) {
+                    this.consecutivePollErrors++;
+                }
+            }, 4000);
+        },
+
+        syncVoteCountsFromList(votesList) {
+            const counts = {};
+            let myVoteFound = false;
+
+            votesList.forEach(v => {
+                const vId = v.venue_id || v.venueId;
+                counts[vId] = (counts[vId] || 0) + 1;
+
+                const voter = v.voter_id || v.voterId || v.voter_name || v.voterName;
+                if (voter === this.voterId || voter === this.voterName) {
+                    this.myVotedVenueId = vId;
+                    myVoteFound = true;
+                }
+            });
+
+            if (!myVoteFound && this.myVotedVenueId !== null) {
+                this.myVotedVenueId = null;
+            }
+
+            this.shortlist.forEach(v => {
+                const serverCount = counts[v.id] || 0;
+                if (v.votes !== serverCount) {
+                    v.votes = serverCount;
+                }
+            });
+        },
+
+        copyShareLink() {
+            const shareUrl = window.location.origin + (this.outingCode ? `/?outing=${encodeURIComponent(this.outingCode)}` : '');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    this.copied = true;
+                    setTimeout(() => { this.copied = false; }, 2500);
+                    this.showToast('📋 Đã sao chép link chia sẻ vào clipboard!', 'success');
+                }).catch(() => {
+                    this.showToast('⚠️ Không thể tự động sao chép. Hãy copy đường dẫn từ thanh địa chỉ.', 'warning');
+                });
+            }
+        },
+
+        async shareVenuePlan(venue) {
+            try {
+                const shareRes = await window.ApiClient.post('/api/outings/generate-share-text', {
+                    venue,
+                    friends: this.friends,
+                    groupScore: venue.groupScore || 90,
+                    outingCode: this.outingCode
+                });
+
+                if (shareRes && shareRes.message) {
+                    this.shareModalData = {
+                        message: shareRes.message,
+                        shareUrl: shareRes.shareUrl || `https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}`,
+                        venueName: shareRes.venueName || venue.name,
+                        appUrl: shareRes.appUrl || window.location.origin
+                    };
+
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(shareRes.message).catch(() => {});
+                    }
+
+                    this.showShareModal = true;
+                    this.showToast('🎉 Đã tạo tin nhắn rủ bạn bè! Hãy dán vào Zalo/Messenger.', 'success');
+                }
+            } catch (err) {
+                console.error('Share plan error:', err);
+                this.showToast('⚠️ Đã có lỗi khi tạo tin nhắn chia sẻ.', 'error');
+            }
+        },
+
+        copyShareMessage() {
+            if (this.shareModalData && this.shareModalData.message) {
+                navigator.clipboard.writeText(this.shareModalData.message).then(() => {
+                    this.showToast('📋 Đã sao chép tin nhắn rủ bạn vào clipboard!', 'success');
+                });
+            }
+        }
+    };
+};
