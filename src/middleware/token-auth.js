@@ -3,25 +3,22 @@
  * Enforces cryptographic token verification for private outing operations.
  */
 const outingRepository = require('../repositories/outing-repository');
-const { verifyShareToken } = require('../services/outing-service');
+const { verifyShareToken, generateShareToken } = require('../services/outing-service');
+
+function extractProvidedToken(req) {
+    return req.headers['x-share-token'] || 
+           (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7) : null) ||
+           req.query?.token || 
+           req.body?.token || 
+           null;
+}
 
 async function requireShareToken(req, res, next) {
     try {
-        const outingId = req.params.id || req.body?.outingId || req.query?.outingId;
+        const rawId = req.params.id || req.body?.outingId || req.query?.outingId;
+        const outingId = typeof rawId === 'string' ? rawId.trim() : rawId;
         if (!outingId) {
             return res.status(400).json({ error: 'missing_outing_id', message: 'Outing ID is required' });
-        }
-
-        const providedToken = req.headers['x-share-token'] || 
-                              req.query?.token || 
-                              req.body?.token ||
-                              (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7) : null);
-
-        if (!providedToken) {
-            return res.status(401).json({
-                error: 'unauthorized',
-                message: 'A valid share token is required to access or interact with this outing'
-            });
         }
 
         const outing = await outingRepository.getOuting(outingId);
@@ -29,10 +26,34 @@ async function requireShareToken(req, res, next) {
             return res.status(404).json({ error: 'outing_not_found', message: 'Outing session not found' });
         }
 
+        const providedToken = extractProvidedToken(req);
+
+        // Handle Legacy Outings (created before share tokens without a hash)
         if (!outing.share_token_hash) {
-            return res.status(403).json({
-                error: 'forbidden',
-                message: 'Invalid share token'
+            if (req.method === 'GET') {
+                // Smooth transition: Automatically issue a secure token on first read
+                const tokenObj = generateShareToken();
+                await outingRepository.updateOutingShareToken(outingId, tokenObj.tokenHash);
+                outing.share_token_hash = tokenObj.tokenHash;
+                req.legacyUpgradedToken = tokenObj.rawToken;
+                req.outing = outing;
+                return next();
+            } else {
+                // Mutations require a token even on legacy outings to prevent unauthenticated takeover
+                return res.status(401).json({
+                    error: 'unauthorized',
+                    code: 'legacy_link_expired',
+                    message: 'Kèo này cần được nâng cấp bảo mật qua link chia sẻ mới trước khi chỉnh sửa hoặc bình chọn.'
+                });
+            }
+        }
+
+        // Standard token verification for secured outings
+        if (!providedToken) {
+            return res.status(401).json({
+                error: 'unauthorized',
+                code: 'token_required',
+                message: 'A valid share token is required to access or interact with this outing'
             });
         }
 
@@ -40,6 +61,7 @@ async function requireShareToken(req, res, next) {
         if (!isValid) {
             return res.status(403).json({
                 error: 'forbidden',
+                code: 'invalid_token',
                 message: 'Invalid share token'
             });
         }
@@ -51,6 +73,24 @@ async function requireShareToken(req, res, next) {
     }
 }
 
+async function requireShareTokenIfOutingSpecified(req, res, next) {
+    const rawId = req.params.id || req.body?.outingId || req.query?.outingId;
+    const outingId = typeof rawId === 'string' ? rawId.trim() : rawId;
+    if (!outingId) {
+        // No outing specified: allowed to create new outing
+        return next();
+    }
+    const outing = await outingRepository.getOuting(outingId);
+    if (!outing) {
+        // Outing does not exist yet: allowed to create new outing with specified ID
+        return next();
+    }
+    // Existing outing specified: strictly verify share token before proceeding
+    return requireShareToken(req, res, next);
+}
+
 module.exports = {
-    requireShareToken
+    requireShareToken,
+    requireShareTokenIfOutingSpecified,
+    extractProvidedToken
 };

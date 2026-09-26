@@ -92,6 +92,8 @@ function initSqliteSchema(db) {
             avg_score REAL NOT NULL,
             lowest_score REAL NOT NULL,
             ai_rationale TEXT NOT NULL,
+            dist_from_center_km REAL,
+            member_breakdowns TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(outing_id) REFERENCES outings(id) ON DELETE CASCADE,
             FOREIGN KEY(venue_id) REFERENCES venues(id) ON DELETE CASCADE
@@ -169,20 +171,12 @@ function initSqliteSchema(db) {
         }
     } catch (_) {}
 
-    // Migration 4: Sequential backfill of share_token_hash for existing outings without a token
+    // Migration 4: Safe column additions for recommendations (dist_from_center_km, member_breakdowns)
     try {
-        const outingsWithoutToken = db.prepare('SELECT id FROM outings WHERE share_token_hash IS NULL').all();
-        if (outingsWithoutToken.length > 0) {
-            const crypto = require('crypto');
-            const updateStmt = db.prepare('UPDATE outings SET share_token_hash = ? WHERE id = ?');
-            db.transaction((rows) => {
-                for (const row of rows) {
-                    const rawToken = crypto.randomBytes(24).toString('base64url');
-                    const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
-                    updateStmt.run(hash, row.id);
-                }
-            })(outingsWithoutToken);
-        }
+        db.exec(`ALTER TABLE recommendations ADD COLUMN dist_from_center_km REAL;`);
+    } catch (_) {}
+    try {
+        db.exec(`ALTER TABLE recommendations ADD COLUMN member_breakdowns TEXT;`);
     } catch (_) {}
 
     // Seed: Ensure venues table is populated from initial-venues.json if empty

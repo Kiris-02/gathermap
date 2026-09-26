@@ -79,5 +79,9 @@ window.ApiClient = {
 
     post(endpoint, body, options = {}) {
         return this.request(endpoint, { ...options, method: 'POST', body });
+    },
+
+    put(endpoint, body, options = {}) {
+        return this.request(endpoint, { ...options, method: 'PUT', body });
     }
 };

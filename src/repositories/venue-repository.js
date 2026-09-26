@@ -72,15 +72,19 @@ async function getAllVenues() {
         }
     }
 
-    if (venues.length === 0) {
-        const sqliteDb = getSqliteDb();
-        if (sqliteDb) {
-            try {
-                const rows = sqliteDb.prepare('SELECT * FROM venues').all();
-                venues = rows.map(formatVenueRecord);
-            } catch (err) {
-                console.warn('SQLite getAllVenues warning:', err.message);
+    const sqliteDb = getSqliteDb();
+    if (sqliteDb) {
+        try {
+            const existingIds = new Set(venues.map(v => v.id));
+            const rows = sqliteDb.prepare('SELECT * FROM venues').all();
+            for (const row of rows) {
+                if (!existingIds.has(row.id)) {
+                    venues.push(formatVenueRecord(row));
+                    existingIds.add(row.id);
+                }
             }
+        } catch (err) {
+            console.warn('SQLite getAllVenues warning:', err.message);
         }
     }
 

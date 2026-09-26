@@ -6,6 +6,8 @@
 const dbClient = require('./db-client');
 const venueRepository = require('./venue-repository');
 const { calcDistanceKm } = require('../algorithms/geometric-median');
+const semanticEngine = require('../../semanticEngine');
+const { buildDirectionsUrl, buildSearchUrl } = require('../services/places-service');
 
 const getSupabaseClient = () => dbClient.getSupabaseClient();
 const getSqliteDb = () => dbClient.getSqliteDb();
@@ -152,7 +154,7 @@ async function updateOutingSettings(outingId, updates = {}) {
     return await getOuting(outingId);
 }
 
-async function getRecommendations(outingId, participants = [], votesMap = {}) {
+async function getRecommendations(outingId, participants = [], votesMap = {}, outingCenter = null) {
     if (!outingId) return [];
     let recRows = [];
 
@@ -172,7 +174,7 @@ async function getRecommendations(outingId, participants = [], votesMap = {}) {
         if (sqliteDb) {
             try {
                 recRows = sqliteDb.prepare(`
-                    SELECT venue_id, group_score, avg_score, lowest_score, ai_rationale
+                    SELECT venue_id, group_score, avg_score, lowest_score, ai_rationale, dist_from_center_km, member_breakdowns
                     FROM recommendations
                     WHERE outing_id = ?
                     ORDER BY group_score DESC
@@ -187,31 +189,66 @@ async function getRecommendations(outingId, participants = [], votesMap = {}) {
     for (const r of recRows) {
         const venue = await venueRepository.getVenueById(r.venue_id || r.venueId);
         if (venue) {
-            const memberBreakdowns = participants.map(p => {
-                const distKm = calcDistanceKm({ lat: p.lat, lng: p.lng }, { lat: venue.lat, lng: venue.lng });
-                const travelMins = Math.max(3, Math.round(distKm * 3.2));
-                return {
-                    friendName: p.name || 'Friend',
-                    distanceKm: Number(distKm.toFixed(1)),
-                    travelMins,
-                    travelScore: Math.max(0, Math.min(100, Math.round(100 - distKm * 12))),
-                    score: Math.round(r.group_score || r.groupScore || 85)
-                };
-            });
+            let memberBreakdowns = [];
+            if (r.member_breakdowns) {
+                try {
+                    memberBreakdowns = typeof r.member_breakdowns === 'string'
+                        ? JSON.parse(r.member_breakdowns)
+                        : r.member_breakdowns;
+                } catch (_) {}
+            }
+
+            // Fallback calculation for legacy rows without saved member_breakdowns
+            if (!Array.isArray(memberBreakdowns) || memberBreakdowns.length === 0) {
+                memberBreakdowns = participants.map(p => {
+                    const distKm = Number(calcDistanceKm({ lat: p.lat, lng: p.lng }, { lat: venue.lat, lng: venue.lng }).toFixed(1));
+                    const travelMins = Math.max(5, Math.round((distKm / 20) * 60));
+                    const travelScore = Math.max(20, Math.min(100, Math.round(100 - (travelMins * 2.2))));
+                    const basePref = r.group_score || 85;
+                    const indScore = Math.round(0.70 * basePref + 0.30 * travelScore);
+                    return {
+                        friendId: p.id,
+                        friendName: p.name || 'Friend',
+                        distanceKm: distKm,
+                        distKm,
+                        travelMins,
+                        travelScore,
+                        score: indScore
+                    };
+                });
+            }
+
+            // Accurate numeric distance from center
+            let distFromCenterKm = null;
+            if (r.dist_from_center_km != null) {
+                distFromCenterKm = Number(Number(r.dist_from_center_km).toFixed(1));
+            } else if (outingCenter && outingCenter.lat != null && outingCenter.lng != null && venue.lat != null && venue.lng != null) {
+                distFromCenterKm = Number(calcDistanceKm(outingCenter, { lat: venue.lat, lng: venue.lng }).toFixed(1));
+            } else {
+                distFromCenterKm = 0;
+            }
+
+            const fairnessScores = memberBreakdowns.length > 0
+                ? semanticEngine.calculateFairnessScores(memberBreakdowns)
+                : null;
 
             shortlist.push({
                 ...venue,
+                distFromCenterKm,
+                distanceKm: distFromCenterKm,
                 groupScore: r.group_score ?? r.groupScore,
                 fairnessScore: r.group_score ?? r.groupScore,
                 avgScore: r.avg_score ?? r.avgScore,
                 lowestScore: r.lowest_score ?? r.lowestScore,
                 minScore: r.lowest_score ?? r.lowestScore,
+                fairnessIndex: fairnessScores?.fairnessIndex || 'Cao',
                 aiRationale: r.ai_rationale ?? r.aiRationale,
+                whyRecommended: r.ai_rationale ?? r.aiRationale,
                 memberBreakdowns,
                 votes: (votesMap[venue.id] || []).length,
                 voters: votesMap[venue.id] || [],
-                directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}`,
-                searchUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name + ' ' + (venue.address || ''))}`
+                directionsUrl: buildDirectionsUrl(venue),
+                searchUrl: buildSearchUrl(venue)
             });
         }
     }
@@ -288,13 +325,14 @@ async function getOuting(id) {
         votesMap[vid].push(v.voter_name || 'Guest');
     });
 
-    const recommendations = await getRecommendations(id, participants, votesMap);
+    const outingCenter = { lat: outing.centerLat, lng: outing.centerLng };
+    const recommendations = await getRecommendations(id, participants, votesMap, outingCenter);
 
     return {
         ...outing,
         center_lat: outing.centerLat,
         center_lng: outing.centerLng,
-        center: { lat: outing.centerLat, lng: outing.centerLng },
+        center: outingCenter,
         radius_km: outing.radiusKm,
         radiusMeters: Math.round(outing.radiusKm * 1000),
         radius_meters: Math.round(outing.radiusKm * 1000),
@@ -429,18 +467,33 @@ async function saveRecommendations(outingId, recommendations = []) {
             console.warn('Supabase ensure venues exception:', vErr.message);
         }
 
-        const recs = recommendations.map(r => ({
-            id: `rec-${outingId}-${r.id}`,
-            outing_id: outingId,
-            venue_id: r.id,
-            group_score: r.groupScore || 0,
-            avg_score: r.avgScore || 0,
-            lowest_score: r.minScore || (r.fairness?.minScore || 0),
-            ai_rationale: r.aiRationale || ''
-        }));
-        const { error } = await client.from('recommendations').upsert(recs);
-        if (error) {
-            throw new Error(`Supabase saveRecommendations failed: ${error.message}`);
+        const recs = recommendations.map(r => {
+            const distFromCenter = r.distFromCenterKm != null ? Number(r.distFromCenterKm) : (r.distanceKm != null ? Number(r.distanceKm) : null);
+            const breakdownsJson = Array.isArray(r.memberBreakdowns) && r.memberBreakdowns.length > 0
+                ? JSON.stringify(r.memberBreakdowns)
+                : null;
+            return {
+                id: `rec-${outingId}-${r.id}`,
+                outing_id: outingId,
+                venue_id: r.id,
+                group_score: r.groupScore || 0,
+                avg_score: r.avgScore || 0,
+                lowest_score: r.minScore || (r.fairness?.minScore || 0),
+                ai_rationale: r.aiRationale || '',
+                dist_from_center_km: distFromCenter,
+                member_breakdowns: breakdownsJson
+            };
+        });
+
+        let { error } = await client.from('recommendations').upsert(recs);
+        if (error && error.code === 'PGRST204') {
+            const legacyRecs = recs.map(({ dist_from_center_km, member_breakdowns, ...rest }) => rest);
+            const fallback = await client.from('recommendations').upsert(legacyRecs);
+            if (fallback.error) {
+                console.warn('Supabase saveRecommendations fallback error:', fallback.error.message);
+            }
+        } else if (error) {
+            console.warn('Supabase saveRecommendations error:', error.message);
         }
     }
 
@@ -456,8 +509,9 @@ async function saveRecommendations(outingId, recommendations = []) {
             `);
 
             const stmt = sqliteDb.prepare(`
-                INSERT OR REPLACE INTO recommendations (id, outing_id, venue_id, group_score, avg_score, lowest_score, ai_rationale)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO recommendations (
+                    id, outing_id, venue_id, group_score, avg_score, lowest_score, ai_rationale, dist_from_center_km, member_breakdowns
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
             for (const r of recommendations) {
                 if (r.name && r.lat != null && r.lng != null) {
@@ -485,6 +539,10 @@ async function saveRecommendations(outingId, recommendations = []) {
                 }
 
                 const recId = `rec-${outingId}-${r.id}`;
+                const distFromCenter = r.distFromCenterKm != null ? Number(r.distFromCenterKm) : (r.distanceKm != null ? Number(r.distanceKm) : null);
+                const breakdownsJson = Array.isArray(r.memberBreakdowns) && r.memberBreakdowns.length > 0
+                    ? JSON.stringify(r.memberBreakdowns)
+                    : null;
                 stmt.run(
                     recId,
                     outingId,
@@ -492,7 +550,9 @@ async function saveRecommendations(outingId, recommendations = []) {
                     r.groupScore || 0,
                     r.avgScore || 0,
                     r.minScore || 0,
-                    r.aiRationale || ''
+                    r.aiRationale || '',
+                    distFromCenter,
+                    breakdownsJson
                 );
             }
         } catch (e) {
@@ -621,9 +681,26 @@ async function recordVote(outingId, venueId, voterName = 'Guest', voterId = null
                 }
             } catch (_) {}
 
+            // Ensure outing exists in Supabase to satisfy foreign key constraint
+            try {
+                const sqliteDb = getSqliteDb();
+                if (sqliteDb) {
+                    const localOuting = sqliteDb.prepare('SELECT id, center_lat, center_lng, radius_km, status FROM outings WHERE id = ?').get(outingId);
+                    if (localOuting) {
+                        await client.from('outings').upsert([{
+                            id: localOuting.id,
+                            center_lat: localOuting.center_lat,
+                            center_lng: localOuting.center_lng,
+                            radius_km: localOuting.radius_km,
+                            status: localOuting.status || 'active'
+                        }], { onConflict: 'id' });
+                    }
+                }
+            } catch (_) {}
+
             if (action === 'changed') {
                 const { error: delErr } = await client.from('votes').delete().eq('outing_id', outingId).eq('voter_name', voterName);
-                if (delErr) throw new Error(`Supabase recordVote changed delete failed: ${delErr.message}`);
+                if (delErr) console.warn(`Supabase recordVote changed delete warning: ${delErr.message}`);
             }
 
             const voteId = 'vote-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
@@ -633,7 +710,7 @@ async function recordVote(outingId, venueId, voterName = 'Guest', voterId = null
                 venue_id: venueId,
                 voter_name: voterName
             }]);
-            if (insErr) throw new Error(`Supabase recordVote ${action} insert failed: ${insErr.message}`);
+            if (insErr) console.warn(`Supabase recordVote ${action} insert warning: ${insErr.message}`);
         }
     }
 
@@ -692,9 +769,28 @@ async function getVotes(outingId) {
     return votesMap;
 }
 
+async function updateOutingShareToken(outingId, shareTokenHash) {
+    if (!outingId || !shareTokenHash) return;
+
+    const client = getSupabaseClient();
+    if (dbClient.isSupabaseConfigured && client) {
+        try {
+            await client.from('outings').update({ share_token_hash: shareTokenHash }).eq('id', outingId);
+        } catch (_) {}
+    }
+
+    const sqliteDb = getSqliteDb();
+    if (sqliteDb) {
+        try {
+            sqliteDb.prepare('UPDATE outings SET share_token_hash = ? WHERE id = ?').run(shareTokenHash, outingId);
+        } catch (_) {}
+    }
+}
+
 module.exports = {
     saveOuting,
     updateOutingSettings,
+    updateOutingShareToken,
     getOuting,
     saveParticipants,
     getParticipants,

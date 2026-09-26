@@ -332,7 +332,7 @@
                             <!-- Address & Travel Preview -->
                             <div class="flex items-center justify-between text-[11px] text-slate-400">
                                 <span class="truncate flex-1 pr-2" x-text="venue.address"></span>
-                                <span class="text-slate-300 font-semibold shrink-0" x-text="venue.distFromCenterKm + ' km từ tâm'"></span>
+                                <span class="text-slate-300 font-semibold shrink-0" x-text="(venue.distFromCenterKm != null && !isNaN(venue.distFromCenterKm)) ? Number(venue.distFromCenterKm).toFixed(1) + ' km từ tâm' : ''"></span>
                             </div>
 
                             <!-- Live Gemini Concierge Rationale -->

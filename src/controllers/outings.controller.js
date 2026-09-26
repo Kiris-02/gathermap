@@ -22,11 +22,17 @@ async function getOuting(req, res, next) {
         }
         // Protect secret hash: Never expose share_token_hash to clients
         const { share_token_hash, ...safeOuting } = outing;
-        res.json({
+        const responseData = {
             outing: safeOuting,
             votes: safeOuting.votes || [],
             ...safeOuting
-        });
+        };
+        if (req.legacyUpgradedToken) {
+            responseData.shareToken = req.legacyUpgradedToken;
+            responseData.isLegacyUpgraded = true;
+            responseData.notice = 'Kèo này đã được nâng cấp bảo mật tự động. Vui lòng lưu link mới kèm mã bảo mật.';
+        }
+        res.json(responseData);
     } catch (err) {
         next(err);
     }

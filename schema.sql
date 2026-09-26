@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS recommendations (
     avg_score DOUBLE PRECISION NOT NULL,
     lowest_score DOUBLE PRECISION NOT NULL,
     ai_rationale TEXT NOT NULL,
+    dist_from_center_km DOUBLE PRECISION,
+    member_breakdowns JSONB DEFAULT '[]'::jsonb,
     travel_times JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

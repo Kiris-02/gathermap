@@ -11,17 +11,22 @@ window.createOutingController = function() {
         async initOutingSession() {
             if (this.outingCode) {
                 try {
-                    const tokenParam = this.shareToken ? `?token=${encodeURIComponent(this.shareToken)}` : '';
-                    const sessionData = await window.ApiClient.get(`/api/outings/${this.outingCode}${tokenParam}`, {
+                    const sessionData = await window.ApiClient.get(`/api/outings/${this.outingCode}`, {
                         shareToken: this.shareToken
                     });
                     if (sessionData && sessionData.outing) {
+                        if (sessionData.isLegacyUpgraded && sessionData.shareToken) {
+                            this.setOutingCodeAndSyncUrl(this.outingCode, sessionData.shareToken);
+                            this.showToast('🎉 Kèo đã được nâng cấp bảo mật! Link mới đã sẵn sàng.', 'success');
+                        }
                         this.applyLoadedSession(sessionData);
                         return;
                     }
                 } catch (err) {
                     console.warn(`Outing ${this.outingCode} could not be loaded (${err.message}). Starting fresh session.`);
-                    if (err.status === 401 || err.status === 403) {
+                    if (err.data?.code === 'legacy_link_expired') {
+                        this.showToast('🔒 ' + (err.message || 'Kèo này đã được nâng cấp bảo mật. Vui lòng mở lại bằng link mới.'), 'warning');
+                    } else if (err.status === 401 || err.status === 403) {
                         this.showToast('🔒 Bạn không có quyền xem kèo này (cần link chia sẻ có mã xác thực).', 'error');
                     } else {
                         this.showToast('ℹ️ Không tìm thấy kèo cũ, đã tạo kèo mới cho bạn.', 'info');
@@ -179,8 +184,7 @@ window.createOutingController = function() {
                 }
 
                 try {
-                    const tokenParam = this.shareToken ? `?token=${encodeURIComponent(this.shareToken)}` : '';
-                    const data = await window.ApiClient.get(`/api/outings/${this.outingCode}${tokenParam}`, {
+                    const data = await window.ApiClient.get(`/api/outings/${this.outingCode}`, {
                         shareToken: this.shareToken
                     });
                     this.consecutivePollErrors = 0;

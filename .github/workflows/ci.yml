@@ -19,10 +19,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 22 (LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -31,8 +31,44 @@ jobs:
       - name: Install Playwright Chromium with dependencies
         run: npx playwright install --with-deps chromium
 
-      - name: Run Deterministic & E2E Test Suite
+      - name: Suite 1 - Recommendation Architecture & Semantic Engine
         env:
           CI: 'true'
           SQLITE_DB_PATH: 'tests/ci-test.db'
-        run: npm test
+        run: npm run test:architecture
+
+      - name: Suite 2 - Pipeline Deterministic Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:pipeline
+
+      - name: Suite 3 - Voting & Session Lifecycle Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:voting
+
+      - name: Suite 4 - Supabase Outing Overwrite Protection Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:overwrite
+
+      - name: Suite 5 - Share Token Security & Route Protection Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:security
+
+      - name: Suite 6 - Legacy Migration & Transition Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:legacy
+
+      - name: Suite 7 - Playwright Dual-Browser E2E Map & UI Suite
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:e2e

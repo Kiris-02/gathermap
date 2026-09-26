@@ -78,7 +78,7 @@ window.createInitialState = function() {
             vegetarian: false,
             no_alcohol: false,
             quiet_only: false,
-            max_price_vnd: 250000
+            max_price_vnd: null
         },
         confirmedSoftPreferences: [],
         parsedInterpretation: {

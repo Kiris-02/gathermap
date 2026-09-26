@@ -172,6 +172,44 @@ async function runE2ESharedLinkTests() {
         await hostPage.screenshot({ path: hostDesktopFile, fullPage: false });
         copyToArtifacts('after_desktop_1440x900.png');
 
+        // Host updates radius to 2000m via setRadius(2000)
+        console.log(`\n--- STEP 2B: HOST UPDATES RADIUS TO 2000M ---`);
+        await hostPage.evaluate(async () => {
+            const data = document.querySelector('body')._x_dataStack[0];
+            await data.setRadius(2000);
+        });
+        await hostPage.waitForFunction(() => {
+            const body = document.querySelector('body');
+            return body && body._x_dataStack && body._x_dataStack[0]?.ranking === false && body._x_dataStack[0]?.shortlist?.length > 0;
+        }, { timeout: 20000 });
+
+        const hostUpdatedState = await hostPage.evaluate(() => {
+            const data = document.querySelector('body')._x_dataStack[0];
+            return {
+                searchRadiusMeters: data.searchRadiusMeters,
+                shortlistCount: data.shortlist.length,
+                firstVenueDist: data.shortlist[0]?.distFromCenterKm,
+                firstVenueBreakdowns: data.shortlist[0]?.memberBreakdowns
+            };
+        });
+
+        try {
+            assert.strictEqual(hostUpdatedState.searchRadiusMeters, 2000, 'Host radius updated to 2000m');
+            assert(typeof hostUpdatedState.firstVenueDist === 'number', 'Venue distance from center must be numeric');
+            assert(!isNaN(hostUpdatedState.firstVenueDist), 'Venue distance must not be NaN');
+            recordPass('Host successfully updates radius to 2000m, shortlist reflects numeric distance');
+        } catch (err) {
+            recordFail('Host radius update assertion', err);
+        }
+
+        const serverSnapshotAfterRadiusUpdate = await outingRepository.getOuting(sharedOutingId);
+        try {
+            assert.strictEqual(Number(serverSnapshotAfterRadiusUpdate.radiusKm), 2, 'Database persisted radiusKm as 2.0');
+            recordPass('Database correctly persisted new radius (2.0 km) via authorized PUT');
+        } catch (err) {
+            recordFail('Database radius persistence assertion', err);
+        }
+
         // --- STEP 3: BROWSER CONTEXT 2 (GUEST - ISOLATED STORAGE & NETWORK SPY) ---
         console.log(`\n--- STEP 3: BROWSER CONTEXT 2 (GUEST LINK OPEN & ZERO MUTATION) ---`);
         const guestContext = await browser.newContext({
@@ -212,6 +250,8 @@ async function runE2ESharedLinkTests() {
                 searchRadiusMeters: data.searchRadiusMeters,
                 shortlistCount: data.shortlist.length,
                 firstVenueId: data.shortlist[0]?.id,
+                firstVenueDist: data.shortlist[0]?.distFromCenterKm,
+                firstVenueBreakdowns: data.shortlist[0]?.memberBreakdowns,
                 votesMap: data.votesMap
             };
         });
@@ -226,10 +266,12 @@ async function runE2ESharedLinkTests() {
             );
             assert.strictEqual(Number(guestState.centerCoords.lat.toFixed(4)), 10.7782, 'Guest UI center lat matches');
             assert.strictEqual(Number(guestState.centerCoords.lng.toFixed(4)), 106.6912, 'Guest UI center lng matches');
-            assert.strictEqual(guestState.searchRadiusMeters, 3000, 'Guest UI radius matches 3000m');
-            assert.strictEqual(guestState.shortlistCount, hostState.shortlistCount, 'Guest shortlist matches Host shortlist');
+            assert.strictEqual(guestState.searchRadiusMeters, 2000, 'Guest UI radius matches updated 2000m');
+            assert.strictEqual(guestState.shortlistCount, hostUpdatedState.shortlistCount, 'Guest shortlist matches Host shortlist');
+            assert(typeof guestState.firstVenueDist === 'number' && !isNaN(guestState.firstVenueDist), 'Guest venue distance is numeric');
+            assert(Array.isArray(guestState.firstVenueBreakdowns), 'Guest receives memberBreakdowns');
             assert.strictEqual(guestState.votesMap[expectedVenue1.id], 1, 'Host vote is visible to Guest');
-            recordPass('Guest UI accurately reconstructs center, radius, participant wishes, shortlist & live votes');
+            recordPass('Guest UI accurately reconstructs center, updated radius (2.0km), member breakdowns, shortlist & live votes');
         } catch (err) {
             recordFail('Guest UI state fidelity check', err);
         }
@@ -239,7 +281,7 @@ async function runE2ESharedLinkTests() {
         try {
             assert.strictEqual(Number(serverSnapshotAfterGuestOpen.centerLat.toFixed(4)), 10.7782);
             assert.strictEqual(Number(serverSnapshotAfterGuestOpen.centerLng.toFixed(4)), 106.6912);
-            assert.strictEqual(Number(serverSnapshotAfterGuestOpen.radiusKm), 3);
+            assert.strictEqual(Number(serverSnapshotAfterGuestOpen.radiusKm), 2);
             assert.strictEqual(serverSnapshotAfterGuestOpen.friends.length, 3);
             recordPass('Server outing session metadata strictly preserved with zero mutation on guest join');
         } catch (err) {
@@ -298,9 +340,66 @@ async function runE2ESharedLinkTests() {
         try {
             assert.strictEqual(mobileState.friendsCount, 3, 'Mobile session loads 3 friends');
             assert(mobileState.shortlistCount > 0, 'Mobile session displays shortlist');
-            recordPass('Mobile viewport (390x844) successfully renders responsive session');
+            assert.strictEqual(mobileState.mobileView, 'list', 'Initial mobile view is list');
+            recordPass('Mobile viewport (390x844) successfully renders responsive session list');
         } catch (err) {
             recordFail('Mobile viewport assertion', err);
+        }
+
+        // Switch to Map View on mobile
+        console.log(`\n--- STEP 5B: MOBILE SWITCH TO MAP VIEW & INTERACTION ---`);
+        await mobilePage.evaluate(() => {
+            const data = document.querySelector('body')._x_dataStack[0];
+            data.switchMobileView('map');
+        });
+        await mobilePage.waitForTimeout(600);
+
+        const mobileMapState = await mobilePage.evaluate(() => {
+            const data = document.querySelector('body')._x_dataStack[0];
+            const mapContainer = document.getElementById('map-container');
+            const isMapVisible = mapContainer && window.getComputedStyle(mapContainer).display !== 'none';
+            const hasLeafletMap = Boolean(data.map);
+            const currentZoom = data.map ? data.map.getZoom() : null;
+            return {
+                mobileView: data.mobileView,
+                isMapVisible,
+                hasLeafletMap,
+                currentZoom,
+                currentMapStyle: data.currentMapStyle
+            };
+        });
+
+        try {
+            assert.strictEqual(mobileMapState.mobileView, 'map', 'Mobile view switched to map');
+            assert.strictEqual(mobileMapState.isMapVisible, true, 'Map container is visible on mobile');
+            assert.strictEqual(mobileMapState.hasLeafletMap, true, 'Leaflet map instance is active');
+            recordPass('Mobile map view toggled cleanly: container visible and Leaflet map initialized');
+        } catch (err) {
+            recordFail('Mobile map toggle assertion', err);
+        }
+
+        // Test tile style switching and zooming on mobile
+        await mobilePage.evaluate(() => {
+            const data = document.querySelector('body')._x_dataStack[0];
+            data.switchMapStyle('osm');
+            data.map.setZoom(15);
+        });
+        await mobilePage.waitForTimeout(600);
+
+        const mobileInteractionState = await mobilePage.evaluate(() => {
+            const data = document.querySelector('body')._x_dataStack[0];
+            return {
+                style: data.currentMapStyle,
+                zoom: data.map.getZoom()
+            };
+        });
+
+        try {
+            assert.strictEqual(mobileInteractionState.style, 'osm', 'Map style switched to OSM');
+            assert.strictEqual(mobileInteractionState.zoom, 15, 'Map zoom level updated to 15');
+            recordPass('Mobile map controls: tile style switched to OSM and zoom updated smoothly');
+        } catch (err) {
+            recordFail('Mobile map interaction assertion', err);
         }
 
         const mobileFile = path.resolve(outDir, 'after_mobile_390x844.png');

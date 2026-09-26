@@ -53,10 +53,35 @@ window.createRecommendationController = function() {
             }
         },
 
-        setRadius(meters) {
-            this.searchRadiusMeters = meters;
-            this.updateRadiusCircle();
-            this.executeSearchAndRank();
+        async setRadius(meters) {
+            const previousRadius = this.searchRadiusMeters;
+            if (this.outingCode) {
+                try {
+                    const radiusKm = Number((meters / 1000).toFixed(2));
+                    await window.ApiClient.put(`/api/outings/${this.outingCode}`, {
+                        radiusKm
+                    }, {
+                        shareToken: this.shareToken
+                    });
+                    this.searchRadiusMeters = meters;
+                    this.updateRadiusCircle();
+                    this.showToast(`📏 Đã cập nhật bán kính: ${(meters/1000).toFixed(1)} km`, 'success');
+                    await this.executeSearchAndRank();
+                } catch (err) {
+                    console.error('Update radius error:', err);
+                    this.searchRadiusMeters = previousRadius;
+                    this.updateRadiusCircle();
+                    if (err.status === 401 || err.status === 403) {
+                        this.showToast('🔒 Không có quyền đổi bán kính kèo này (Yêu cầu share token hợp lệ).', 'error');
+                    } else {
+                        this.showToast(`⚠️ Không thể lưu bán kính mới: ${err.message}`, 'error');
+                    }
+                }
+            } else {
+                this.searchRadiusMeters = meters;
+                this.updateRadiusCircle();
+                await this.executeSearchAndRank();
+            }
         },
 
         selectVenue(venue) {
@@ -100,7 +125,8 @@ window.createRecommendationController = function() {
 
                 const data = await window.ApiClient.post('/api/venues/search-and-rank', requestPayload, {
                     signal: this.searchAbortController.signal,
-                    timeoutMs: 15000
+                    timeoutMs: 15000,
+                    shareToken: this.shareToken
                 });
 
                 if (currentReqId !== this.searchRequestId) return;

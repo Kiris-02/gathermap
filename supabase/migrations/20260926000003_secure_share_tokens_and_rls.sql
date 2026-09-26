@@ -1,8 +1,11 @@
--- GatherMap Migration: Secure Share Tokens & Strict Privacy RLS
+-- GatherMap Migration: Secure Share Tokens, Data Preservation & Strict Privacy RLS
 -- 1. Add share_token_hash column to outings for cryptographically secure access delegation.
--- 2. Backfill existing outings sequentially with high-entropy token hashes.
--- 3. Revoke public direct SELECT access on outings, participants, recommendations, and votes.
+--    NOTE: Does NOT destructively backfill legacy outings with unrecoverable hashes.
+--    Legacy outings (share_token_hash IS NULL) transition smoothly via application-level upgrade upon access.
+-- 2. Add dist_from_center_km and member_breakdowns to recommendations for complete data restoration.
+-- 3. Revoke public direct SELECT access on private tables (outings, participants, recommendations, votes).
 --    All private outing and location access must be authorized via the backend service_role using valid share tokens.
+-- 4. Venues and reviews remain public read-only.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -17,10 +20,22 @@ BEGIN
     END IF;
 END $$;
 
--- 2. Sequential backfill of existing outings with secure SHA-256 token hashes
-UPDATE outings
-SET share_token_hash = encode(digest(gen_random_bytes(24)::text, 'sha256'), 'hex')
-WHERE share_token_hash IS NULL;
+-- 2. Add dist_from_center_km and member_breakdowns to recommendations if not present
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'recommendations' AND column_name = 'dist_from_center_km'
+    ) THEN
+        ALTER TABLE recommendations ADD COLUMN dist_from_center_km REAL;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'recommendations' AND column_name = 'member_breakdowns'
+    ) THEN
+        ALTER TABLE recommendations ADD COLUMN member_breakdowns TEXT;
+    END IF;
+END $$;
 
 -- 3. Strict Row Level Security: Revoke public direct read on private tables
 ALTER TABLE outings ENABLE ROW LEVEL SECURITY;
