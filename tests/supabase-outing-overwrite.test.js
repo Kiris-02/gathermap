@@ -702,6 +702,221 @@ async function runOverwriteTests() {
         }
     });
 
+    // 10. Authoritative Read: getRawVotesList() returns [] without falling back to SQLite
+    await test('Authoritative Read: getRawVotesList() returns [] from Supabase (zero SQLite fallback when SQLite has data)', async () => {
+        const outingId = 'EAT-AUTH-VOTES-EMPTY';
+        
+        // Populate SQLite with local votes
+        const sqliteDb = new Database(testDbPath);
+        sqliteDb.prepare(`INSERT OR IGNORE INTO outings (id, center_lat, center_lng) VALUES (?, 10.7, 106.7)`).run(outingId);
+        sqliteDb.prepare(`INSERT OR IGNORE INTO votes (id, outing_id, venue_id, voter_name, voter_id) VALUES (?, ?, ?, ?, ?)`).run('vote-local-1', outingId, 'venue-local', 'Local Voter', 'v-local-1');
+        sqliteDb.close();
+
+        // Supabase returns []
+        const mockSupabase = {
+            from: (table) => {
+                if (table === 'votes') {
+                    return {
+                        select: () => ({
+                            eq: async () => ({
+                                data: [],
+                                error: null
+                            })
+                        })
+                    };
+                }
+            }
+        };
+
+        const dbClient = require('../src/repositories/db-client');
+        const origGetSupabaseClient = dbClient.getSupabaseClient;
+        const origIsConfigured = dbClient.isSupabaseConfigured;
+
+        try {
+            dbClient.getSupabaseClient = () => mockSupabase;
+            dbClient.isSupabaseConfigured = true;
+
+            const votes = await outingRepository.getRawVotesList(outingId);
+            assert.strictEqual(Array.isArray(votes), true, 'Must return array');
+            assert.strictEqual(votes.length, 0, 'Must return empty array [] from Supabase without falling back to SQLite');
+        } finally {
+            dbClient.getSupabaseClient = origGetSupabaseClient;
+            dbClient.isSupabaseConfigured = origIsConfigured;
+        }
+    });
+
+    // 11. Authoritative Read: getRawVotesList() throws error on Supabase failure
+    await test('Authoritative Read: getRawVotesList() throws error on Supabase failure (zero SQLite fallback or error swallowing)', async () => {
+        const outingId = 'EAT-AUTH-VOTES-ERROR';
+        
+        const sqliteDb = new Database(testDbPath);
+        sqliteDb.prepare(`INSERT OR IGNORE INTO outings (id, center_lat, center_lng) VALUES (?, 10.7, 106.7)`).run(outingId);
+        sqliteDb.prepare(`INSERT OR IGNORE INTO votes (id, outing_id, venue_id, voter_name, voter_id) VALUES (?, ?, ?, ?, ?)`).run('vote-local-2', outingId, 'venue-local-2', 'Local Voter 2', 'v-local-2');
+        sqliteDb.close();
+
+        const mockSupabase = {
+            from: (table) => ({
+                select: () => ({
+                    eq: async () => ({
+                        data: null,
+                        error: { message: 'Supabase connection timeout during vote query' }
+                    })
+                })
+            })
+        };
+
+        const dbClient = require('../src/repositories/db-client');
+        const origGetSupabaseClient = dbClient.getSupabaseClient;
+        const origIsConfigured = dbClient.isSupabaseConfigured;
+
+        try {
+            dbClient.getSupabaseClient = () => mockSupabase;
+            dbClient.isSupabaseConfigured = true;
+
+            let threw = false;
+            try {
+                await outingRepository.getRawVotesList(outingId);
+            } catch (err) {
+                threw = true;
+                assert(err.message.includes('Supabase connection timeout'), 'Error must contain exact Supabase error message');
+            }
+            assert.strictEqual(threw, true, 'getRawVotesList must throw error on Supabase failure');
+        } finally {
+            dbClient.getSupabaseClient = origGetSupabaseClient;
+            dbClient.isSupabaseConfigured = origIsConfigured;
+        }
+    });
+
+    // 12. Authoritative Read: getOuting, getParticipants, getRecommendations return null/[] without falling back to SQLite
+    await test('Authoritative Read: getOuting, getParticipants, getRecommendations return null/[] (zero SQLite fallback)', async () => {
+        const outingId = 'EAT-AUTH-RECS-EMPTY';
+        
+        // Put data in SQLite
+        const sqliteDb = new Database(testDbPath);
+        sqliteDb.prepare(`INSERT OR IGNORE INTO outings (id, name, center_lat, center_lng) VALUES (?, 'Local Outing', 10.7, 106.7)`).run(outingId);
+        sqliteDb.prepare(`INSERT OR IGNORE INTO participants (id, outing_id, name, lat, lng) VALUES ('p-loc-1', ?, 'Local Person', 10.7, 106.7)`).run(outingId);
+        sqliteDb.prepare(`INSERT OR IGNORE INTO venues (id, name, category, type, address, lat, lng) VALUES ('v-loc-1', 'Local Venue', 'Food', 'cafe', '123 Test St', 10.7, 106.7)`).run();
+        sqliteDb.prepare(`INSERT OR IGNORE INTO recommendations (id, outing_id, venue_id, group_score, avg_score, lowest_score, ai_rationale) VALUES ('r-loc-1', ?, 'v-loc-1', 90, 90, 90, 'local rationale')`).run(outingId);
+        sqliteDb.close();
+
+        const mockSupabase = {
+            from: (table) => {
+                if (table === 'outings') {
+                    return {
+                        select: () => ({
+                            eq: () => ({
+                                maybeSingle: async () => ({ data: null, error: null })
+                            })
+                        })
+                    };
+                }
+                if (table === 'participants') {
+                    return {
+                        select: () => ({
+                            eq: async () => ({ data: [], error: null })
+                        })
+                    };
+                }
+                if (table === 'recommendations') {
+                    return {
+                        select: () => ({
+                            eq: () => ({
+                                order: async () => ({ data: [], error: null })
+                            })
+                        })
+                    };
+                }
+            }
+        };
+
+        const dbClient = require('../src/repositories/db-client');
+        const origGetSupabaseClient = dbClient.getSupabaseClient;
+        const origIsConfigured = dbClient.isSupabaseConfigured;
+
+        try {
+            dbClient.getSupabaseClient = () => mockSupabase;
+            dbClient.isSupabaseConfigured = true;
+
+            const outing = await outingRepository.getOuting(outingId);
+            assert.strictEqual(outing, null, 'getOuting must return null from Supabase without reading SQLite');
+
+            const participants = await outingRepository.getParticipants(outingId);
+            assert.deepStrictEqual(participants, [], 'getParticipants must return [] from Supabase without reading SQLite');
+
+            const recs = await outingRepository.getRecommendations(outingId);
+            assert.deepStrictEqual(recs, [], 'getRecommendations must return [] from Supabase without reading SQLite');
+        } finally {
+            dbClient.getSupabaseClient = origGetSupabaseClient;
+            dbClient.isSupabaseConfigured = origIsConfigured;
+        }
+    });
+
+    // 13. Authoritative Read: getOuting, getParticipants, getRecommendations propagate errors on failure
+    await test('Authoritative Read: getOuting, getParticipants, getRecommendations throw on Supabase error', async () => {
+        const outingId = 'EAT-AUTH-ERROR-PROPAGATION';
+
+        const mockFailingSupabase = {
+            from: (table) => ({
+                select: () => {
+                    const resultObj = {
+                        data: null,
+                        error: { message: `Supabase error on ${table}` },
+                        maybeSingle: async () => ({ data: null, error: { message: `Supabase error on ${table}` } }),
+                        order: async () => ({ data: null, error: { message: `Supabase error on ${table}` } })
+                    };
+                    Object.defineProperty(resultObj, 'then', {
+                        value: (resolve) => resolve({ data: null, error: { message: `Supabase error on ${table}` } })
+                    });
+                    return {
+                        eq: () => resultObj,
+                        order: () => ({
+                            eq: async () => ({ data: null, error: { message: `Supabase error on ${table}` } })
+                        })
+                    };
+                }
+            })
+        };
+
+        const dbClient = require('../src/repositories/db-client');
+        const origGetSupabaseClient = dbClient.getSupabaseClient;
+        const origIsConfigured = dbClient.isSupabaseConfigured;
+
+        try {
+            dbClient.getSupabaseClient = () => mockFailingSupabase;
+            dbClient.isSupabaseConfigured = true;
+
+            let outingThrew = false;
+            try {
+                await outingRepository.getOuting(outingId);
+            } catch (err) {
+                outingThrew = true;
+                assert(err.message.includes('Supabase error on outings'));
+            }
+            assert.strictEqual(outingThrew, true, 'getOuting must throw on Supabase error');
+
+            let participantsThrew = false;
+            try {
+                await outingRepository.getParticipants(outingId);
+            } catch (err) {
+                participantsThrew = true;
+                assert(err.message.includes('Supabase error on participants'));
+            }
+            assert.strictEqual(participantsThrew, true, 'getParticipants must throw on Supabase error');
+
+            let recsThrew = false;
+            try {
+                await outingRepository.getRecommendations(outingId);
+            } catch (err) {
+                recsThrew = true;
+                assert(err.message.includes('Supabase error on recommendations'));
+            }
+            assert.strictEqual(recsThrew, true, 'getRecommendations must throw on Supabase error');
+        } finally {
+            dbClient.getSupabaseClient = origGetSupabaseClient;
+            dbClient.isSupabaseConfigured = origIsConfigured;
+        }
+    });
+
     console.log(`\n📊 OVERWRITE PREVENTION SUMMARY: ${passed} PASSED, ${failed} FAILED\n`);
 
     try { fs.unlinkSync(testDbPath); } catch (_) {}

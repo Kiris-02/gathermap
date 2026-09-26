@@ -160,16 +160,15 @@ async function getRecommendations(outingId, participants = [], votesMap = {}, ou
 
     const client = getSupabaseClient();
     if (dbClient.isSupabaseConfigured && client) {
-        try {
-            const { data } = await client.from('recommendations')
-                .select('*')
-                .eq('outing_id', outingId)
-                .order('group_score', { ascending: false });
-            if (data && data.length > 0) recRows = data;
-        } catch (_) {}
-    }
-
-    if (recRows.length === 0) {
+        const { data, error } = await client.from('recommendations')
+            .select('*')
+            .eq('outing_id', outingId)
+            .order('group_score', { ascending: false });
+        if (error) {
+            throw new Error(`Supabase getRecommendations failed: ${error.message}`);
+        }
+        recRows = data || [];
+    } else {
         const sqliteDb = getSqliteDb();
         if (sqliteDb) {
             try {
@@ -261,34 +260,30 @@ async function getOuting(id) {
 
     const client = getSupabaseClient();
     if (dbClient.isSupabaseConfigured && client) {
-        try {
-            const { data, error } = await client.from('outings').select('*').eq('id', id).maybeSingle();
-            if (error && error.code !== 'PGRST116') {
-                console.warn('Supabase getOuting warning:', error.message);
-            }
-            if (data) {
-                outing = {
-                    id: data.id,
-                    name: data.name || 'Weekend Hangout',
-                    mode: data.mode || 'representative',
-                    centerLat: data.center_lat,
-                    centerLng: data.center_lng,
-                    radiusKm: data.radius_km,
-                    status: data.status,
-                    share_token_hash: data.share_token_hash || null,
-                    createdAt: data.created_at
-                };
-            }
-        } catch (e) {
-            // Not found in Supabase or network error
+        const { data, error } = await client.from('outings').select('*').eq('id', id).maybeSingle();
+        if (error && error.code !== 'PGRST116') {
+            throw new Error(`Supabase getOuting failed: ${error.message}`);
         }
-    }
-
-    const sqliteDb = getSqliteDb();
-    if (sqliteDb) {
-        const row = sqliteDb.prepare('SELECT * FROM outings WHERE id = ?').get(id);
-        if (row) {
-            if (!outing) {
+        if (data) {
+            outing = {
+                id: data.id,
+                name: data.name || 'Weekend Hangout',
+                mode: data.mode || 'representative',
+                centerLat: data.center_lat,
+                centerLng: data.center_lng,
+                radiusKm: data.radius_km,
+                status: data.status,
+                share_token_hash: data.share_token_hash || null,
+                createdAt: data.created_at
+            };
+        } else {
+            return null;
+        }
+    } else {
+        const sqliteDb = getSqliteDb();
+        if (sqliteDb) {
+            const row = sqliteDb.prepare('SELECT * FROM outings WHERE id = ?').get(id);
+            if (row) {
                 outing = {
                     id: row.id,
                     name: row.name,
@@ -300,16 +295,6 @@ async function getOuting(id) {
                     share_token_hash: row.share_token_hash || null,
                     createdAt: row.created_at
                 };
-            } else {
-                if (!outing.share_token_hash && row.share_token_hash) {
-                    outing.share_token_hash = row.share_token_hash;
-                }
-                if (row.name && (!outing.name || outing.name === 'Weekend Hangout')) {
-                    outing.name = row.name;
-                }
-                if (row.mode && (!outing.mode || outing.mode === 'representative')) {
-                    outing.mode = row.mode;
-                }
             }
         }
     }
@@ -399,22 +384,18 @@ async function getParticipants(outingId) {
     if (!outingId) return [];
     const client = getSupabaseClient();
     if (dbClient.isSupabaseConfigured && client) {
-        try {
-            const { data, error } = await client.from('participants').select('*').eq('outing_id', outingId);
-            if (error) throw new Error(error.message);
-            if (data && data.length > 0) {
-                return data.map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    lat: p.lat,
-                    lng: p.lng,
-                    wish: p.wish,
-                    isMe: p.is_me
-                }));
-            }
-        } catch (e) {
-            console.warn('Supabase getParticipants warning:', e.message);
+        const { data, error } = await client.from('participants').select('*').eq('outing_id', outingId);
+        if (error) {
+            throw new Error(`Supabase getParticipants failed: ${error.message}`);
         }
+        return (data || []).map(p => ({
+            id: p.id,
+            name: p.name,
+            lat: p.lat,
+            lng: p.lng,
+            wish: p.wish,
+            isMe: Boolean(p.is_me)
+        }));
     }
 
     const sqliteDb = getSqliteDb();
@@ -840,10 +821,11 @@ async function getRawVotesList(outingId) {
 
     const client = getSupabaseClient();
     if (dbClient.isSupabaseConfigured && client) {
-        try {
-            const { data } = await client.from('votes').select('*').eq('outing_id', outingId);
-            if (data && data.length > 0) return data;
-        } catch (_) {}
+        const { data, error } = await client.from('votes').select('*').eq('outing_id', outingId);
+        if (error) {
+            throw new Error(`Supabase getRawVotesList failed: ${error.message}`);
+        }
+        return data || [];
     }
 
     const sqliteDb = getSqliteDb();

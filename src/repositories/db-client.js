@@ -189,8 +189,22 @@ function initSqliteSchema(db) {
         db.exec(`ALTER TABLE recommendations ADD COLUMN member_breakdowns TEXT;`);
     } catch (_) {}
 
-    // Migration 5: Replace old UNIQUE(outing_id, voter_name, venue_id) with stable voter identity indexes
+    // Migration 5: Replace old UNIQUE(outing_id, voter_name, venue_id) with stable voter identity indexes & audit archive
     try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS votes_dedup_archive (
+                archive_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id TEXT,
+                outing_id TEXT,
+                venue_id TEXT,
+                voter_name TEXT,
+                voter_id TEXT,
+                created_at TEXT,
+                archived_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                archive_reason TEXT
+            );
+        `);
+
         const tableSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='votes'").get();
         if (tableSql && tableSql.sql && tableSql.sql.includes('UNIQUE(outing_id, voter_name, venue_id)')) {
             db.transaction(() => {
@@ -212,6 +226,63 @@ function initSqliteSchema(db) {
                 `);
             })();
         }
+
+        // Deduplicate identifiable voters (voter_id IS NOT NULL) before creating unique index
+        db.transaction(() => {
+            db.exec(`
+                INSERT INTO votes_dedup_archive (id, outing_id, venue_id, voter_name, voter_id, created_at, archive_reason)
+                SELECT id, outing_id, venue_id, voter_name, voter_id, created_at, 'superseded_duplicate_voter_id'
+                FROM votes
+                WHERE voter_id IS NOT NULL AND id NOT IN (
+                    SELECT id FROM (
+                        SELECT id, ROW_NUMBER() OVER (
+                            PARTITION BY outing_id, voter_id 
+                            ORDER BY created_at DESC, id DESC
+                        ) as rn
+                        FROM votes
+                        WHERE voter_id IS NOT NULL
+                    ) WHERE rn = 1
+                );
+
+                DELETE FROM votes
+                WHERE voter_id IS NOT NULL AND id NOT IN (
+                    SELECT id FROM (
+                        SELECT id, ROW_NUMBER() OVER (
+                            PARTITION BY outing_id, voter_id 
+                            ORDER BY created_at DESC, id DESC
+                        ) as rn
+                        FROM votes
+                        WHERE voter_id IS NOT NULL
+                    ) WHERE rn = 1
+                );
+
+                INSERT INTO votes_dedup_archive (id, outing_id, venue_id, voter_name, voter_id, created_at, archive_reason)
+                SELECT id, outing_id, venue_id, voter_name, voter_id, created_at, 'superseded_duplicate_legacy_voter_name'
+                FROM votes
+                WHERE voter_id IS NULL AND id NOT IN (
+                    SELECT id FROM (
+                        SELECT id, ROW_NUMBER() OVER (
+                            PARTITION BY outing_id, voter_name 
+                            ORDER BY created_at DESC, id DESC
+                        ) as rn
+                        FROM votes
+                        WHERE voter_id IS NULL
+                    ) WHERE rn = 1
+                );
+
+                DELETE FROM votes
+                WHERE voter_id IS NULL AND id NOT IN (
+                    SELECT id FROM (
+                        SELECT id, ROW_NUMBER() OVER (
+                            PARTITION BY outing_id, voter_name 
+                            ORDER BY created_at DESC, id DESC
+                        ) as rn
+                        FROM votes
+                        WHERE voter_id IS NULL
+                    ) WHERE rn = 1
+                );
+            `);
+        })();
     } catch (_) {}
 
     // Ensure non-colliding unique partial indexes exist in SQLite
@@ -305,5 +376,6 @@ module.exports = {
         return isSupabaseConfigured ? 'Supabase Cloud Database (PostgreSQL)' : 'Local SQLite Database (gathermap.db)';
     },
     getSupabaseClient: () => supabaseClient,
-    getSqliteDb: () => sqliteDb
+    getSqliteDb: () => sqliteDb,
+    initSqliteSchema
 };

@@ -199,6 +199,116 @@ async function runVotingSessionTests() {
             try { fs.unlinkSync(legacyDbPath); } catch (_) {}
         });
 
+        // Test 2B: Pre-migration duplicate vote deduplication, audit archive, and idempotent unique indexing
+        await runTest('Pre-migration duplicate vote deduplication: archives superseded votes, preserves same-name distinct voters, and runs idempotently', async () => {
+            const dedupTestDbPath = path.join(__dirname, 'dedup-migration-test.test.db');
+            if (fs.existsSync(dedupTestDbPath)) fs.unlinkSync(dedupTestDbPath);
+
+            const { initSqliteSchema } = require('../src/repositories/db-client');
+            const testDb = new Database(dedupTestDbPath);
+
+            // 1. Create legacy schema with old UNIQUE constraint allowing duplicates across multiple venues
+            testDb.exec(`
+                CREATE TABLE outings (
+                    id TEXT PRIMARY KEY,
+                    name TEXT,
+                    mode TEXT DEFAULT 'representative',
+                    center_lat REAL NOT NULL,
+                    center_lng REAL NOT NULL,
+                    radius_km REAL NOT NULL DEFAULT 3.0,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    share_token_hash TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE TABLE votes (
+                    id TEXT PRIMARY KEY,
+                    outing_id TEXT NOT NULL,
+                    venue_id TEXT NOT NULL,
+                    voter_name TEXT NOT NULL,
+                    voter_id TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(outing_id, voter_name, venue_id)
+                );
+
+                INSERT INTO outings (id, center_lat, center_lng) VALUES ('EAT-DEDUP-01', 10.7769, 106.7009);
+
+                -- Case A: Identifiable voter (voter_id = 'v_alice') with duplicate votes (older on v_old, newer on v_new)
+                INSERT INTO votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
+                VALUES ('vote-alice-old', 'EAT-DEDUP-01', 'venue-old', 'You', 'v_alice', '2026-09-01 10:00:00');
+                INSERT INTO votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
+                VALUES ('vote-alice-new', 'EAT-DEDUP-01', 'venue-new', 'You', 'v_alice', '2026-09-01 12:00:00');
+
+                -- Case B: Distinct voter with identical display name 'You' (voter_id = 'v_bob') on distinct venue
+                INSERT INTO votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
+                VALUES ('vote-bob-active', 'EAT-DEDUP-01', 'venue-bob', 'You', 'v_bob', '2026-09-01 11:00:00');
+
+                -- Case C: Legacy voter (voter_id IS NULL) with duplicate votes under voter_name 'Legacy Charlie'
+                INSERT INTO votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
+                VALUES ('vote-charlie-old', 'EAT-DEDUP-01', 'venue-1', 'Legacy Charlie', NULL, '2026-09-01 08:00:00');
+                INSERT INTO votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
+                VALUES ('vote-charlie-new', 'EAT-DEDUP-01', 'venue-2', 'Legacy Charlie', NULL, '2026-09-01 09:00:00');
+
+                -- Case D: Distinct legacy voter under voter_name 'Legacy David'
+                INSERT INTO votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
+                VALUES ('vote-david-active', 'EAT-DEDUP-01', 'venue-3', 'Legacy David', NULL, '2026-09-01 08:30:00');
+            `);
+
+            // Total initial raw votes = 6 (2 Alice + 1 Bob + 2 Charlie + 1 David)
+            const initialCount = testDb.prepare('SELECT count(*) as c FROM votes').get().c;
+            assert.strictEqual(initialCount, 6, 'Initial raw votes must be 6');
+
+            // 2. Execute migration schema initialization
+            initSqliteSchema(testDb);
+
+            // 3. Assert active votes after deduplication
+            const activeVotes = testDb.prepare('SELECT * FROM votes ORDER BY id ASC').all();
+            assert.strictEqual(activeVotes.length, 4, 'Active votes after migration must be exactly 4 (1 Alice, 1 Bob, 1 Charlie, 1 David)');
+
+            // Alice kept most recent vote (vote-alice-new on venue-new)
+            const activeAlice = activeVotes.find(v => v.voter_id === 'v_alice');
+            assert.strictEqual(activeAlice.id, 'vote-alice-new', 'Alice active vote must be the newer vote');
+            assert.strictEqual(activeAlice.venue_id, 'venue-new');
+
+            // Bob preserved (voter_id = 'v_bob' also named 'You')
+            const activeBob = activeVotes.find(v => v.voter_id === 'v_bob');
+            assert(activeBob, 'Bob must be preserved independently of Alice');
+            assert.strictEqual(activeBob.venue_id, 'venue-bob');
+
+            // Charlie kept most recent vote (vote-charlie-new on venue-2)
+            const activeCharlie = activeVotes.find(v => v.voter_name === 'Legacy Charlie');
+            assert.strictEqual(activeCharlie.id, 'vote-charlie-new', 'Charlie active vote must be the newer vote');
+            assert.strictEqual(activeCharlie.venue_id, 'venue-2');
+
+            // David preserved
+            const activeDavid = activeVotes.find(v => v.voter_name === 'Legacy David');
+            assert(activeDavid, 'David legacy vote must be preserved');
+
+            // 4. Assert votes_dedup_archive contains superseded duplicate votes
+            const archived = testDb.prepare('SELECT * FROM votes_dedup_archive ORDER BY id ASC').all();
+            assert.strictEqual(archived.length, 2, 'Archived votes count must be exactly 2 (vote-alice-old and vote-charlie-old)');
+            assert.strictEqual(archived[0].id, 'vote-alice-old');
+            assert.strictEqual(archived[0].archive_reason, 'superseded_duplicate_voter_id');
+            assert.strictEqual(archived[1].id, 'vote-charlie-old');
+            assert.strictEqual(archived[1].archive_reason, 'superseded_duplicate_legacy_voter_name');
+
+            // 5. Assert unique indexes exist and prevent new duplicate votes
+            const indexes = testDb.prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='votes'").all();
+            const indexNames = indexes.map(i => i.name);
+            assert(indexNames.includes('idx_unique_votes_voter_id'), 'idx_unique_votes_voter_id index must exist');
+            assert(indexNames.includes('idx_unique_votes_legacy_name'), 'idx_unique_votes_legacy_name index must exist');
+
+            // 6. Test Idempotency: Run migration a second time -> zero errors, zero extra rows archived
+            initSqliteSchema(testDb);
+            const secondPassActive = testDb.prepare('SELECT count(*) as c FROM votes').get().c;
+            const secondPassArchived = testDb.prepare('SELECT count(*) as c FROM votes_dedup_archive').get().c;
+            assert.strictEqual(secondPassActive, 4, 'Second migration run must leave active votes unchanged');
+            assert.strictEqual(secondPassArchived, 2, 'Second migration run must not duplicate archive rows');
+
+            testDb.close();
+            try { fs.unlinkSync(dedupTestDbPath); } catch (_) {}
+        });
+
         // --- SUITE B: COLLISION RESISTANCE & OUTING OVERWRITE PREVENTION ---
 
         // Test 3: Outing ID format and collision resistance
