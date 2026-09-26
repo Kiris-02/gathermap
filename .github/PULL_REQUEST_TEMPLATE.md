@@ -9,8 +9,7 @@
 - 
 
 ### 🧪 Tests & Verification
-- **Executed Command**: 
-pm test
+- **Executed Command**: `npm test`
 - **Result Output**: 
 
 ### ⚠️ Known Risks

@@ -22,8 +22,7 @@ assignees: ''
 - 
 
 ### 🧪 Verification
-- Command: 
-pm test
+- Command: `npm test`
 - Manual check: 
 
 ### 🚫 Out of Scope

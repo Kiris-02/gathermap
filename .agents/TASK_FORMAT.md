@@ -4,9 +4,9 @@ All formal communications between **Grum** and **Antina** must adhere to the fou
 
 ---
 
-## 1. GRUM_TASK (Issued by Grum on GitHub Issue)
+## 1. `GRUM_TASK` (Issued by Grum on GitHub Issue)
 
-`markdown
+```markdown
 ## 📋 GRUM_TASK
 
 - **task_id**: TASK-XXX
@@ -22,50 +22,48 @@ All formal communications between **Grum** and **Antina** must adhere to the fou
 - Constraint 2
 
 ### 📁 Files of Interest
-- path/to/file1.js
-- path/to/file2.js
+- `path/to/file1.js`
+- `path/to/file2.js`
 
 ### 🧪 Verification
-- Command: 
-pm test
+- Command: `npm test`
 - Manual check: [Step-by-step verification instruction]
 
 ### 🚫 Out of Scope
 - Out-of-scope item 1
-`
+```
 
 ---
 
-## 2. ANTINA_STATUS (Issued by Antina on GitHub Issue comment)
+## 2. `ANTINA_STATUS` (Issued by Antina on GitHub Issue comment)
 
-`markdown
+```markdown
 ## 🔄 ANTINA_STATUS
 
 - **task_id**: TASK-XXX
 - **state**: ANTINA_WORKING | BLOCKED | NEEDS_KIRIS
-- **branch**: eat/task-xxx-description
+- **branch**: `feat/task-xxx-description`
 - **notes**: [Current phase of implementation, subagent progress, or blocker details]
-`
+```
 
 ---
 
-## 3. ANTINA_REPORT (Issued by Antina on Pull Request description)
+## 3. `ANTINA_REPORT` (Issued by Antina on Pull Request description)
 
-`markdown
+```markdown
 ## 📤 ANTINA_REPORT
 
 - **task_id**: TASK-XXX
 - **status**: PR_READY | REVISION_REQUIRED
-- **pr**: #123 (or https://github.com/Kiris-02/gathermap/pull/123)
+- **pr**: #123 (or `https://github.com/Kiris-02/gathermap/pull/123`)
 - **commit**: [SHA]
 - **summary**: [Concise summary of implementation changes]
 
 ### 📁 Files Changed
-- path/to/file1.js (+12, -3)
+- `path/to/file1.js` (+12, -3)
 
 ### 🧪 Verification
-- **Executed Command**: 
-pm test
+- **Executed Command**: `npm test`
 - **Result**: [Pass/Fail summary]
 
 ### ⚠️ Risks
@@ -75,13 +73,13 @@ pm test
 - None (or list open questions)
 
 > 🛑 **Author Confirmation**: I will not self-merge this Pull Request.
-`
+```
 
 ---
 
-## 4. GRUM_REVIEW (Issued by Grum on Pull Request comment)
+## 4. `GRUM_REVIEW` (Issued by Grum on Pull Request comment)
 
-`markdown
+```markdown
 ## 🔍 GRUM_REVIEW
 
 - **task_id**: TASK-XXX
@@ -91,4 +89,4 @@ pm test
   - [ ] Action item 1 (if REVISION_REQUIRED)
 - **verification_notes**: [Notes on CI run or test validation]
 - **next_state**: DONE | ANTINA_WORKING | NEEDS_KIRIS
-`
+```
