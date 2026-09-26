@@ -9,21 +9,21 @@ assignees: ''
 ## 📋 GRUM_TASK
 
 - **task_id**: TASK-
-- **goal**: 
-- **context**: 
+- **goal**:
+- **context**:
 
 ### 🎯 Acceptance Criteria
-- [ ] 
+- [ ]
 
 ### ⚠️ Constraints
-- 
+-
 
 ### 📁 Files of Interest
-- 
+-
 
 ### 🧪 Verification
 - Command: `npm test`
-- Manual check: 
+- Manual check:
 
 ### 🚫 Out of Scope
-- 
+-

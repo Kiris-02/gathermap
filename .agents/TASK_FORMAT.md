@@ -85,7 +85,7 @@ All formal communications between **Grum** and **Antina** must adhere to the fou
 - **task_id**: TASK-XXX
 - **decision**: ACCEPT | REVISION_REQUIRED | NEEDS_KIRIS
 - **findings**: [Detailed observations from diff inspection]
-- **required_changes**: 
+- **required_changes**:
   - [ ] Action item 1 (if REVISION_REQUIRED)
 - **verification_notes**: [Notes on CI run or test validation]
 - **next_state**: DONE | ANTINA_WORKING | NEEDS_KIRIS
