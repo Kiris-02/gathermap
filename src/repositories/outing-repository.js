@@ -650,6 +650,19 @@ async function recordVote(outingId, venueId, voterName = 'Guest', voterId = null
             const { error } = await client.from('votes').delete().eq('outing_id', outingId).eq('voter_name', voterName);
             if (error) throw new Error(`Supabase recordVote unvoted failed: ${error.message}`);
         } else {
+            // Ensure outing exists in Supabase before attaching votes (never overwrite metadata)
+            const { data: remoteOuting, error: outingCheckErr } = await client
+                .from('outings')
+                .select('id')
+                .eq('id', outingId)
+                .maybeSingle();
+            if (outingCheckErr) {
+                throw new Error(`Supabase verify outing existence failed: ${outingCheckErr.message}`);
+            }
+            if (!remoteOuting) {
+                throw new Error(`Outing ${outingId} does not exist in remote database`);
+            }
+
             // Ensure venue exists in Supabase to satisfy foreign key constraint
             try {
                 const venue = await venueRepository.getVenueById(venueId);
@@ -681,26 +694,9 @@ async function recordVote(outingId, venueId, voterName = 'Guest', voterId = null
                 }
             } catch (_) {}
 
-            // Ensure outing exists in Supabase to satisfy foreign key constraint
-            try {
-                const sqliteDb = getSqliteDb();
-                if (sqliteDb) {
-                    const localOuting = sqliteDb.prepare('SELECT id, center_lat, center_lng, radius_km, status FROM outings WHERE id = ?').get(outingId);
-                    if (localOuting) {
-                        await client.from('outings').upsert([{
-                            id: localOuting.id,
-                            center_lat: localOuting.center_lat,
-                            center_lng: localOuting.center_lng,
-                            radius_km: localOuting.radius_km,
-                            status: localOuting.status || 'active'
-                        }], { onConflict: 'id' });
-                    }
-                }
-            } catch (_) {}
-
             if (action === 'changed') {
                 const { error: delErr } = await client.from('votes').delete().eq('outing_id', outingId).eq('voter_name', voterName);
-                if (delErr) console.warn(`Supabase recordVote changed delete warning: ${delErr.message}`);
+                if (delErr) throw new Error(`Supabase recordVote changed delete failed: ${delErr.message}`);
             }
 
             const voteId = 'vote-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
@@ -710,7 +706,7 @@ async function recordVote(outingId, venueId, voterName = 'Guest', voterId = null
                 venue_id: venueId,
                 voter_name: voterName
             }]);
-            if (insErr) console.warn(`Supabase recordVote ${action} insert warning: ${insErr.message}`);
+            if (insErr) throw new Error(`Supabase recordVote ${action} insert failed: ${insErr.message}`);
         }
     }
 
@@ -769,28 +765,69 @@ async function getVotes(outingId) {
     return votesMap;
 }
 
-async function updateOutingShareToken(outingId, shareTokenHash) {
-    if (!outingId || !shareTokenHash) return;
+async function setLegacyOutingShareToken(outingId, shareTokenHash) {
+    if (!outingId || !shareTokenHash) throw new Error('outingId and shareTokenHash are required');
+    let affected = 0;
 
     const client = getSupabaseClient();
     if (dbClient.isSupabaseConfigured && client) {
-        try {
-            await client.from('outings').update({ share_token_hash: shareTokenHash }).eq('id', outingId);
-        } catch (_) {}
+        const { data, error } = await client
+            .from('outings')
+            .update({ share_token_hash: shareTokenHash })
+            .eq('id', outingId)
+            .is('share_token_hash', null)
+            .select('id');
+        if (error && error.code !== 'PGRST204') {
+            throw new Error(`Supabase setLegacyOutingShareToken failed: ${error.message}`);
+        }
+        affected = data ? data.length : 0;
     }
 
     const sqliteDb = getSqliteDb();
     if (sqliteDb) {
-        try {
-            sqliteDb.prepare('UPDATE outings SET share_token_hash = ? WHERE id = ?').run(shareTokenHash, outingId);
-        } catch (_) {}
+        const res = sqliteDb.prepare('UPDATE outings SET share_token_hash = ? WHERE id = ? AND share_token_hash IS NULL').run(shareTokenHash, outingId);
+        affected = res.changes;
     }
+
+    return { success: affected > 0, modifiedCount: affected };
+}
+
+async function forceReissueOutingShareToken(outingId, shareTokenHash) {
+    if (!outingId || !shareTokenHash) throw new Error('outingId and shareTokenHash are required');
+    let affected = 0;
+
+    const client = getSupabaseClient();
+    if (dbClient.isSupabaseConfigured && client) {
+        const { data, error } = await client
+            .from('outings')
+            .update({ share_token_hash: shareTokenHash })
+            .eq('id', outingId)
+            .select('id');
+        if (error && error.code !== 'PGRST204') {
+            throw new Error(`Supabase forceReissueOutingShareToken failed: ${error.message}`);
+        }
+        affected = data ? data.length : 0;
+    }
+
+    const sqliteDb = getSqliteDb();
+    if (sqliteDb) {
+        const res = sqliteDb.prepare('UPDATE outings SET share_token_hash = ? WHERE id = ?').run(shareTokenHash, outingId);
+        affected = res.changes;
+    }
+
+    return { success: affected > 0, modifiedCount: affected };
+}
+
+async function updateOutingShareToken(outingId, shareTokenHash) {
+    return await forceReissueOutingShareToken(outingId, shareTokenHash);
 }
 
 module.exports = {
     saveOuting,
     updateOutingSettings,
     updateOutingShareToken,
+    setLegacyOutingShareToken,
+    forceReissueOutingShareToken,
     getOuting,
     saveParticipants,
     getParticipants,

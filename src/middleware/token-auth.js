@@ -30,22 +30,11 @@ async function requireShareToken(req, res, next) {
 
         // Handle Legacy Outings (created before share tokens without a hash)
         if (!outing.share_token_hash) {
-            if (req.method === 'GET') {
-                // Smooth transition: Automatically issue a secure token on first read
-                const tokenObj = generateShareToken();
-                await outingRepository.updateOutingShareToken(outingId, tokenObj.tokenHash);
-                outing.share_token_hash = tokenObj.tokenHash;
-                req.legacyUpgradedToken = tokenObj.rawToken;
-                req.outing = outing;
-                return next();
-            } else {
-                // Mutations require a token even on legacy outings to prevent unauthenticated takeover
-                return res.status(401).json({
-                    error: 'unauthorized',
-                    code: 'legacy_link_expired',
-                    message: 'Kèo này cần được nâng cấp bảo mật qua link chia sẻ mới trước khi chỉnh sửa hoặc bình chọn.'
-                });
-            }
+            return res.status(401).json({
+                error: 'unauthorized',
+                code: 'legacy_outing_upgrade_required',
+                message: 'Kèo này được tạo từ phiên bản cũ chưa có mã bảo vệ. Vui lòng liên hệ quản trị viên hoặc sử dụng công cụ nâng cấp bảo mật để cấp link mới.'
+            });
         }
 
         // Standard token verification for secured outings

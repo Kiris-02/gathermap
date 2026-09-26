@@ -56,6 +56,7 @@ window.createRecommendationController = function() {
         async setRadius(meters) {
             const previousRadius = this.searchRadiusMeters;
             if (this.outingCode) {
+                let putSucceeded = false;
                 try {
                     const radiusKm = Number((meters / 1000).toFixed(2));
                     await window.ApiClient.put(`/api/outings/${this.outingCode}`, {
@@ -63,12 +64,13 @@ window.createRecommendationController = function() {
                     }, {
                         shareToken: this.shareToken
                     });
+                    putSucceeded = true;
                     this.searchRadiusMeters = meters;
                     this.updateRadiusCircle();
                     this.showToast(`📏 Đã cập nhật bán kính: ${(meters/1000).toFixed(1)} km`, 'success');
-                    await this.executeSearchAndRank();
                 } catch (err) {
-                    console.error('Update radius error:', err);
+                    console.error('Update radius PUT error:', err);
+                    // Phase 1 failed: Revert UI slider and circle to previous valid radius
                     this.searchRadiusMeters = previousRadius;
                     this.updateRadiusCircle();
                     if (err.status === 401 || err.status === 403) {
@@ -76,12 +78,31 @@ window.createRecommendationController = function() {
                     } else {
                         this.showToast(`⚠️ Không thể lưu bán kính mới: ${err.message}`, 'error');
                     }
+                    return;
+                }
+
+                // Phase 2: Execute search. If search fails, keep updated radius and mark shortlist as stale
+                if (putSucceeded) {
+                    try {
+                        await this.executeSearchAndRank();
+                    } catch (searchErr) {
+                        console.error('Search after radius update failed:', searchErr);
+                        this.searchFailed = true;
+                        this.isShortlistStale = true;
+                        this.searchErrorMessage = searchErr.message || 'Lỗi kết nối máy chủ';
+                    }
                 }
             } else {
                 this.searchRadiusMeters = meters;
                 this.updateRadiusCircle();
                 await this.executeSearchAndRank();
             }
+        },
+
+        async retrySearchOnly() {
+            if (this.ranking) return;
+            this.showToast('🔄 Đang thử tìm lại quán theo bán kính mới...', 'info');
+            await this.executeSearchAndRank();
         },
 
         selectVenue(venue) {
@@ -131,6 +152,11 @@ window.createRecommendationController = function() {
 
                 if (currentReqId !== this.searchRequestId) return;
 
+                // Reset search failure flags on success
+                this.searchFailed = false;
+                this.isShortlistStale = false;
+                this.searchErrorMessage = '';
+
                 // Sync outing code and share token if assigned/created by backend
                 if (data.outingId) {
                     this.setOutingCodeAndSyncUrl(data.outingId, data.shareToken);
@@ -157,6 +183,9 @@ window.createRecommendationController = function() {
             } catch (err) {
                 if (err.name === 'AbortError' || err.name === 'TimeoutError') return;
                 console.error('Search and rank error:', err);
+                this.searchFailed = true;
+                this.isShortlistStale = true;
+                this.searchErrorMessage = err.message || 'Lỗi kết nối máy chủ';
                 this.emptyStateReason = 'api_error';
                 this.showToast(`⚠️ Không thể tải danh sách gợi ý: ${err.message}`, 'error');
             } finally {

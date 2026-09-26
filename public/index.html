@@ -218,6 +218,23 @@
                     </button>
                 </div>
 
+                <!-- SEARCH FAILURE / STALE SHORTLIST RETRY BANNER -->
+                <template x-if="searchFailed">
+                    <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs flex items-center justify-between space-x-2">
+                        <div class="flex items-center space-x-2 text-amber-200">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
+                            <div>
+                                <p class="font-bold">Đã lưu bán kính nhưng chưa tải được danh sách mới.</p>
+                                <p class="text-[11px] text-amber-300/80" x-text="searchErrorMessage || 'Danh sách bên dưới đang là kết quả cũ. Bấm Tìm lại để cập nhật.'"></p>
+                            </div>
+                        </div>
+                        <button @click="retrySearchOnly()" :disabled="ranking" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-dark-950 font-bold text-xs shrink-0 flex items-center space-x-1 transition shadow">
+                            <i class="fa-solid fa-rotate-right" :class="ranking ? 'fa-spin' : ''"></i>
+                            <span>Tìm lại</span>
+                        </button>
+                    </div>
+                </template>
+
                 <!-- LOADING INDICATOR -->
                 <template x-if="ranking">
                     <div class="p-8 text-center bg-dark-850 rounded-2xl border border-slate-800 space-y-3">

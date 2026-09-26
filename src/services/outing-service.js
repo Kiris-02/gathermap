@@ -140,6 +140,48 @@ async function updateOutingSettings(outingId, updates) {
     return await outingRepository.updateOutingSettings(outingId, updates);
 }
 
+async function reissueLegacyOutingShareToken({ outingId, force = false }) {
+    if (!outingId) throw new Error('outingId is required');
+    const outing = await outingRepository.getOuting(outingId);
+    if (!outing) {
+        throw new Error(`Outing session "${outingId}" not found`);
+    }
+
+    if (outing.share_token_hash && !force) {
+        return {
+            success: false,
+            outingId,
+            reason: 'already_secured',
+            message: `Outing ${outingId} already has a share token configured. Use --force if you intentionally want to rotate the token.`
+        };
+    }
+
+    const { rawToken, tokenHash } = generateShareToken();
+    let result;
+    if (force) {
+        result = await outingRepository.forceReissueOutingShareToken(outingId, tokenHash);
+    } else {
+        result = await outingRepository.setLegacyOutingShareToken(outingId, tokenHash);
+    }
+
+    if (!result.success) {
+        return {
+            success: false,
+            outingId,
+            reason: 'update_conflict',
+            message: `Failed to update share token for outing ${outingId}. It may have been upgraded concurrently.`
+        };
+    }
+
+    return {
+        success: true,
+        outingId,
+        shareToken: rawToken,
+        tokenHash,
+        message: `Share token successfully issued for outing ${outingId}`
+    };
+}
+
 module.exports = {
     generateUniqueOutingId,
     generateShareToken,
@@ -150,5 +192,6 @@ module.exports = {
     updateOutingSettings,
     castVote,
     getVotesForOuting,
-    generateShareText
+    generateShareText,
+    reissueLegacyOutingShareToken
 };

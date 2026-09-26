@@ -13,6 +13,10 @@ if (fs.existsSync(testDbPath)) {
     try { fs.unlinkSync(testDbPath); } catch (_) {}
 }
 process.env.SQLITE_DB_PATH = testDbPath;
+process.env.SUPABASE_URL = '';
+process.env.SUPABASE_KEY = '';
+process.env.SUPABASE_ANON_KEY = '';
+process.env.SUPABASE_SERVICE_ROLE_KEY = '';
 
 const outingRepository = require('../src/repositories/outing-repository');
 
@@ -208,6 +212,156 @@ async function runOverwriteTests() {
                 assert(err.message.includes('Database connection terminated'), 'Error must contain Supabase error message');
             }
             assert.strictEqual(errorThrown, true, 'saveOuting must throw on Supabase error');
+        } finally {
+            dbClient.getSupabaseClient = origGetSupabaseClient;
+            dbClient.isSupabaseConfigured = origIsConfigured;
+        }
+    });
+
+    // 5. Voting Lifecycle & Outing Metadata Protection on Supabase
+    await test('Supabase Mock: recordVote() touches ONLY votes table and never mutates outings metadata', async () => {
+        const tableCalls = { outings: [], venues: [], votes: [] };
+        let mockVotesInDb = [];
+
+        const mockVotingSupabase = {
+            from: (table) => {
+                if (table === 'outings') {
+                    return {
+                        select: (cols) => ({
+                            eq: (field, val) => ({
+                                maybeSingle: async () => {
+                                    tableCalls.outings.push({ op: 'select', field, val });
+                                    return { data: { id: val }, error: null };
+                                }
+                            })
+                        }),
+                        upsert: (records) => {
+                            tableCalls.outings.push({ op: 'upsert', records });
+                            return { error: null };
+                        },
+                        update: (patch) => ({
+                            eq: (field, val) => {
+                                tableCalls.outings.push({ op: 'update', patch, field, val });
+                                return { error: null };
+                            }
+                        })
+                    };
+                }
+                if (table === 'venues') {
+                    return {
+                        upsert: (records) => {
+                            tableCalls.venues.push({ op: 'upsert', records });
+                            return { error: null };
+                        }
+                    };
+                }
+                if (table === 'votes') {
+                    return {
+                        select: (cols) => ({
+                            eq: (field, val) => {
+                                tableCalls.votes.push({ op: 'select', field, val });
+                                return { data: mockVotesInDb, error: null };
+                            }
+                        }),
+                        insert: (records) => {
+                            tableCalls.votes.push({ op: 'insert', records });
+                            mockVotesInDb.push(...records);
+                            return { error: null };
+                        },
+                        delete: () => ({
+                            eq: (f1, v1) => ({
+                                eq: (f2, v2) => {
+                                    tableCalls.votes.push({ op: 'delete', f1, v1, f2, v2 });
+                                    mockVotesInDb = mockVotesInDb.filter(v => !(v.outing_id === v1 && v.voter_name === v2));
+                                    return { error: null };
+                                }
+                            })
+                        })
+                    };
+                }
+            }
+        };
+
+        const dbClient = require('../src/repositories/db-client');
+        const origGetSupabaseClient = dbClient.getSupabaseClient;
+        const origIsConfigured = dbClient.isSupabaseConfigured;
+
+        try {
+            dbClient.getSupabaseClient = () => mockVotingSupabase;
+            dbClient.isSupabaseConfigured = true;
+
+            const voteOutingId = 'EAT-VOTE-ISOLATION';
+
+            // 5a. New Vote
+            const res1 = await outingRepository.recordVote(voteOutingId, 'venue-a', 'Alice', 'v-alice');
+            assert.strictEqual(res1.action, 'voted');
+            assert.strictEqual(res1.currentVotedVenue, 'venue-a');
+
+            // Assert outings table was verified via SELECT but NEVER mutated via upsert or update
+            const outingMutations1 = tableCalls.outings.filter(c => c.op === 'upsert' || c.op === 'update' || c.op === 'insert');
+            assert.strictEqual(outingMutations1.length, 0, 'Must NOT mutate outings table on new vote');
+
+            // 5b. Change Vote (to venue-b)
+            const res2 = await outingRepository.recordVote(voteOutingId, 'venue-b', 'Alice', 'v-alice');
+            assert.strictEqual(res2.action, 'changed');
+            assert.strictEqual(res2.currentVotedVenue, 'venue-b');
+
+            const outingMutations2 = tableCalls.outings.filter(c => c.op === 'upsert' || c.op === 'update' || c.op === 'insert');
+            assert.strictEqual(outingMutations2.length, 0, 'Must NOT mutate outings table on vote change');
+
+            // 5c. Toggle / Retract Vote (unvote venue-b)
+            const res3 = await outingRepository.recordVote(voteOutingId, 'venue-b', 'Alice', 'v-alice');
+            assert.strictEqual(res3.action, 'unvoted');
+            assert.strictEqual(res3.currentVotedVenue, null);
+
+            const outingMutations3 = tableCalls.outings.filter(c => c.op === 'upsert' || c.op === 'update' || c.op === 'insert');
+            assert.strictEqual(outingMutations3.length, 0, 'Must NOT mutate outings table on vote retraction');
+        } finally {
+            dbClient.getSupabaseClient = origGetSupabaseClient;
+            dbClient.isSupabaseConfigured = origIsConfigured;
+        }
+    });
+
+    // 6. Supabase Error Propagation on Voting
+    await test('Supabase Mock: recordVote() propagates Supabase errors without swallowing', async () => {
+        const mockFailingVotingSupabase = {
+            from: (table) => {
+                if (table === 'outings') {
+                    return {
+                        select: () => ({
+                            eq: () => ({
+                                maybeSingle: async () => ({
+                                    data: null,
+                                    error: { message: 'Outings table RLS permission denied' }
+                                })
+                            })
+                        })
+                    };
+                }
+                return {
+                    upsert: async () => ({ error: null }),
+                    insert: async () => ({ error: { message: 'Insert vote permission denied' } }),
+                    delete: () => ({ eq: () => ({ eq: async () => ({ error: { message: 'Delete vote error' } }) }) })
+                };
+            }
+        };
+
+        const dbClient = require('../src/repositories/db-client');
+        const origGetSupabaseClient = dbClient.getSupabaseClient;
+        const origIsConfigured = dbClient.isSupabaseConfigured;
+
+        try {
+            dbClient.getSupabaseClient = () => mockFailingVotingSupabase;
+            dbClient.isSupabaseConfigured = true;
+
+            let errorThrown = false;
+            try {
+                await outingRepository.recordVote('EAT-FAIL-VOTE', 'venue-x', 'Hacker', 'v-hacker');
+            } catch (err) {
+                errorThrown = true;
+                assert(err.message.includes('Outings table RLS permission denied'), 'Must propagate exact Supabase error message');
+            }
+            assert.strictEqual(errorThrown, true, 'recordVote must throw when Supabase operation fails');
         } finally {
             dbClient.getSupabaseClient = origGetSupabaseClient;
             dbClient.isSupabaseConfigured = origIsConfigured;

@@ -18,6 +18,10 @@ if (fs.existsSync(testDbPath)) {
 process.env.SQLITE_DB_PATH = testDbPath;
 process.env.PORT = '0';
 process.env.NODE_ENV = 'test';
+process.env.SUPABASE_URL = '';
+process.env.SUPABASE_KEY = '';
+process.env.SUPABASE_ANON_KEY = '';
+process.env.SUPABASE_SERVICE_ROLE_KEY = '';
 
 const app = require('../src/app');
 const { generateUniqueOutingId } = require('../src/services/outing-service');

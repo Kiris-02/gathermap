@@ -126,6 +126,10 @@ initDb.close();
 // Now point application to this legacy DB
 process.env.SQLITE_DB_PATH = legacyDbPath;
 process.env.PORT = '0';
+process.env.SUPABASE_URL = '';
+process.env.SUPABASE_KEY = '';
+process.env.SUPABASE_ANON_KEY = '';
+process.env.SUPABASE_SERVICE_ROLE_KEY = '';
 
 const app = require('../server');
 
@@ -176,6 +180,8 @@ async function runTests() {
 
     let newlyIssuedToken = null;
 
+    const outingService = require('../src/services/outing-service');
+
     try {
         // --- TEST 1: Migration preserves all historical data intact ---
         await test('Schema initialization migrates legacy columns while preserving all historical data', async () => {
@@ -192,37 +198,59 @@ async function runTests() {
             assert.strictEqual(votes.length, 1, 'Must have 1 vote');
         });
 
-        // --- TEST 2: First read of legacy link smoothly issues new secure share token without 401 lockout ---
-        await test('First visit to legacy link without token issues new secure token and returns 200 OK', async () => {
+        // --- TEST 2: Direct visit to legacy outing without token is rejected with 401 legacy_outing_upgrade_required ---
+        await test('Visit to legacy outing without token is rejected with 401 legacy_outing_upgrade_required', async () => {
             const res = await request(`/api/outings/${legacyOutingId}`);
 
-            assert.strictEqual(res.status, 200, `Expected 200, got ${res.status}`);
-            assert.ok(res.data.shareToken, 'Must issue a new shareToken on legacy upgrade');
-            assert.strictEqual(res.data.isLegacyUpgraded, true, 'Must flag as isLegacyUpgraded');
-            assert.strictEqual(res.data.name, 'Legacy Coffee Meetup');
-            assert.strictEqual(res.data.participants.length, 2);
-            assert.strictEqual(res.data.recommendations.length, 2);
-            assert.strictEqual(res.data.votes.length, 1);
+            assert.strictEqual(res.status, 401, `Expected 401, got ${res.status}`);
+            assert.strictEqual(res.data.error, 'unauthorized');
+            assert.strictEqual(res.data.code, 'legacy_outing_upgrade_required');
+            assert.ok(res.data.message.includes('phiên bản cũ'), 'Must explain upgrade requirement');
+        });
 
-            newlyIssuedToken = res.data.shareToken;
+        // --- TEST 3: Operator reissues token for legacy outing atomically ---
+        await test('Operator utility generates share token and sets hash atomically', async () => {
+            const result = await outingService.reissueLegacyOutingShareToken({ outingId: legacyOutingId, force: false });
+
+            assert.strictEqual(result.success, true);
+            assert.strictEqual(result.outingId, legacyOutingId);
+            assert.ok(result.shareToken, 'Must generate raw share token');
+            assert.ok(result.tokenHash, 'Must generate token hash');
+
+            newlyIssuedToken = result.shareToken;
 
             // Verify DB now has the token hash saved
             const db = new Database(legacyDbPath);
             const updatedOuting = db.prepare('SELECT share_token_hash FROM outings WHERE id = ?').get(legacyOutingId);
             db.close();
 
-            assert.ok(updatedOuting.share_token_hash, 'share_token_hash must be stored in DB');
+            assert.strictEqual(updatedOuting.share_token_hash, result.tokenHash, 'share_token_hash must match in DB');
         });
 
-        // --- TEST 3: Subsequent visit without token is now protected (401) ---
-        await test('Subsequent visit without token to upgraded outing is protected with 401', async () => {
-            const res = await request(`/api/outings/${legacyOutingId}`);
+        // --- TEST 4: Duplicate upgrade without force is safely rejected (concurrency / overwrite protection) ---
+        await test('Duplicate reissue without force is safely rejected with already_secured', async () => {
+            const dupResult = await outingService.reissueLegacyOutingShareToken({ outingId: legacyOutingId, force: false });
 
-            assert.strictEqual(res.status, 401, `Expected 401, got ${res.status}`);
-            assert.strictEqual(res.data.error, 'unauthorized');
+            assert.strictEqual(dupResult.success, false);
+            assert.strictEqual(dupResult.reason, 'already_secured');
         });
 
-        // --- TEST 4: Visit with newly issued token via x-share-token succeeds with 200 ---
+        // --- TEST 5: Reissue with force rotates token successfully ---
+        await test('Reissue with force rotates token and updates hash in DB', async () => {
+            const forceResult = await outingService.reissueLegacyOutingShareToken({ outingId: legacyOutingId, force: true });
+
+            assert.strictEqual(forceResult.success, true);
+            assert.notStrictEqual(forceResult.shareToken, newlyIssuedToken, 'New token must differ');
+            newlyIssuedToken = forceResult.shareToken;
+
+            const db = new Database(legacyDbPath);
+            const updatedOuting = db.prepare('SELECT share_token_hash FROM outings WHERE id = ?').get(legacyOutingId);
+            db.close();
+
+            assert.strictEqual(updatedOuting.share_token_hash, forceResult.tokenHash);
+        });
+
+        // --- TEST 6: Visit with newly issued token via x-share-token succeeds with 200 OK and preserves data ---
         await test('Visit with newly issued token in x-share-token header succeeds with 200 OK', async () => {
             const res = await request(`/api/outings/${legacyOutingId}`, {
                 headers: { 'x-share-token': newlyIssuedToken }
@@ -231,9 +259,12 @@ async function runTests() {
             assert.strictEqual(res.status, 200);
             assert.strictEqual(res.data.id, legacyOutingId);
             assert.strictEqual(res.data.name, 'Legacy Coffee Meetup');
+            assert.strictEqual(res.data.participants.length, 2);
+            assert.strictEqual(res.data.recommendations.length, 2);
+            assert.strictEqual(res.data.votes.length, 1);
         });
 
-        // --- TEST 5: Voting on upgraded legacy outing works with the new token ---
+        // --- TEST 7: Voting on upgraded legacy outing works with the new token ---
         await test('Voting on upgraded legacy outing succeeds with the new share token', async () => {
             const res = await request(`/api/outings/${legacyOutingId}/vote`, {
                 method: 'POST',

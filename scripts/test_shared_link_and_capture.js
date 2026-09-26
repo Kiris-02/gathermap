@@ -26,6 +26,10 @@ if (fs.existsSync(tempDbPath)) {
     try { fs.unlinkSync(tempDbPath); } catch (_) {}
 }
 process.env.SQLITE_DB_PATH = tempDbPath;
+process.env.SUPABASE_URL = '';
+process.env.SUPABASE_KEY = '';
+process.env.SUPABASE_ANON_KEY = '';
+process.env.SUPABASE_SERVICE_ROLE_KEY = '';
 
 const outDir = path.resolve(__dirname, '..', 'tests', 'screenshots');
 if (!fs.existsSync(outDir)) {
@@ -288,22 +292,33 @@ async function runE2ESharedLinkTests() {
             recordFail('Server data mutation check', err);
         }
 
-        // --- STEP 4: GUEST CASTS VOTE ---
-        console.log(`\n--- STEP 4: GUEST CASTS VOTE ---`);
-        const guestVoteRes = await guestPage.evaluate(async ({ outingCode, venueId, shareToken }) => {
-            return await window.ApiClient.post(`/api/outings/${outingCode}/vote?token=${encodeURIComponent(shareToken)}`, {
-                venueId,
-                voterId: 'voter_minh_guest',
-                voterName: 'Minh (Guest)'
-            }, { shareToken });
-        }, { outingCode: sharedOutingId, venueId: expectedVenue2.id, shareToken });
+        // --- STEP 4: GUEST CASTS VOTE VIA REAL DOM INTERACTION ---
+        console.log(`\n--- STEP 4: GUEST CASTS VOTE VIA REAL DOM INTERACTION ---`);
+        const venueCardLocator = guestPage.locator(`#venue-card-${expectedVenue2.id}`);
+        await venueCardLocator.scrollIntoViewIfNeeded();
+        const voteButton = venueCardLocator.locator('button', { hasText: 'Vote' });
+        await voteButton.click();
+
+        // Wait for Alpine reactive state and DOM count update
+        await guestPage.waitForFunction((venueId) => {
+            const data = document.querySelector('body')._x_dataStack[0];
+            return data && data.myVotedVenueId === venueId;
+        }, expectedVenue2.id, { timeout: 10000 });
+
+        const guestVotedState = await guestPage.evaluate((venueId) => {
+            const data = document.querySelector('body')._x_dataStack[0];
+            return {
+                myVotedVenueId: data.myVotedVenueId,
+                venueVotes: data.shortlist.find(v => v.id === venueId)?.votes
+            };
+        }, expectedVenue2.id);
 
         try {
-            assert(guestVoteRes.success, 'Guest vote response must be successful');
-            assert(guestVoteRes.action === 'voted' || guestVoteRes.action === 'changed', 'Vote action must be valid');
-            recordPass('Guest successfully votes for venue via shared session');
+            assert.strictEqual(guestVotedState.myVotedVenueId, expectedVenue2.id, 'Guest state reflects voted venue');
+            assert(guestVotedState.venueVotes >= 1, 'Venue vote count incremented');
+            recordPass('Guest successfully votes for venue by clicking UI Vote button');
         } catch (err) {
-            recordFail('Guest vote registration', err);
+            recordFail('Guest UI vote click', err);
         }
 
         // Wait for polling sync on both Host and Guest pages

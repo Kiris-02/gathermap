@@ -27,11 +27,6 @@ async function getOuting(req, res, next) {
             votes: safeOuting.votes || [],
             ...safeOuting
         };
-        if (req.legacyUpgradedToken) {
-            responseData.shareToken = req.legacyUpgradedToken;
-            responseData.isLegacyUpgraded = true;
-            responseData.notice = 'Kèo này đã được nâng cấp bảo mật tự động. Vui lòng lưu link mới kèm mã bảo mật.';
-        }
         res.json(responseData);
     } catch (err) {
         next(err);

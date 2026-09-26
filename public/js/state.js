@@ -52,6 +52,9 @@ window.createInitialState = function() {
         votesMap: {},
         votesList: [],
         emptyStateReason: null, // null | 'no_data' | 'filter_empty' | 'hard_constraint_filtered' | 'api_error'
+        searchFailed: false,
+        isShortlistStale: false,
+        searchErrorMessage: '',
 
         // Modals & Panels
         showGroupModal: false,

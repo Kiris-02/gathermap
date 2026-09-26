@@ -15,16 +15,14 @@ window.createOutingController = function() {
                         shareToken: this.shareToken
                     });
                     if (sessionData && sessionData.outing) {
-                        if (sessionData.isLegacyUpgraded && sessionData.shareToken) {
-                            this.setOutingCodeAndSyncUrl(this.outingCode, sessionData.shareToken);
-                            this.showToast('🎉 Kèo đã được nâng cấp bảo mật! Link mới đã sẵn sàng.', 'success');
-                        }
                         this.applyLoadedSession(sessionData);
                         return;
                     }
                 } catch (err) {
                     console.warn(`Outing ${this.outingCode} could not be loaded (${err.message}). Starting fresh session.`);
-                    if (err.data?.code === 'legacy_link_expired') {
+                    if (err.data?.code === 'legacy_outing_upgrade_required') {
+                        this.showToast('🔒 Kèo này được tạo từ bản cũ chưa có mã bảo vệ. Vui lòng liên hệ quản trị viên để nâng cấp link chia sẻ.', 'warning');
+                    } else if (err.data?.code === 'legacy_link_expired') {
                         this.showToast('🔒 ' + (err.message || 'Kèo này đã được nâng cấp bảo mật. Vui lòng mở lại bằng link mới.'), 'warning');
                     } else if (err.status === 401 || err.status === 403) {
                         this.showToast('🔒 Bạn không có quyền xem kèo này (cần link chia sẻ có mã xác thực).', 'error');

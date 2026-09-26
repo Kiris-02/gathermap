@@ -61,7 +61,13 @@ jobs:
           SQLITE_DB_PATH: 'tests/ci-test.db'
         run: npm run test:security
 
-      - name: Suite 6 - Legacy Migration & Transition Tests
+      - name: Suite 6 - Radius State Synchronization & Search Retry Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:radius
+
+      - name: Suite 7 - Legacy Migration & Controlled Transition Tests
         env:
           CI: 'true'
           SQLITE_DB_PATH: 'tests/ci-test.db'
@@ -69,7 +75,7 @@ jobs:
       - name: Run Radius State Synchronization Test
         run: npm run test:radius
 
-      - name: Suite 7 - Playwright Dual-Browser E2E Map & UI Suite
+      - name: Suite 8 - Playwright Dual-Browser E2E Map & UI Suite
         env:
           CI: 'true'
           SQLITE_DB_PATH: 'tests/ci-test.db'
