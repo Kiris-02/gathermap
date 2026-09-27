@@ -2,7 +2,10 @@
  * Real PostgreSQL Migration Execution & Live RLS Security Test Suite
  * 
  * Validates against an actual PostgreSQL 16 database:
- * 1. Safety Guard Rail: strictly prohibits connecting to or dropping non-test databases.
+ * 1. Safety Guard Rail (Fail-Closed): strictly prohibits connecting to or dropping non-test databases.
+ *    - Pre-connection URL whitelist/blacklist inspection.
+ *    - Post-connection live database name verification before any DROP/migration.
+ *    - Immediate process termination on safety violation with zero mutations.
  * 2. Sequential execution of production SQL migrations:
  *    - 20260913000001_gathermap_complete.sql
  *    - 20260926000002_tighten_rls_and_voting.sql
@@ -92,6 +95,10 @@ function validateSafeTestDatabaseUrl(urlStr) {
  * Validates the live connected database name before any DROP or destructive operation.
  */
 async function assertSafeConnectedDatabase(client) {
+    if (!client || typeof client.query !== 'function') {
+        throw new Error('[SAFETY GUARD] Invalid database client supplied for safety verification.');
+    }
+
     const res = await client.query('SELECT current_database() as db');
     const liveDbName = res.rows[0]?.db?.toLowerCase() || '';
 
@@ -124,7 +131,7 @@ async function runPostgresMigrationAndRlsTests() {
         }
     }
 
-    // --- STEP 0A: TEST SAFETY GUARD RAIL REJECTIONS & ACCEPTANCE ---
+    // --- STEP 0A: TEST SAFETY GUARD RAIL REJECTIONS & FAIL-CLOSED BEHAVIOR ---
     await test('Safety Guard: Validate URL guard rail blocks production and non-test databases', async () => {
         // Test 1: Production Supabase host rejection
         assert.throws(() => {
@@ -152,7 +159,34 @@ async function runPostgresMigrationAndRlsTests() {
         assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@postgres:5432/gathermap_test'), true);
     });
 
-    // Validate active configured URL before connecting
+    await test('Safety Guard (Fail-Closed): Mock client connected to unapproved database halts with zero mutations', async () => {
+        const executedQueries = [];
+        const mockUnsafeClient = {
+            query: async (sql, params) => {
+                executedQueries.push({ sql, params });
+                if (typeof sql === 'string' && sql.includes('current_database')) {
+                    return { rows: [{ db: 'production_customer_data' }] };
+                }
+                return { rows: [] };
+            }
+        };
+
+        // Assert that assertSafeConnectedDatabase throws on the unsafe database
+        await assert.rejects(async () => {
+            await assertSafeConnectedDatabase(mockUnsafeClient);
+        }, /Live connected database "production_customer_data" is not an authorized test database/);
+
+        // Assert that no destructive or mutation queries were executed
+        const destructiveKeywords = ['DROP', 'CREATE', 'ALTER', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'GRANT', 'REVOKE'];
+        const dangerousQueries = executedQueries.filter(q => 
+            destructiveKeywords.some(kw => q.sql.toUpperCase().includes(kw))
+        );
+
+        assert.strictEqual(dangerousQueries.length, 0, 'Zero destructive or modification queries must be executed when live database safety check fails');
+        assert.strictEqual(executedQueries.length, 1, 'Only the safety check current_database query was executed');
+    });
+
+    // 1. Validate active configured URL before connecting
     try {
         validateSafeTestDatabaseUrl(POSTGRES_URL);
     } catch (guardErr) {
@@ -181,13 +215,19 @@ async function runPostgresMigrationAndRlsTests() {
         }
     }
 
+    // 2. Strict Fail-Closed Live Database Name Verification BEFORE any migration stages or DROP
+    let verifiedDbName = '';
+    try {
+        verifiedDbName = await assertSafeConnectedDatabase(client);
+    } catch (guardErr) {
+        console.error(`\n🛑 SAFETY GUARD ENFORCED: ${guardErr.message}`);
+        try { await client.end(); } catch (_) {}
+        process.exit(1);
+    }
+
     try {
         // --- STEP 0B: ENVIRONMENT INITIALIZATION & SUPABASE ROLES SETUP ---
-        await test('Stage 0: Verify connected test database and initialize schema & Supabase auth roles', async () => {
-            // Guard rail check on the live connected database BEFORE executing any DROP
-            const dbName = await assertSafeConnectedDatabase(client);
-            assert(dbName === 'gathermap_test' || dbName.endsWith('_test') || dbName.endsWith('_temp') || dbName.endsWith('_fixture'), 'Connected DB must be test DB');
-
+        await test(`Stage 0: Initialize schema & Supabase auth roles on verified test db (${verifiedDbName})`, async () => {
             // Re-create public schema for fresh isolated test
             await client.query(`
                 DROP SCHEMA IF EXISTS public CASCADE;
