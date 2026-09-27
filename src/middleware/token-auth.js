@@ -6,10 +6,10 @@ const outingRepository = require('../repositories/outing-repository');
 const { verifyShareToken, generateShareToken } = require('../services/outing-service');
 
 function extractProvidedToken(req) {
-    return req.headers['x-share-token'] || 
+    return req.headers['x-share-token'] ||
            (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7) : null) ||
-           req.query?.token || 
-           req.body?.token || 
+           req.query?.token ||
+           req.body?.token ||
            null;
 }
 

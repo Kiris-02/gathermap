@@ -22,16 +22,6 @@ function getConfig(req, res) {
     });
 }
 
-function updateMapsKey(req, res) {
-    const { key } = req.body || {};
-    if (typeof key === 'string') {
-        process.env.GOOGLE_MAPS_API_KEY = key.trim();
-        return res.json({ success: true, mapsConfigured: Boolean(process.env.GOOGLE_MAPS_API_KEY) });
-    }
-    res.status(400).json({ error: 'invalid_key', message: 'key must be a string' });
-}
-
 module.exports = {
-    getConfig,
-    updateMapsKey
+    getConfig
 };

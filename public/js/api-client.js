@@ -52,8 +52,8 @@ window.ApiClient = {
             }
 
             if (!res.ok) {
-                const errorMessage = (data && (data.error || data.message)) 
-                    ? (data.error || data.message) 
+                const errorMessage = (data && (data.error || data.message))
+                    ? (data.error || data.message)
                     : `Request failed with HTTP ${res.status}`;
                 const err = new Error(errorMessage);
                 err.status = res.status;

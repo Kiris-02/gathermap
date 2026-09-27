@@ -705,7 +705,7 @@ async function runOverwriteTests() {
     // 10. Authoritative Read: getRawVotesList() returns [] without falling back to SQLite
     await test('Authoritative Read: getRawVotesList() returns [] from Supabase (zero SQLite fallback when SQLite has data)', async () => {
         const outingId = 'EAT-AUTH-VOTES-EMPTY';
-        
+
         // Populate SQLite with local votes
         const sqliteDb = new Database(testDbPath);
         sqliteDb.prepare(`INSERT OR IGNORE INTO outings (id, center_lat, center_lng) VALUES (?, 10.7, 106.7)`).run(outingId);
@@ -748,7 +748,7 @@ async function runOverwriteTests() {
     // 11. Authoritative Read: getRawVotesList() throws error on Supabase failure
     await test('Authoritative Read: getRawVotesList() throws error on Supabase failure (zero SQLite fallback or error swallowing)', async () => {
         const outingId = 'EAT-AUTH-VOTES-ERROR';
-        
+
         const sqliteDb = new Database(testDbPath);
         sqliteDb.prepare(`INSERT OR IGNORE INTO outings (id, center_lat, center_lng) VALUES (?, 10.7, 106.7)`).run(outingId);
         sqliteDb.prepare(`INSERT OR IGNORE INTO votes (id, outing_id, venue_id, voter_name, voter_id) VALUES (?, ?, ?, ?, ?)`).run('vote-local-2', outingId, 'venue-local-2', 'Local Voter 2', 'v-local-2');
@@ -790,7 +790,7 @@ async function runOverwriteTests() {
     // 12. Authoritative Read: getOuting, getParticipants, getRecommendations return null/[] without falling back to SQLite
     await test('Authoritative Read: getOuting, getParticipants, getRecommendations return null/[] (zero SQLite fallback)', async () => {
         const outingId = 'EAT-AUTH-RECS-EMPTY';
-        
+
         // Put data in SQLite
         const sqliteDb = new Database(testDbPath);
         sqliteDb.prepare(`INSERT OR IGNORE INTO outings (id, name, center_lat, center_lng) VALUES (?, 'Local Outing', 10.7, 106.7)`).run(outingId);

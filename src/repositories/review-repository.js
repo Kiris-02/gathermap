@@ -3,7 +3,7 @@
  * Handles social reviews from Google Local Guide, TikTok, Facebook, ShopeeFood, and Users.
  */
 
-const { getSupabaseClient, getSqliteDb, isSupabaseConfigured } = require('./db-client');
+const dbClient = require('./db-client');
 const { getVenueById } = require('./venue-repository');
 
 const venueReviewsCache = new Map();
@@ -28,27 +28,23 @@ function formatReviewRecord(r) {
 
 async function preloadAllReviews() {
     if (allReviewsPreloaded) return;
-    const client = getSupabaseClient();
-    if (isSupabaseConfigured && client) {
-        try {
-            const { data, error } = await client.from('reviews').select('*').order('created_at', { ascending: false });
-            if (!error && data) {
-                data.forEach(r => {
-                    const formatted = formatReviewRecord(r);
-                    if (!venueReviewsCache.has(formatted.venueId)) {
-                        venueReviewsCache.set(formatted.venueId, []);
-                    }
-                    venueReviewsCache.get(formatted.venueId).push(formatted);
-                });
-                allReviewsPreloaded = true;
-                return;
-            }
-        } catch (e) {
-            console.warn('Supabase preloadAllReviews warning:', e.message);
+    if (dbClient.isSupabaseConfigured) {
+        const client = dbClient.getSupabaseClient();
+        if (!client) throw new Error('Supabase review client is unavailable');
+        const { data, error } = await client.from('reviews').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        const grouped = new Map();
+        for (const row of data || []) {
+            const formatted = formatReviewRecord(row);
+            if (!grouped.has(formatted.venueId)) grouped.set(formatted.venueId, []);
+            grouped.get(formatted.venueId).push(formatted);
         }
+        for (const [venueId, reviews] of grouped) venueReviewsCache.set(venueId, reviews);
+        allReviewsPreloaded = true;
+        return;
     }
 
-    const sqliteDb = getSqliteDb();
+    const sqliteDb = dbClient.getSqliteDb();
     if (sqliteDb) {
         try {
             const rows = sqliteDb.prepare('SELECT * FROM reviews ORDER BY created_at DESC').all();
@@ -73,19 +69,17 @@ async function getVenueReviews(venueId, limit = 50) {
         return cached.slice(0, limit);
     }
 
-    const client = getSupabaseClient();
-    if (isSupabaseConfigured && client) {
-        try {
-            const { data } = await client.from('reviews').select('*').eq('venue_id', venueId).order('created_at', { ascending: false }).limit(limit);
-            const formatted = (data || []).map(formatReviewRecord);
-            venueReviewsCache.set(venueId, formatted);
-            return formatted;
-        } catch (e) {
-            console.error('Supabase getVenueReviews error:', e.message);
-        }
+    if (dbClient.isSupabaseConfigured) {
+        const client = dbClient.getSupabaseClient();
+        if (!client) throw new Error('Supabase review client is unavailable');
+        const { data, error } = await client.from('reviews').select('*').eq('venue_id', venueId).order('created_at', { ascending: false }).limit(limit);
+        if (error) throw error;
+        const formatted = (data || []).map(formatReviewRecord);
+        venueReviewsCache.set(venueId, formatted);
+        return formatted;
     }
 
-    const sqliteDb = getSqliteDb();
+    const sqliteDb = dbClient.getSqliteDb();
     if (sqliteDb) {
         try {
             const rows = sqliteDb.prepare('SELECT * FROM reviews WHERE venue_id = ? ORDER BY created_at DESC LIMIT ?').all(venueId, limit);
@@ -105,27 +99,25 @@ async function addVenueReview({ venueId, source = 'user', authorName = 'Kiris (T
     const reviewDate = 'Vừa xong';
     const tagStr = JSON.stringify(tags || []);
 
-    const client = getSupabaseClient();
-    if (isSupabaseConfigured && client) {
-        try {
-            await client.from('reviews').insert([{
-                id,
-                venue_id: venueId,
-                source,
-                author_name: authorName,
-                rating,
-                content,
-                tags: tagStr,
-                date_text: reviewDate
-            }]);
-            venueReviewsCache.delete(venueId);
-            return { id, success: true };
-        } catch (e) {
-            console.error('Supabase addVenueReview error:', e.message);
-        }
+    if (dbClient.isSupabaseConfigured) {
+        const client = dbClient.getSupabaseClient();
+        if (!client) throw new Error('Supabase review client is unavailable');
+        const { error } = await client.from('reviews').insert([{
+            id,
+            venue_id: venueId,
+            source,
+            author_name: authorName,
+            rating,
+            content,
+            tags: tagStr,
+            date_text: reviewDate
+        }]);
+        if (error) throw error;
+        venueReviewsCache.delete(venueId);
+        return { id, success: true };
     }
 
-    const sqliteDb = getSqliteDb();
+    const sqliteDb = dbClient.getSqliteDb();
     if (sqliteDb) {
         try {
             sqliteDb.prepare(`
@@ -140,7 +132,7 @@ async function addVenueReview({ venueId, source = 'user', authorName = 'Kiris (T
         }
     }
 
-    return { id, success: true };
+    throw new Error('Review database is unavailable');
 }
 
 async function getVenueReviewerHighlights(venueId) {

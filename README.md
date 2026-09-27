@@ -1,6 +1,6 @@
 # GatherMap 🗺️🍽️
 
-> **Equal-Weight Geometric Group Eatery Matchmaker**  
+> **Equal-Weight Geometric Group Eatery Matchmaker**
 > Finds the fair meeting spot for friends using Weiszfeld geometric median, Gemini AI multi-criteria interpretation, and decoupled travel & preference satisfaction scoring.
 
 Live Demo: [https://gathermap.onrender.com](https://gathermap.onrender.com)

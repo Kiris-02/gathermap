@@ -167,8 +167,8 @@ window.createRecommendationController = function() {
                 this.searchMessage = data.message || '';
 
                 if (this.shortlist.length === 0) {
-                    const hasStrictConstraints = this.confirmedConstraints.vegetarian || 
-                                                this.confirmedConstraints.no_alcohol || 
+                    const hasStrictConstraints = this.confirmedConstraints.vegetarian ||
+                                                this.confirmedConstraints.no_alcohol ||
                                                 this.confirmedConstraints.quiet_only;
                     this.emptyStateReason = hasStrictConstraints ? 'hard_constraint_filtered' : 'no_data';
                 }

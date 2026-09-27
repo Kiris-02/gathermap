@@ -15,4 +15,3 @@ temp-*.db
 tests/*.db
 temp-browser-profile-*
 test.txt
-

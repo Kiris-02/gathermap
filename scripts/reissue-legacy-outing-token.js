@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * Operator CLI Tool: Reissue / Upgrade Share Token for Legacy Outings
- * 
+ *
  * Usage:
  *   node scripts/reissue-legacy-outing-token.js --outing=EAT-ABC123
  *   node scripts/reissue-legacy-outing-token.js EAT-ABC123
  *   node scripts/reissue-legacy-outing-token.js --outing=EAT-ABC123 --force
- * 
+ *
  * Security Notes:
  * - Raw token is printed ONCE to stdout for the operator to share securely with the outing owner.
  * - Raw token is never written to disk or logged in persistent files.
@@ -76,7 +76,7 @@ async function main() {
 
         const host = process.env.PUBLIC_APP_URL || 'https://gathermap.onrender.com';
         const displayToken = isCI ? '[REDACTED_IN_CI_ENVIRONMENT]' : result.shareToken;
-        const fullShareUrl = isCI 
+        const fullShareUrl = isCI
             ? `${host}/?outing=${encodeURIComponent(result.outingId)}&token=[REDACTED_IN_CI]`
             : `${host}/?outing=${encodeURIComponent(result.outingId)}&token=${encodeURIComponent(result.shareToken)}`;
 

@@ -1,6 +1,6 @@
 /**
  * Real PostgreSQL Migration Execution & Live RLS Security Test Suite
- * 
+ *
  * Validates against an actual PostgreSQL 16 database:
  * 1. Safety Guard Rail (Fail-Closed): strictly prohibits connecting to or dropping non-test databases.
  *    - Pre-connection URL whitelist/blacklist inspection.
@@ -238,7 +238,7 @@ async function runPostgresMigrationAndRlsTests(options = {}) {
 
             // Assert zero mutation queries occurred
             const destructiveKeywords = ['DROP', 'CREATE', 'ALTER', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'GRANT', 'REVOKE'];
-            const dangerousQueries = executedQueries.filter(q => 
+            const dangerousQueries = executedQueries.filter(q =>
                 destructiveKeywords.some(kw => q.sql.toUpperCase().includes(kw))
             );
 
@@ -326,7 +326,7 @@ async function runPostgresMigrationAndRlsTests(options = {}) {
             await client.query(sql3);
 
             const res = await client.query(`
-                SELECT table_name FROM information_schema.tables 
+                SELECT table_name FROM information_schema.tables
                 WHERE table_schema = 'public'
             `);
             const tables = res.rows.map(r => r.table_name);
@@ -346,7 +346,7 @@ async function runPostgresMigrationAndRlsTests(options = {}) {
 
             await client.query(`
                 INSERT INTO participants (id, outing_id, name, lat, lng, wish, is_me)
-                VALUES 
+                VALUES
                     ('p-1', $1, 'Alice', 10.7769, 106.7009, 'Coffee', true),
                     ('p-2', $1, 'Alice', 10.7800, 106.6900, 'Tea', false),
                     ('p-3', $1, 'Legacy Bob', 10.7850, 106.6950, 'Food', false),
@@ -357,7 +357,7 @@ async function runPostgresMigrationAndRlsTests(options = {}) {
             // Case 1: Identifiable voter (voter_alice) with 3 votes across venues
             await client.query(`
                 INSERT INTO votes (id, outing_id, venue_id, voter_name, created_at)
-                VALUES 
+                VALUES
                     ('v-1-old-1', $1, 'hcm-vnu-01', 'Alice', '2026-09-01 10:00:00+00'),
                     ('v-1-old-2', $1, 'hcm-vnu-02', 'Alice', '2026-09-01 11:00:00+00'),
                     ('v-1-latest', $1, 'hcm-vnu-03', 'Alice', '2026-09-01 12:00:00+00')
@@ -366,7 +366,7 @@ async function runPostgresMigrationAndRlsTests(options = {}) {
             // Case 2: Identifiable voter with identical created_at (tie-break by id DESC)
             await client.query(`
                 INSERT INTO votes (id, outing_id, venue_id, voter_name, created_at)
-                VALUES 
+                VALUES
                     ('v-tie-10', $1, 'hcm-vnu-01', 'TieBreaker', '2026-09-01 10:00:00+00'),
                     ('v-tie-20', $1, 'hcm-vnu-02', 'TieBreaker', '2026-09-01 10:00:00+00')
             `, [outingId]);
@@ -374,14 +374,14 @@ async function runPostgresMigrationAndRlsTests(options = {}) {
             // Case 3: Distinct voter with identical display name 'Alice'
             await client.query(`
                 INSERT INTO votes (id, outing_id, venue_id, voter_name, created_at)
-                VALUES 
+                VALUES
                     ('v-alice2-active', $1, 'hcm-vnu-04', 'Alice', '2026-09-01 11:30:00+00')
             `, [outingId]);
 
             // Case 4: Legacy voter (voter_id IS NULL) with multiple votes
             await client.query(`
                 INSERT INTO votes (id, outing_id, venue_id, voter_name, created_at)
-                VALUES 
+                VALUES
                     ('v-leg-old', $1, 'hcm-vnu-01', 'Legacy Bob', '2026-09-01 09:00:00+00'),
                     ('v-leg-latest', $1, 'hcm-vnu-02', 'Legacy Bob', '2026-09-01 10:30:00+00')
             `, [outingId]);
@@ -389,7 +389,7 @@ async function runPostgresMigrationAndRlsTests(options = {}) {
             // Case 5: Distinct legacy voter
             await client.query(`
                 INSERT INTO votes (id, outing_id, venue_id, voter_name, created_at)
-                VALUES 
+                VALUES
                     ('v-charlie-active', $1, 'hcm-vnu-05', 'Legacy Charlie', '2026-09-01 09:15:00+00')
             `, [outingId]);
 
@@ -469,7 +469,7 @@ async function runPostgresMigrationAndRlsTests(options = {}) {
 
             // Verify unique partial indexes exist in PostgreSQL
             const indexRes = await client.query(`
-                SELECT indexname FROM pg_indexes 
+                SELECT indexname FROM pg_indexes
                 WHERE tablename = 'votes' AND schemaname = 'public'
             `);
             const indexNames = indexRes.rows.map(r => r.indexname);

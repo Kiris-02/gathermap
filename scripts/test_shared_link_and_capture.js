@@ -1,6 +1,6 @@
 /**
  * Two-Browser Context & Shared Link Verification Suite (Playwright E2E)
- * 
+ *
  * Requirements:
  * 1. Independent browser contexts: Host creates outing, Guest opens ?outing=...&token=...
  * 2. Assertions on UI and API:
@@ -452,7 +452,7 @@ async function runE2ESharedLinkTests() {
             assert.strictEqual(unauthState.sessionLoaded, false, 'Session must not be loaded without token');
             const leakedPrivateFriend = unauthState.friends.some(n => ['Kiris (Host)', 'Minh', 'Lan'].includes(n));
             assert.strictEqual(leakedPrivateFriend, false, 'Private friends must NOT be exposed without token');
-            
+
             // Check direct API returns 401
             const apiRes = await unauthPage.request.get(`${baseUrl}/api/outings/${sharedOutingId}`);
             assert.strictEqual(apiRes.status(), 401, 'API without token must return 401');
@@ -477,7 +477,7 @@ async function runE2ESharedLinkTests() {
             assert.strictEqual(badTokenState.sessionLoaded, false, 'Session must not load with forged token');
             const leakedPrivateFriend = badTokenState.friends.some(n => ['Kiris (Host)', 'Minh', 'Lan'].includes(n));
             assert.strictEqual(leakedPrivateFriend, false, 'Friends must NOT be revealed to forged token');
-            
+
             // Check direct API returns 403
             const apiRes = await unauthPage.request.get(`${baseUrl}/api/outings/${sharedOutingId}?token=forged_token_evil_hacker_123`);
             assert.strictEqual(apiRes.status(), 403, 'API with forged token must return 403');

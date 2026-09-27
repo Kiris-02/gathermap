@@ -10,7 +10,7 @@ window.createInitialState = function() {
     if (urlShareToken) {
         window._currentShareToken = urlShareToken;
     }
-    
+
     // 2. Resolve or generate persistent Voter ID & Name
     let voterId = '';
     try {
@@ -42,7 +42,7 @@ window.createInitialState = function() {
         activeScenario: 'all',
         activeQuickFilter: 'all',
         mobileView: 'list', // 'list' | 'map'
-        
+
         // Progress Flags
         ranking: false,
         parsing: false,

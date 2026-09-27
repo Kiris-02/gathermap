@@ -236,7 +236,7 @@ function initSqliteSchema(db) {
                 WHERE voter_id IS NOT NULL AND id NOT IN (
                     SELECT id FROM (
                         SELECT id, ROW_NUMBER() OVER (
-                            PARTITION BY outing_id, voter_id 
+                            PARTITION BY outing_id, voter_id
                             ORDER BY created_at DESC, id DESC
                         ) as rn
                         FROM votes
@@ -248,7 +248,7 @@ function initSqliteSchema(db) {
                 WHERE voter_id IS NOT NULL AND id NOT IN (
                     SELECT id FROM (
                         SELECT id, ROW_NUMBER() OVER (
-                            PARTITION BY outing_id, voter_id 
+                            PARTITION BY outing_id, voter_id
                             ORDER BY created_at DESC, id DESC
                         ) as rn
                         FROM votes
@@ -262,7 +262,7 @@ function initSqliteSchema(db) {
                 WHERE voter_id IS NULL AND id NOT IN (
                     SELECT id FROM (
                         SELECT id, ROW_NUMBER() OVER (
-                            PARTITION BY outing_id, voter_name 
+                            PARTITION BY outing_id, voter_name
                             ORDER BY created_at DESC, id DESC
                         ) as rn
                         FROM votes
@@ -274,7 +274,7 @@ function initSqliteSchema(db) {
                 WHERE voter_id IS NULL AND id NOT IN (
                     SELECT id FROM (
                         SELECT id, ROW_NUMBER() OVER (
-                            PARTITION BY outing_id, voter_name 
+                            PARTITION BY outing_id, voter_name
                             ORDER BY created_at DESC, id DESC
                         ) as rn
                         FROM votes

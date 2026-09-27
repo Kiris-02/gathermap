@@ -10,7 +10,7 @@
     "test:pipeline": "node tests/pipeline.test.js",
     "test:voting": "node tests/voting-session.test.js",
     "test:overwrite": "node tests/supabase-outing-overwrite.test.js",
-    "test:security": "node tests/token-security-and-overwrite.test.js",
+    "test:security": "node tests/token-security-and-overwrite.test.js && node tests/review-fail-closed.test.js",
     "test:radius": "node tests/radius-update-sync.test.js",
     "test:legacy": "node tests/legacy-migration-transition.test.js",
     "test:fixture": "node tests/supabase-migration-fixture.test.js",

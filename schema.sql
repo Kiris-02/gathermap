@@ -147,4 +147,3 @@ DROP POLICY IF EXISTS "Public read reviews" ON reviews;
 DROP POLICY IF EXISTS "Service write reviews" ON reviews;
 CREATE POLICY "Public read reviews" ON reviews FOR SELECT USING (true);
 CREATE POLICY "Service write reviews" ON reviews FOR ALL TO service_role USING (true) WITH CHECK (true);
-

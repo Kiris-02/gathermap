@@ -30,9 +30,9 @@ window.createVenueCardController = function() {
 
             const oh = venue.openingHours;
             const tags = Array.isArray(venue.tags) ? venue.tags : [];
-            const is24_7 = (oh && (oh.is24_7 || oh.is24h)) || 
-                           tags.some(t => String(t).toLowerCase().includes('24/7') || 
-                                          String(t).toLowerCase().includes('24h') || 
+            const is24_7 = (oh && (oh.is24_7 || oh.is24h)) ||
+                           tags.some(t => String(t).toLowerCase().includes('24/7') ||
+                                          String(t).toLowerCase().includes('24h') ||
                                           String(t).toLowerCase().includes('xuyên đêm'));
 
             if (is24_7) {

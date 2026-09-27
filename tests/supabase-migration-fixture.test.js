@@ -115,7 +115,7 @@ async function runMigrationFixtureTests() {
 
             db.prepare(`
                 INSERT INTO participants (id, outing_id, name, lat, lng, wish, is_me)
-                VALUES 
+                VALUES
                     ('p-1', ?, 'Alice', 10.7769, 106.7009, 'Coffee', 1),
                     ('p-2', ?, 'Alice', 10.7800, 106.6900, 'Tea', 0),
                     ('p-3', ?, 'Legacy Bob', 10.7850, 106.6950, 'Food', 0),
@@ -124,7 +124,7 @@ async function runMigrationFixtureTests() {
 
             db.prepare(`
                 INSERT INTO venues (id, name, category, type, address, lat, lng)
-                VALUES 
+                VALUES
                     ('venue-A', 'Cafe A', 'Cafe', 'cafe', '123 A St', 10.7750, 106.7020),
                     ('venue-B', 'Cafe B', 'Cafe', 'cafe', '456 B St', 10.7780, 106.7040),
                     ('venue-C', 'Cafe C', 'Cafe', 'cafe', '789 C St', 10.7800, 106.7060),
@@ -134,7 +134,7 @@ async function runMigrationFixtureTests() {
 
             db.prepare(`
                 INSERT INTO recommendations (id, outing_id, venue_id, group_score, avg_score, lowest_score, ai_rationale)
-                VALUES 
+                VALUES
                     ('r-1', ?, 'venue-A', 92.0, 90.0, 85.0, 'Rationale A'),
                     ('r-2', ?, 'venue-B', 88.0, 86.0, 80.0, 'Rationale B'),
                     ('r-3', ?, 'venue-C', 85.0, 84.0, 78.0, 'Rationale C')

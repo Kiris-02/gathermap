@@ -31,31 +31,31 @@ VALUES ('out-fixture-01', 'Old Group Meetup', 'representative', 10.7769, 106.700
 
 -- Case 1: Identifiable voter (voter_1) with 3 votes (2 older, 1 newer)
 INSERT INTO fixture_votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
-VALUES 
+VALUES
     ('v-1-old-1', 'out-fixture-01', 'venue-A', 'Alice', 'voter_alice', '2026-09-01 10:00:00+07'),
     ('v-1-old-2', 'out-fixture-01', 'venue-B', 'Alice', 'voter_alice', '2026-09-01 11:00:00+07'),
     ('v-1-latest', 'out-fixture-01', 'venue-C', 'Alice', 'voter_alice', '2026-09-01 12:00:00+07');
 
 -- Case 2: Identifiable voter with identical created_at to test tie-breaking by id
 INSERT INTO fixture_votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
-VALUES 
+VALUES
     ('v-tie-10', 'out-fixture-01', 'venue-A', 'TieBreaker', 'voter_tie', '2026-09-01 10:00:00+07'),
     ('v-tie-20', 'out-fixture-01', 'venue-B', 'TieBreaker', 'voter_tie', '2026-09-01 10:00:00+07');
 
 -- Case 3: Distinct voter with identical display name 'Alice' (voter_id = 'voter_alice_2')
 INSERT INTO fixture_votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
-VALUES 
+VALUES
     ('v-alice2-active', 'out-fixture-01', 'venue-A', 'Alice', 'voter_alice_2', '2026-09-01 11:30:00+07');
 
 -- Case 4: Legacy voter (voter_id IS NULL) with multiple votes
 INSERT INTO fixture_votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
-VALUES 
+VALUES
     ('v-leg-old', 'out-fixture-01', 'venue-A', 'Legacy Bob', NULL, '2026-09-01 09:00:00+07'),
     ('v-leg-latest', 'out-fixture-01', 'venue-B', 'Legacy Bob', NULL, '2026-09-01 10:30:00+07');
 
 -- Case 5: Distinct legacy voter (voter_id IS NULL, voter_name = 'Legacy Charlie')
 INSERT INTO fixture_votes (id, outing_id, venue_id, voter_name, voter_id, created_at)
-VALUES 
+VALUES
     ('v-charlie-active', 'out-fixture-01', 'venue-A', 'Legacy Charlie', NULL, '2026-09-01 09:15:00+07');
 
 -- Total initial rows = 9
@@ -86,7 +86,7 @@ CREATE TEMP TABLE fixture_votes_archive (
 WITH ranked_voter_id_votes AS (
     SELECT id, outing_id, venue_id, voter_name, voter_id, created_at,
            ROW_NUMBER() OVER (
-               PARTITION BY outing_id, voter_id 
+               PARTITION BY outing_id, voter_id
                ORDER BY created_at DESC NULLS LAST, id DESC
            ) as rn
     FROM fixture_votes
@@ -105,7 +105,7 @@ DELETE FROM fixture_votes
 WHERE id IN (
     SELECT id FROM (
         SELECT id, ROW_NUMBER() OVER (
-            PARTITION BY outing_id, voter_id 
+            PARTITION BY outing_id, voter_id
             ORDER BY created_at DESC NULLS LAST, id DESC
         ) as rn
         FROM fixture_votes
@@ -117,7 +117,7 @@ WHERE id IN (
 WITH ranked_legacy_votes AS (
     SELECT id, outing_id, venue_id, voter_name, voter_id, created_at,
            ROW_NUMBER() OVER (
-               PARTITION BY outing_id, voter_name 
+               PARTITION BY outing_id, voter_name
                ORDER BY created_at DESC NULLS LAST, id DESC
            ) as rn
     FROM fixture_votes
@@ -136,7 +136,7 @@ DELETE FROM fixture_votes
 WHERE id IN (
     SELECT id FROM (
         SELECT id, ROW_NUMBER() OVER (
-            PARTITION BY outing_id, voter_name 
+            PARTITION BY outing_id, voter_name
             ORDER BY created_at DESC NULLS LAST, id DESC
         ) as rn
         FROM fixture_votes
@@ -210,7 +210,7 @@ BEGIN
     WITH ranked_voter_id_votes AS (
         SELECT id, outing_id, venue_id, voter_name, voter_id, created_at,
                ROW_NUMBER() OVER (
-                   PARTITION BY outing_id, voter_id 
+                   PARTITION BY outing_id, voter_id
                    ORDER BY created_at DESC NULLS LAST, id DESC
                ) as rn
         FROM fixture_votes
@@ -235,17 +235,17 @@ END $$;
 
 -- 5. Row Level Security & Grants Audit Query for Production Validation
 -- This query can be run on Supabase database to verify strict privacy
-SELECT 
+SELECT
     schemaname,
     tablename,
     rowsecurity as rls_enabled
 FROM pg_tables
-WHERE schemaname = 'public' 
+WHERE schemaname = 'public'
   AND tablename IN ('outings', 'participants', 'recommendations', 'votes', 'votes_dedup_archive', 'venues', 'reviews')
 ORDER BY tablename;
 
 -- Verify policies
-SELECT 
+SELECT
     schemaname,
     tablename,
     policyname,

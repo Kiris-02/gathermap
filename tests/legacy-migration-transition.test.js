@@ -97,21 +97,21 @@ initDb.prepare(`
 
 initDb.prepare(`
     INSERT INTO participants (id, outing_id, name, district, lat, lng, wish, is_me)
-    VALUES 
+    VALUES
         (?, ?, 'Alice (Host)', 'D1', 10.7769, 106.7009, 'Good coffee, quiet', 1),
         (?, ?, 'Bob (Guest)', 'D3', 10.7850, 106.6950, 'Budget friendly', 0)
 `).run(`p-${legacyOutingId}-1`, legacyOutingId, `p-${legacyOutingId}-2`, legacyOutingId);
 
 initDb.exec(`
     INSERT INTO venues (id, name, category, type, address, lat, lng)
-    VALUES 
+    VALUES
         ('v-legacy-1', 'The Workshop Coffee', 'Cà phê', 'cafe', '27 Ngo Duc Ke, D1', 10.7735, 106.7042),
         ('v-legacy-2', 'Goc Ha Noi Cafe', 'Cà phê', 'cafe', '165 Bui Vien, D1', 10.7675, 106.6935);
 `);
 
 initDb.prepare(`
     INSERT INTO recommendations (id, outing_id, venue_id, group_score, avg_score, lowest_score, ai_rationale)
-    VALUES 
+    VALUES
         (?, ?, 'v-legacy-1', 92.5, 91.0, 88.0, 'Great specialty coffee for Alice & Bob'),
         (?, ?, 'v-legacy-2', 86.0, 85.0, 82.0, 'Cozy egg coffee spot')
 `).run(`rec-${legacyOutingId}-1`, legacyOutingId, `rec-${legacyOutingId}-2`, legacyOutingId);
