@@ -25,8 +25,9 @@ class CycleTests(unittest.TestCase):
     def test_pending_excludes_blocked_and_non_tasks(self):
         values = [issue("to:antina", "state:ready"),
                   issue("to:antina", "state:revision", "state:needs-kiris"),
+                  issue("to:antina", "state:ready", "state:working"),
                   issue("to:antina", "state:working")]
-        values[2]["body"] = "not a task"
+        values[3]["body"] = "not a task"
         with patch.object(cycle, "gh_json", return_value=values):
             self.assertEqual(cycle.pending(), [{"number": 8, "title": "Task"}])
 
@@ -57,11 +58,26 @@ class CycleTests(unittest.TestCase):
                 cycle.claim(8, "chore/task-8")
             run.assert_not_called()
 
+    def test_claim_refuses_conflicting_working_state(self):
+        with patch.object(cycle, "require_branch"), \
+             patch.object(cycle, "issue_view", return_value=issue(
+                 "to:antina", "state:ready", "state:working")), \
+             patch.object(cycle, "run") as run:
+            with self.assertRaises(cycle.CycleError):
+                cycle.claim(8, "chore/task-8")
+            run.assert_not_called()
+
     def test_branch_refuses_product_and_dirty_checkout(self):
         with patch.object(cycle, "run", side_effect=["refactor/ui-map-architecture"]):
             with self.assertRaises(cycle.CycleError):
                 cycle.require_branch("refactor/ui-map-architecture")
         with patch.object(cycle, "run", side_effect=["chore/task-8", " M app.js"]):
+            with self.assertRaises(cycle.CycleError):
+                cycle.require_branch("chore/task-8")
+
+    def test_branch_refuses_lookalike_origin(self):
+        with patch.object(cycle, "run", side_effect=[
+                "chore/task-8", "", "https://evil.example/Kiris-02/gathermap.git"]):
             with self.assertRaises(cycle.CycleError):
                 cycle.require_branch("chore/task-8")
 

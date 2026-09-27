@@ -15,6 +15,13 @@ from pathlib import Path
 REPO = "Kiris-02/gathermap"
 READY = {"state:ready", "state:revision"}
 FORBIDDEN = {"state:blocked", "state:needs-kiris", "NEEDS_KIRIS"}
+BUSY = {"state:working", "state:review", "state:done", "to:grum"}
+EXPECTED_ORIGINS = {
+    "https://github.com/Kiris-02/gathermap",
+    "https://github.com/Kiris-02/gathermap.git",
+    "git@github.com:Kiris-02/gathermap.git",
+    "ssh://git@github.com/Kiris-02/gathermap.git",
+}
 
 
 class CycleError(Exception):
@@ -63,8 +70,7 @@ def require_branch(branch):
     if run("git", "status", "--porcelain"):
         raise CycleError("Working tree must be clean before a state transition")
     origin = run("git", "remote", "get-url", "origin")
-    if not (origin.endswith("Kiris-02/gathermap.git") or
-            origin.endswith("Kiris-02/gathermap")):
+    if origin not in EXPECTED_ORIGINS:
         raise CycleError("This checkout does not point at the expected repository")
 
 
@@ -75,7 +81,8 @@ def pending():
     return [{"number": issue["number"], "title": issue["title"]}
             for issue in issues if issue["state"] == "OPEN"
             and "GRUM_TASK" in (issue.get("body") or "")
-            and labels(issue) & READY and not labels(issue) & FORBIDDEN]
+            and len(labels(issue) & READY) == 1
+            and not labels(issue) & (FORBIDDEN | BUSY)]
 
 
 def claim(number, branch):
@@ -83,7 +90,8 @@ def claim(number, branch):
     issue = issue_view(number)
     require_task(issue)
     current = labels(issue)
-    if "to:antina" not in current or len(current & READY) != 1:
+    if ("to:antina" not in current or len(current & READY) != 1 or
+            current & BUSY):
         raise CycleError("Issue is not in exactly one ready/revision state for Antina")
     old = next(iter(current & READY))
     run("gh", "issue", "edit", str(number), "--repo", REPO,
