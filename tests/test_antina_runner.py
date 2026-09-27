@@ -1,6 +1,7 @@
 """Offline safety tests for the automatic Antina runner."""
 
 import importlib.util
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -9,6 +10,9 @@ from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "antina_runner.py"
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "antina-runner.yml"
+VALIDATION_WORKFLOW = (
+    Path(__file__).resolve().parents[1] / ".github" / "workflows" / "antina-validation.yml"
+)
 spec = importlib.util.spec_from_file_location("antina_runner", SCRIPT)
 runner = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = runner
@@ -42,12 +46,23 @@ def event(*labels, association="OWNER", action="labeled", trigger="state:ready")
 class RunnerTests(unittest.TestCase):
     def test_workflow_is_owner_scoped_serial_and_does_not_persist_credentials(self):
         workflow = WORKFLOW.read_text(encoding="utf-8")
+        validation = VALIDATION_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("github.event.issue.author_association == 'OWNER'", workflow)
         self.assertIn("group: antina-issue-${{ github.event.issue.number }}", workflow)
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn("timeout-minutes: 45", workflow)
         self.assertNotIn("pull_request_target", workflow)
+        self.assertNotIn("npm ci", workflow)
+        self.assertNotIn("npm test", workflow)
+        self.assertIn("name: Antina required validation", validation)
+        self.assertIn("if: startsWith(github.head_ref, 'agent/')", validation)
+        self.assertIn("contents: read", validation)
+        self.assertIn("persist-credentials: false", validation)
+        self.assertIn("npm ci", validation)
+        self.assertIn("npm test", validation)
+        self.assertNotIn("contents: write", validation)
+        self.assertNotIn("git push", validation)
 
     def test_event_requires_owner_issue_label_event(self):
         self.assertEqual(runner.validate_event(event())[0], 8)
@@ -100,29 +115,66 @@ class RunnerTests(unittest.TestCase):
             self.assertFalse(runner.read_args_allowed({"file_path": ".env.production"}, root))
             self.assertFalse(runner.read_args_allowed({"directory_path": "../"}, root))
 
-    def test_only_read_only_or_test_commands_are_allowed(self):
-        allowed = [
-            "git diff --check",
-            "npm test",
-            "npm run lint",
-            "python -m unittest discover -s tests",
-            "node tests/pipeline.test.js",
-        ]
-        denied = [
-            "git push origin main",
-            "git reset --hard",
-            "npm publish",
-            "npm run deploy",
-            "python -c 'import os'",
-            "node test.js && rm -rf .",
-            "npx anything",
-            "rg --pre python task_id .",
-            "supabase db push",
-        ]
-        for command in allowed:
-            self.assertTrue(runner.command_allowed({"CommandLine": command}), command)
-        for command in denied:
-            self.assertFalse(runner.command_allowed({"CommandLine": command}), command)
+    def test_sdk_cannot_execute_repository_controlled_commands(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertNotIn('policy.allow("run_command"', source)
+        self.assertNotIn("types.BuiltinTools.RUN_COMMAND", source)
+        self.assertIn("enable_subagents=False", source)
+        self.assertFalse(hasattr(runner, "command_allowed"))
+        self.assertNotIn('("npm", "test")', source)
+        self.assertTrue(Path(runner.TRUSTED_GIT).is_absolute())
+
+    def test_git_boundary_rejects_hooks_config_remote_and_head_changes(self):
+        task = runner.task_from_issue(issue("to:antina", "state:ready"), "OWNER")
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            subprocess.run(["git", "init", "-b", task.branch], cwd=root, check=True,
+                           capture_output=True, text=True)
+            subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.email", "test@example.com"],
+                           cwd=root, check=True)
+            (root / "README.md").write_text("safe\n", encoding="utf-8")
+            subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "base"], cwd=root, check=True,
+                           capture_output=True, text=True)
+            subprocess.run([
+                "git", "remote", "add", "origin",
+                "https://github.com/Kiris-02/gathermap.git",
+            ], cwd=root, check=True)
+            head = subprocess.run(
+                ["git", "rev-parse", "HEAD"], cwd=root, check=True,
+                capture_output=True, text=True,
+            ).stdout.strip()
+            runner.assert_git_boundary(task, root, head)
+
+            hook = root / ".git" / "hooks" / "pre-commit"
+            hook.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            with self.assertRaisesRegex(runner.RunnerError, "hooks"):
+                runner.assert_git_boundary(task, root, head)
+            hook.unlink()
+
+            subprocess.run(["git", "config", "core.hooksPath", ".hooks"],
+                           cwd=root, check=True)
+            with self.assertRaisesRegex(runner.RunnerError, "configuration"):
+                runner.assert_git_boundary(task, root, head)
+            subprocess.run(["git", "config", "--unset", "core.hooksPath"],
+                           cwd=root, check=True)
+
+            subprocess.run(["git", "remote", "set-url", "origin", "https://evil.invalid/x"],
+                           cwd=root, check=True)
+            with self.assertRaisesRegex(runner.RunnerError, "origin"):
+                runner.assert_git_boundary(task, root, head)
+            subprocess.run([
+                "git", "remote", "set-url", "origin",
+                "https://github.com/Kiris-02/gathermap.git",
+            ], cwd=root, check=True)
+
+            (root / "README.md").write_text("changed\n", encoding="utf-8")
+            subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "unexpected"], cwd=root, check=True,
+                           capture_output=True, text=True)
+            with self.assertRaisesRegex(runner.RunnerError, "HEAD"):
+                runner.assert_git_boundary(task, root, head)
 
     def test_ready_task_refuses_preexisting_remote_branch(self):
         task = runner.task_from_issue(issue("to:antina", "state:ready"), "OWNER")
@@ -144,11 +196,23 @@ class RunnerTests(unittest.TestCase):
 
     def test_check_rollup_distinguishes_pending_failure_and_success(self):
         self.assertEqual(runner.checks_state([]), "pending")
-        self.assertEqual(runner.checks_state([{"status": "IN_PROGRESS"}]), "pending")
-        self.assertEqual(runner.checks_state([{"conclusion": "FAILURE"}]), "failed")
         self.assertEqual(runner.checks_state([
-            {"conclusion": "SUCCESS"}, {"conclusion": "SKIPPED"}
-        ]), "success")
+            {"name": "unrelated", "status": "COMPLETED", "conclusion": "SUCCESS"}
+        ]), "pending")
+        self.assertEqual(runner.checks_state([{
+            "name": "Antina required validation", "status": "IN_PROGRESS"
+        }]), "pending")
+        for conclusion in ["FAILURE", "CANCELLED", "SKIPPED", "NEUTRAL"]:
+            self.assertEqual(runner.checks_state([{
+                "name": "Antina required validation",
+                "status": "COMPLETED",
+                "conclusion": conclusion,
+            }]), "failed")
+        self.assertEqual(runner.checks_state([{
+            "name": "Antina required validation",
+            "status": "COMPLETED",
+            "conclusion": "SUCCESS",
+        }]), "success")
 
     def test_changed_protected_path_fails_before_publish(self):
         with tempfile.TemporaryDirectory() as temp, \

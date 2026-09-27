@@ -1,0 +1,32 @@
+name: Antina validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  required-validation:
+    name: Antina required validation
+    if: startsWith(github.head_ref, 'agent/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install product dependencies
+        run: npm ci
+      - name: Run Python regression tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Run product regression tests
+        run: npm test

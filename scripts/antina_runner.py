@@ -12,7 +12,7 @@ import asyncio
 import json
 import os
 import re
-import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -45,18 +45,13 @@ PROTECTED_FILES = {
     "scripts/agent_cycle.py",
     "scripts/antina_runner.py",
 }
-SAFE_GIT = {"diff", "grep", "log", "ls-files", "rev-parse", "show", "status"}
-SAFE_NPM_SCRIPTS = {"build", "lint", "test", "test:unit", "test:integration"}
-UNSAFE_SHELL = re.compile(r"[;&|><`\n\r]|\$\(")
-UNSAFE_COMMAND_WORDS = re.compile(
-    r"\b(deploy|publish|release|migration|migrate|supabase|render|secret|"
-    r"force|reset|checkout|switch|commit|push|merge|rebase|clean|rm|del)\b",
-    re.IGNORECASE,
-)
+REQUIRED_CHECKS = frozenset({"Antina required validation"})
 SENSITIVE_ENV = re.compile(
     r"(TOKEN|SECRET|PASSWORD|CREDENTIAL|PRIVATE|API_KEY|ACTIONS_RUNTIME)",
     re.IGNORECASE,
 )
+TRUSTED_GIT = shutil.which("git")
+TRUSTED_GH = shutil.which("gh")
 
 
 class RunnerError(Exception):
@@ -78,9 +73,14 @@ class Task:
 
 
 def run(*args: str, cwd: Path | None = None, check: bool = True) -> str:
+    command = list(args)
+    if command and command[0] == "git" and TRUSTED_GIT:
+        command[0] = TRUSTED_GIT
+    elif command and command[0] == "gh" and TRUSTED_GH:
+        command[0] = TRUSTED_GH
     try:
         result = subprocess.run(
-            args,
+            command,
             cwd=cwd,
             check=check,
             capture_output=True,
@@ -230,32 +230,6 @@ def edit_args_allowed(args: dict, root: Path) -> bool:
     return path_allowed(str(path), root)
 
 
-def command_allowed(args: dict) -> bool:
-    command = str(args.get("CommandLine") or args.get("command") or "").strip()
-    if not command or UNSAFE_SHELL.search(command) or UNSAFE_COMMAND_WORDS.search(command):
-        return False
-    try:
-        words = shlex.split(command)
-    except ValueError:
-        return False
-    if not words:
-        return False
-    executable = Path(words[0]).name.lower()
-    if executable == "git":
-        return len(words) >= 2 and words[1] in SAFE_GIT
-    if executable == "npm":
-        if words[1:2] == ["test"]:
-            return True
-        return len(words) >= 3 and words[1] == "run" and words[2] in SAFE_NPM_SCRIPTS
-    if executable in {"python", "python3"}:
-        return len(words) >= 3 and words[1] == "-m" and words[2] in {
-            "pytest", "unittest", "py_compile"
-        }
-    if executable == "node":
-        return len(words) >= 2 and not words[1].startswith("-")
-    return False
-
-
 def pop_sensitive_environment() -> dict[str, str]:
     removed = {name: value for name, value in os.environ.items() if SENSITIVE_ENV.search(name)}
     for name in removed:
@@ -280,9 +254,46 @@ def validate_changes(root: Path) -> list[str]:
     return paths
 
 
+def assert_git_boundary(task: Task, root: Path, expected_head: str) -> None:
+    """Reject model/test influence over later privileged Git operations."""
+    raw_git_dir = root / ".git"
+    if not raw_git_dir.is_dir() or raw_git_dir.is_symlink():
+        raise RunnerError("Checkout Git directory is missing, redirected, or not a directory")
+    reported = Path(run("git", "rev-parse", "--git-dir", cwd=root))
+    if not reported.is_absolute():
+        reported = root / reported
+    if reported.resolve() != raw_git_dir.resolve():
+        raise RunnerError("Checkout uses an unexpected Git directory")
+    if run("git", "branch", "--show-current", cwd=root) != task.branch:
+        raise RunnerError("Checkout left the dedicated task branch")
+    if run("git", "rev-parse", "HEAD", cwd=root) != expected_head:
+        raise RunnerError("Checkout HEAD changed outside the harness")
+    origin = run("git", "remote", "get-url", "origin", cwd=root)
+    if origin not in agent_cycle.EXPECTED_ORIGINS:
+        raise RunnerError("Checkout origin changed outside the harness")
+    local_keys = run("git", "config", "--local", "--name-only", "--list", cwd=root)
+    unsafe_keys = [
+        key for key in local_keys.splitlines()
+        if key.lower() == "core.hookspath"
+        or key.lower().startswith(("include.", "includeif."))
+    ]
+    if unsafe_keys:
+        raise RunnerError("Unsafe local Git configuration: " + ", ".join(unsafe_keys))
+    hooks = raw_git_dir / "hooks"
+    if hooks.exists():
+        active = [
+            path.relative_to(raw_git_dir).as_posix()
+            for path in hooks.rglob("*")
+            if path.is_symlink() or (path.is_file() and not path.name.endswith(".sample"))
+        ]
+        if active:
+            raise RunnerError("Active Git hooks are forbidden: " + ", ".join(sorted(active)))
+
+
 def remote_branch_exists(branch: str) -> bool:
+    executable = TRUSTED_GIT or "git"
     result = subprocess.run(
-        ("git", "ls-remote", "--exit-code", "--heads", "origin", branch),
+        (executable, "ls-remote", "--exit-code", "--heads", "origin", branch),
         check=False,
         capture_output=True,
         text=True,
@@ -343,8 +354,8 @@ async def run_antigravity(task: Task, root: Path) -> str:
             policy.allow("search_directory", when=lambda args: read_args_allowed(args, root)),
             policy.allow("find_file", when=lambda args: read_args_allowed(args, root)),
             policy.allow("grep_search", when=lambda args: read_args_allowed(args, root)),
+            policy.allow("create_file", when=lambda args: edit_args_allowed(args, root)),
             policy.allow("edit_file", when=lambda args: edit_args_allowed(args, root)),
-            policy.allow("run_command", when=command_allowed),
             policy.deny("*", name="deny-all-unlisted-tools"),
         ]
         instructions = f"""You are Antina, the implementation and testing agent for Gathermap.
@@ -352,7 +363,8 @@ Read .agents/README.md, PROTOCOL.md, ANTINA.md, TASK_FORMAT.md, and SAFETY.md fi
 Implement only the GRUM_TASK below in the current isolated branch.
 Do not call git or gh mutation commands; the outer harness owns branch, commit, push, PR,
 labels, and comments. Never merge, deploy, execute migrations, access secrets, or modify
-protected protocol/workflow/runner files. Run relevant allowed tests. If the task is
+protected protocol/workflow/runner files. You have no command-execution capability;
+validation runs later in a separate credential-free GitHub Actions job. If the task is
 unsafe, ambiguous, or impossible within these tools, make no changes and explain why.
 
 ISSUE #{task.issue}
@@ -363,13 +375,22 @@ ISSUE #{task.issue}
             system_instructions=instructions,
             policies=policies,
             capabilities=types.CapabilitiesConfig(
-                run_command_config=types.RunCommandConfig(enable_sandbox=True),
+                enable_subagents=False,
+                enabled_tools=[
+                    types.BuiltinTools.LIST_DIR,
+                    types.BuiltinTools.SEARCH_DIR,
+                    types.BuiltinTools.FIND_FILE,
+                    types.BuiltinTools.VIEW_FILE,
+                    types.BuiltinTools.CREATE_FILE,
+                    types.BuiltinTools.EDIT_FILE,
+                    types.BuiltinTools.FINISH,
+                ],
             ),
             workspaces=[str(root.resolve())],
         )
         async with Agent(config) as agent:
             response = await agent.chat(
-                "Inspect the repository, implement the task, run relevant tests, and finish with a concise factual summary."
+                "Inspect the repository, implement the task, and finish with a concise factual summary."
             )
             return await response.text()
     finally:
@@ -380,19 +401,43 @@ ISSUE #{task.issue}
                 os.environ[name] = secret_environment[name]
 
 
-def checks_state(rollup: list[dict]) -> str:
+def check_state(check: dict) -> str:
+    status = str(check.get("status") or check.get("state") or "").upper()
+    conclusion = str(check.get("conclusion") or "").upper()
+    if status in {"EXPECTED", "IN_PROGRESS", "PENDING", "QUEUED", "REQUESTED", "WAITING"}:
+        return "pending"
+    if status == "COMPLETED":
+        return "success" if conclusion == "SUCCESS" else "failed"
+    if conclusion:
+        return "success" if conclusion == "SUCCESS" else "failed"
+    return "pending"
+
+
+def checks_state(rollup: list[dict], required: frozenset[str] = REQUIRED_CHECKS) -> str:
     if not rollup:
         return "pending"
-    pending = {"EXPECTED", "IN_PROGRESS", "PENDING", "QUEUED", "REQUESTED", "WAITING"}
-    success = {"NEUTRAL", "SKIPPED", "STALE", "SUCCESS"}
-    saw_pending = False
+    grouped: dict[str, list[dict]] = {}
     for check in rollup:
-        state = str(check.get("conclusion") or check.get("state") or check.get("status") or "").upper()
-        if state in pending or not state:
-            saw_pending = True
-        elif state not in success and state != "COMPLETED" or state == "COMPLETED" and str(check.get("conclusion") or "").upper() not in success:
-            return "failed"
+        name = str(check.get("name") or check.get("context") or "")
+        grouped.setdefault(name, []).append(check)
+    if not required <= grouped.keys():
+        return "pending"
+    saw_pending = False
+    for name in required:
+        for check in grouped[name]:
+            state = check_state(check)
+            if state == "failed":
+                return "failed"
+            if state == "pending":
+                saw_pending = True
     return "pending" if saw_pending else "success"
+
+
+def verify_remote_head(task: Task, root: Path, expected_head: str) -> None:
+    remote = run("git", "ls-remote", "--heads", "origin", task.branch, cwd=root)
+    fields = remote.split()
+    if len(fields) != 2 or fields[0] != expected_head:
+        raise RunnerError("Remote task branch does not match the pushed commit")
 
 
 def wait_for_checks(pr_number: int, timeout: int = 1800) -> None:
@@ -408,24 +453,32 @@ def wait_for_checks(pr_number: int, timeout: int = 1800) -> None:
     raise RunnerError("Timed out waiting for PR checks")
 
 
-def publish(task: Task, root: Path, prior_pr: dict | None, summary: str, paths: list[str]) -> dict:
-    test_environment = {
-        name: value for name, value in os.environ.items() if not SENSITIVE_ENV.search(name)
-    }
-    try:
-        subprocess.run(
-            ("npm", "test"), cwd=root, env=test_environment, check=True,
-            capture_output=True, text=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        raise RunnerError(f"npm test failed: {(exc.stderr or exc.stdout).strip()}") from exc
+def publish(
+    task: Task,
+    root: Path,
+    prior_pr: dict | None,
+    summary: str,
+    paths: list[str],
+    baseline_head: str,
+) -> dict:
+    assert_git_boundary(task, root, baseline_head)
     run("git", "add", "--all", cwd=root)
-    run("git", "config", "user.name", "Antina Automation", cwd=root)
-    run("git", "config", "user.email", "antina-automation@users.noreply.github.com", cwd=root)
-    run("git", "commit", "-m", f"feat(antina): complete {task.task_id}", cwd=root)
-    run("gh", "auth", "setup-git", cwd=root)
-    run("git", "push", "--set-upstream", "origin", task.branch, cwd=root)
+    assert_git_boundary(task, root, baseline_head)
+    run(
+        "git", "-c", "core.hooksPath=/dev/null",
+        "-c", "user.name=Antina Automation",
+        "-c", "user.email=antina-automation@users.noreply.github.com",
+        "commit", "-m", f"feat(antina): complete {task.task_id}", cwd=root,
+    )
     sha = run("git", "rev-parse", "HEAD", cwd=root)
+    assert_git_boundary(task, root, sha)
+    run("gh", "auth", "setup-git", cwd=root)
+    assert_git_boundary(task, root, sha)
+    run(
+        "git", "-c", "core.hooksPath=/dev/null", "push", "--set-upstream",
+        "origin", task.branch, cwd=root,
+    )
+    verify_remote_head(task, root, sha)
     if prior_pr is None:
         url = run(
             "gh", "pr", "create", "--repo", REPO, "--base", "main", "--head", task.branch,
@@ -453,11 +506,9 @@ def publish(task: Task, root: Path, prior_pr: dict | None, summary: str, paths: 
 {chr(10).join(f'- `{path}`' for path in paths)}
 
 ### 🧪 Tests & Verification
-- **Executed Command**: `npm test`
-- **Result**: Passed.
 - **Executed Command**: `git diff --check`
 - **Result**: Passed.
-- **GitHub Actions**: Required checks passed.
+- **GitHub Actions**: Exact required check `Antina required validation` passed in a separate read-only job.
 
 ### ⚠️ Known Risks
 - Automated SDK execution is bounded by repository and command policies; human merge remains mandatory.
@@ -504,9 +555,12 @@ def execute(event_path: Path, root: Path) -> dict:
     try:
         prior_pr = prepare_branch(task, root)
         agent_cycle.claim(task.issue, task.branch)
+        baseline_head = run("git", "rev-parse", "HEAD", cwd=root)
+        assert_git_boundary(task, root, baseline_head)
         summary = asyncio.run(run_antigravity(task, root))
+        assert_git_boundary(task, root, baseline_head)
         paths = validate_changes(root)
-        return publish(task, root, prior_pr, summary, paths)
+        return publish(task, root, prior_pr, summary, paths, baseline_head)
     except Exception as exc:
         route_needs_kiris(task.issue, task.task_id, str(exc))
         raise

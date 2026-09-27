@@ -54,12 +54,23 @@ Issue must be open, authored by the repository owner, contain a structured
 per Issue; duplicate/stale events exit without mutation.
 
 The workflow uses the official Google Antigravity Python SDK. The SDK agent is
-deny-by-default: it may inspect files, edit only non-protected paths, and run a
-small allowlist of read-only/test commands inside the SDK OS sandbox. It cannot
-use GitHub mutation tools. `scripts/antina_runner.py` owns branch preparation,
-claim, verification, commit, push, PR creation/update, CI wait, and the v1
-handoff to Grum. It refuses Product PR #2, protocol/workflow/runner files,
-migrations, secrets, deploy commands, force operations, and self-merge.
+deny-by-default: it may inspect files and edit only non-protected paths. It has
+no command-execution or GitHub mutation tool. `scripts/antina_runner.py` owns
+branch preparation, claim, Git-boundary verification, commit, push, PR
+creation/update, CI wait, and the v1 handoff to Grum. Before every privileged
+commit or push, the harness rechecks the exact branch and HEAD, canonical
+origin, local Git includes/hook path, and active hooks; harness Git commands
+also disable hooks explicitly. It refuses Product PR #2,
+protocol/workflow/runner files, migrations, secrets, force operations, and
+self-merge.
+
+Repository-controlled tests never execute in the credential-bearing Antina
+runner job. `.github/workflows/antina-validation.yml` runs the fixed Python and
+Node suites in a separate job with `contents: read`, checkout credentials
+disabled, and no later privileged Git operation. The harness waits for the
+exact `Antina required validation` check; an empty rollup, an unrelated green
+check, a pending check, or a skipped/failed required check cannot pass the
+gate.
 
 ### One-time activation
 
