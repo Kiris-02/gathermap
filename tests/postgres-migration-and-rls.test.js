@@ -291,30 +291,44 @@ async function runPostgresMigrationAndRlsTests() {
                 throw new Error('Anon should be able to read venues catalog');
             }
 
-            // Private tables access denied / 0 rows under RLS
-            const outingReadRes = await client.query('SELECT * FROM outings');
-            if (outingReadRes.rows.length !== 0) {
-                throw new Error(`Anon received rows from outings table under RLS: ${outingReadRes.rows.length}`);
+            const reviewReadRes = await client.query('SELECT count(*) as c FROM reviews');
+            if (parseInt(reviewReadRes.rows[0].c, 10) < 1) {
+                throw new Error('Anon should be able to read reviews catalog');
             }
 
-            const votesReadRes = await client.query('SELECT * FROM votes');
-            if (votesReadRes.rows.length !== 0) {
-                throw new Error(`Anon received rows from votes table under RLS: ${votesReadRes.rows.length}`);
+            // Private tables access denied / 0 rows under RLS
+            let anonOutingBlocked = false;
+            try {
+                const outingReadRes = await client.query('SELECT * FROM outings');
+                if (outingReadRes.rows.length === 0) anonOutingBlocked = true;
+            } catch (err) {
+                anonOutingBlocked = true; // Blocked at table privilege layer
+            }
+            if (!anonOutingBlocked) {
+                throw new Error('Anon was able to access rows from outings table');
+            }
+
+            let anonVotesBlocked = false;
+            try {
+                const votesReadRes = await client.query('SELECT * FROM votes');
+                if (votesReadRes.rows.length === 0) anonVotesBlocked = true;
+            } catch (err) {
+                anonVotesBlocked = true; // Blocked at table privilege layer
+            }
+            if (!anonVotesBlocked) {
+                throw new Error('Anon was able to access rows from votes table');
             }
 
             // votes_dedup_archive direct privilege check (REVOKE ALL was executed)
             let anonArchiveBlocked = false;
             try {
-                await client.query('SELECT * FROM votes_dedup_archive');
+                const archiveCheck = await client.query('SELECT * FROM votes_dedup_archive');
+                if (archiveCheck.rows.length === 0) anonArchiveBlocked = true;
             } catch (err) {
                 anonArchiveBlocked = true; // Threw permission denied error
             }
-            // Even if query didn't throw due to superuser inheritance, RLS policy would yield 0 rows
             if (!anonArchiveBlocked) {
-                const archiveCheck = await client.query('SELECT * FROM votes_dedup_archive');
-                if (archiveCheck.rows.length > 0) {
-                    throw new Error('Anon was able to access rows from votes_dedup_archive');
-                }
+                throw new Error('Anon was able to access rows from votes_dedup_archive');
             }
 
             // 6b. Under role `authenticated`

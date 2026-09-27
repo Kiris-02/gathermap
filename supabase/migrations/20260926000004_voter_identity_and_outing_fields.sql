@@ -193,3 +193,9 @@ GRANT ALL ON TABLE public.participants TO service_role;
 GRANT ALL ON TABLE public.recommendations TO service_role;
 GRANT ALL ON TABLE public.votes TO service_role;
 
+-- 10. Public Catalog Access Grants
+GRANT SELECT ON TABLE public.venues TO anon, authenticated;
+GRANT SELECT ON TABLE public.reviews TO anon, authenticated;
+GRANT ALL ON TABLE public.venues TO service_role;
+GRANT ALL ON TABLE public.reviews TO service_role;
+
