@@ -1,0 +1,29 @@
+name: Platform guardrails
+
+on:
+  push:
+    branches:
+      - chore/agent-orchestrator-v1
+    paths:
+      - scripts/agent_cycle.py
+      - tests/test_agent_cycle.py
+      - .github/workflows/platform-guardrails.yml
+  pull_request:
+    paths:
+      - scripts/agent_cycle.py
+      - tests/test_agent_cycle.py
+      - .github/workflows/platform-guardrails.yml
+
+permissions:
+  contents: read
+
+jobs:
+  offline-guardrails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run guarded handoff tests
+        run: python -m unittest discover -s tests -p 'test_agent_cycle.py' -v
