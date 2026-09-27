@@ -17,7 +17,8 @@ URL = "https://github.com/Kiris-02/gathermap/pull/9"
 
 
 def issue(*names):
-    return {"number": 8, "title": "Task", "body": "## GRUM_TASK\n",
+    return {"number": 8, "title": "Task",
+            "body": "## GRUM_TASK\n\n- **task_id**: `GAT-TEST-008`\n",
             "state": "OPEN", "labels": [{"name": name} for name in names]}
 
 
@@ -48,6 +49,15 @@ class CycleTests(unittest.TestCase):
             run.assert_any_call("gh", "issue", "edit", "8", "--repo", cycle.REPO,
                                 "--remove-label", "state:ready", "--add-label",
                                 "state:working")
+            status = next(call.args[-1] for call in run.call_args_list
+                          if call.args[:3] == ("gh", "issue", "comment"))
+            self.assertIn("**task_id**: `GAT-TEST-008`", status)
+
+    def test_task_requires_structured_task_id(self):
+        candidate = issue("to:antina", "state:ready")
+        candidate["body"] = "## GRUM_TASK\n"
+        with self.assertRaisesRegex(cycle.CycleError, "structured task_id"):
+            cycle.require_task(candidate)
 
     def test_claim_refuses_blocked_without_mutation(self):
         with patch.object(cycle, "require_branch"), \
@@ -127,24 +137,62 @@ class CycleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             report = Path(temp) / "report.md"
             report.write_text(f"## ANTINA_REPORT\n{SHA}\n{URL}\n", encoding="utf-8")
+            events = []
+            issue_results = iter([issue("to:antina", "state:working"),
+                                  issue("to:grum", "state:review")])
+
+            def view(_number):
+                events.append("issue_view")
+                return next(issue_results)
+
+            def command(*args):
+                events.append(args)
+                return SHA if args[:2] == ("git", "rev-parse") else ""
+
             with patch.object(cycle, "require_branch"), \
-                 patch.object(cycle, "issue_view", side_effect=[
-                     issue("to:antina", "state:working"),
-                     issue("to:grum", "state:review")]), \
+                 patch.object(cycle, "issue_view", side_effect=view), \
                  patch.object(cycle, "gh_json", return_value=pr), \
-                 patch.object(cycle, "run", side_effect=lambda *args:
-                              SHA if args[:2] == ("git", "rev-parse") else "") as run:
+                 patch.object(cycle, "run", side_effect=command) as run:
                 self.assertEqual(cycle.handoff(8, "chore/task-8", 9, report)[
                     "state"], "PR_READY")
                 calls = [call.args for call in run.call_args_list]
-                self.assertLess(next(i for i, cmd in enumerate(calls) if cmd[:3] ==
-                                     ("gh", "pr", "checks")),
-                                next(i for i, cmd in enumerate(calls) if cmd[:3] ==
-                                     ("gh", "issue", "edit")))
-                self.assertIn(("gh", "pr", "edit", "9", "--repo", cycle.REPO,
-                               "--add-label", "to:grum"), calls)
-                self.assertTrue(any(cmd[:3] == ("gh", "pr", "comment") and
-                                    "ANTINA_HANDOFF" in cmd[-1] for cmd in calls))
+                checks = next(i for i, cmd in enumerate(calls) if cmd[:3] ==
+                              ("gh", "pr", "checks"))
+                issue_edit = next(i for i, cmd in enumerate(calls) if cmd[:3] ==
+                                  ("gh", "issue", "edit"))
+                pr_route = calls.index(("gh", "pr", "edit", "9", "--repo",
+                                        cycle.REPO, "--add-label", "to:grum"))
+                self.assertLess(checks, issue_edit)
+                issue_edit_event = events.index(calls[issue_edit])
+                verified_event = len(events) - 1 - events[::-1].index("issue_view")
+                pr_route_event = events.index(calls[pr_route])
+                self.assertLess(issue_edit_event, verified_event)
+                self.assertLess(verified_event, pr_route_event)
+                handoff = next(cmd[-1] for cmd in calls if cmd[:3] ==
+                               ("gh", "pr", "comment") and
+                               "ANTINA_HANDOFF" in cmd[-1])
+                self.assertIn("**task_id**: `GAT-TEST-008`", handoff)
+
+    def test_handoff_rejects_residual_control_labels_before_pr_routing(self):
+        pr = {"state": "OPEN", "headRefName": "chore/task-8", "baseRefName": "main",
+              "headRefOid": SHA, "url": URL}
+        with tempfile.TemporaryDirectory() as temp:
+            report = Path(temp) / "report.md"
+            report.write_text(f"## ANTINA_REPORT\n{SHA}\n{URL}\n", encoding="utf-8")
+            with patch.object(cycle, "require_branch"), \
+                 patch.object(cycle, "issue_view", side_effect=[
+                     issue("to:antina", "state:working"),
+                     issue("to:antina", "to:grum", "state:working", "state:review")]), \
+                 patch.object(cycle, "gh_json", return_value=pr), \
+                 patch.object(cycle, "run", side_effect=lambda *args:
+                              SHA if args[:2] == ("git", "rev-parse") else "") as run:
+                with self.assertRaisesRegex(cycle.CycleError, "exact to:grum"):
+                    cycle.handoff(8, "chore/task-8", 9, report)
+                calls = [call.args for call in run.call_args_list]
+                self.assertNotIn(("gh", "pr", "edit", "9", "--repo", cycle.REPO,
+                                  "--add-label", "to:grum"), calls)
+                self.assertFalse(any(cmd[:3] == ("gh", "pr", "comment")
+                                     for cmd in calls))
 
 
 if __name__ == "__main__":
