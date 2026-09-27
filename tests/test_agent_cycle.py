@@ -141,6 +141,10 @@ class CycleTests(unittest.TestCase):
                                      ("gh", "pr", "checks")),
                                 next(i for i, cmd in enumerate(calls) if cmd[:3] ==
                                      ("gh", "issue", "edit")))
+                self.assertIn(("gh", "pr", "edit", "9", "--repo", cycle.REPO,
+                               "--add-label", "to:grum"), calls)
+                self.assertTrue(any(cmd[:3] == ("gh", "pr", "comment") and
+                                    "ANTINA_HANDOFF" in cmd[-1] for cmd in calls))
 
 
 if __name__ == "__main__":

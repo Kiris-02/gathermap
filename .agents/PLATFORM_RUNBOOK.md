@@ -37,7 +37,9 @@ python scripts/agent_cycle.py handoff --issue NUMBER --branch chore/task-NUMBER 
 `handoff` confirms the open PR targets `main`, its head matches the local and
 remote task branch, the report identifies the same PR/HEAD, and `gh pr checks`
 exits successfully. It updates the PR description, changes Issue labels to
-`to:grum,state:review`, verifies them, and posts a short Issue pointer. It
+`to:grum,state:review`, verifies them, labels the PR `to:grum`, and posts an
+`ANTINA_HANDOFF` PR comment. That comment is the Grum webhook wake-up, so it
+is emitted only after the checks gate passes. It
 never approves or merges. GitHub labels are not a transactional lock: run
 only one Antina pickup worker for a repository until an atomic claim mechanism
 exists. If a step fails, inspect the Issue/PR before retrying; a partial

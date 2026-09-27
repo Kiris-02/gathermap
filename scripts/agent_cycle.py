@@ -126,6 +126,8 @@ def handoff(number, branch, pr_number, report_path):
     run("gh", "pr", "checks", str(pr_number), "--repo", REPO)
     run("gh", "pr", "edit", str(pr_number), "--repo", REPO,
         "--body-file", str(report_path))
+    run("gh", "pr", "edit", str(pr_number), "--repo", REPO,
+        "--add-label", "to:grum")
     run("gh", "issue", "edit", str(number), "--repo", REPO,
         "--remove-label", "to:antina,state:working",
         "--add-label", "to:grum,state:review")
@@ -135,6 +137,10 @@ def handoff(number, branch, pr_number, report_path):
     run("gh", "issue", "comment", str(number), "--repo", REPO,
         "--body", f"## 📤 ANTINA_REPORT\n\n- **pr**: {pr['url']}\n"
                   f"- **commit**: `{sha}`\n- **status**: PR_READY")
+    # The PR comment is the GitHub webhook wake-up after checks are green.
+    run("gh", "pr", "comment", str(pr_number), "--repo", REPO,
+        "--body", f"## 📯 ANTINA_HANDOFF\n\n- **issue**: #{number}\n"
+                  f"- **commit**: `{sha}`\n- **state**: GRUM_REVIEW")
     return {"issue": number, "pr": pr["url"], "commit": sha,
             "state": "PR_READY"}
 
