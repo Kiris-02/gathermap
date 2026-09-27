@@ -7,6 +7,7 @@ does not create branches, execute task bodies, merge PRs, or deploy anything.
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -49,6 +50,17 @@ def labels(issue):
     return {label["name"] for label in issue.get("labels") or []}
 
 
+def task_id(issue):
+    match = re.search(
+        r"^\s*-\s*\*\*task_id\*\*:\s*`?([A-Za-z0-9][A-Za-z0-9._-]*)`?\s*$",
+        issue.get("body") or "",
+        re.MULTILINE,
+    )
+    if not match:
+        raise CycleError("Issue GRUM_TASK must contain a structured task_id")
+    return match.group(1)
+
+
 def issue_view(number):
     return gh_json("issue", "view", str(number), "--repo", REPO,
                    "--json", "number,title,body,state,labels")
@@ -59,6 +71,7 @@ def require_task(issue):
         raise CycleError("Issue must be open and contain a GRUM_TASK")
     if labels(issue) & FORBIDDEN:
         raise CycleError("Issue is blocked or requires Kiris")
+    task_id(issue)
 
 
 def require_branch(branch):
@@ -94,13 +107,15 @@ def claim(number, branch):
             current & BUSY):
         raise CycleError("Issue is not in exactly one ready/revision state for Antina")
     old = next(iter(current & READY))
+    identifier = task_id(issue)
     run("gh", "issue", "edit", str(number), "--repo", REPO,
         "--remove-label", old, "--add-label", "state:working")
     updated = labels(issue_view(number))
     if "state:working" not in updated or old in updated:
         raise CycleError("Claim label transition was not confirmed")
     run("gh", "issue", "comment", str(number), "--repo", REPO,
-        "--body", f"## 🔄 ANTINA_STATUS\n\n- **state**: ANTINA_WORKING\n"
+        "--body", f"## 🔄 ANTINA_STATUS\n\n- **task_id**: `{identifier}`\n"
+                  f"- **state**: ANTINA_WORKING\n"
                   f"- **branch**: `{branch}`\n- **notes**: Claimed from `{old}`.")
     return {"issue": number, "branch": branch, "state": "ANTINA_WORKING"}
 
@@ -111,6 +126,7 @@ def handoff(number, branch, pr_number, report_path):
     require_task(issue)
     if not {"to:antina", "state:working"} <= labels(issue):
         raise CycleError("Issue must be owned by Antina and working")
+    identifier = task_id(issue)
     pr = gh_json("pr", "view", str(pr_number), "--repo", REPO,
                  "--json", "number,state,headRefName,baseRefName,headRefOid,url")
     if (pr["state"] != "OPEN" or pr["headRefName"] != branch or
@@ -126,21 +142,28 @@ def handoff(number, branch, pr_number, report_path):
     run("gh", "pr", "checks", str(pr_number), "--repo", REPO)
     run("gh", "pr", "edit", str(pr_number), "--repo", REPO,
         "--body-file", str(report_path))
-    run("gh", "pr", "edit", str(pr_number), "--repo", REPO,
-        "--add-label", "to:grum")
     run("gh", "issue", "edit", str(number), "--repo", REPO,
         "--remove-label", "to:antina,state:working",
         "--add-label", "to:grum,state:review")
     updated = labels(issue_view(number))
-    if not {"to:grum", "state:review"} <= updated:
-        raise CycleError("Handoff label transition was not confirmed")
+    expected = {"to:grum", "state:review"}
+    control = {name for name in updated
+               if name.startswith("to:") or name.startswith("state:")
+               or name == "NEEDS_KIRIS"}
+    if control != expected:
+        raise CycleError("Handoff requires exact to:grum + state:review labels")
+    # Publish PR routing only after the Issue is confirmed in its exact state.
+    run("gh", "pr", "edit", str(pr_number), "--repo", REPO,
+        "--add-label", "to:grum")
     run("gh", "issue", "comment", str(number), "--repo", REPO,
-        "--body", f"## 📤 ANTINA_REPORT\n\n- **pr**: {pr['url']}\n"
+        "--body", f"## 📤 ANTINA_REPORT\n\n- **task_id**: `{identifier}`\n"
+                  f"- **pr**: {pr['url']}\n"
                   f"- **commit**: `{sha}`\n- **status**: PR_READY")
     # The PR comment is the GitHub webhook wake-up after checks are green.
     run("gh", "pr", "comment", str(pr_number), "--repo", REPO,
         "--body", f"## 📯 ANTINA_HANDOFF\n\n- **issue**: #{number}\n"
-                  f"- **commit**: `{sha}`\n- **state**: GRUM_REVIEW")
+                  f"- **task_id**: `{identifier}`\n- **commit**: `{sha}`\n"
+                  f"- **state**: GRUM_REVIEW")
     return {"issue": number, "pr": pr["url"], "commit": sha,
             "state": "PR_READY"}
 
