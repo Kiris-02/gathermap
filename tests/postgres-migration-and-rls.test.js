@@ -2,15 +2,16 @@
  * Real PostgreSQL Migration Execution & Live RLS Security Test Suite
  * 
  * Validates against an actual PostgreSQL 16 database:
- * 1. Sequential execution of production SQL migrations:
+ * 1. Safety Guard Rail: strictly prohibits connecting to or dropping non-test databases.
+ * 2. Sequential execution of production SQL migrations:
  *    - 20260913000001_gathermap_complete.sql
  *    - 20260926000002_tighten_rls_and_voting.sql
  *    - 20260926000003_secure_share_tokens_and_rls.sql
  *    - 20260926000004_voter_identity_and_outing_fields.sql
- * 2. Pre-migration fixture data execution with duplicate votes, tie-breakers, same-name distinct voters, and legacy null voters.
- * 3. Exact non-destructive archiving into votes_dedup_archive (5 active retained, 4 archived).
- * 4. Migration 4 idempotency: second sequential execution results in 0 additional archive rows.
- * 5. Live PostgreSQL Row Level Security (RLS) and privilege verification under roles:
+ * 3. Pre-migration fixture data execution with duplicate votes, tie-breakers, same-name distinct voters, and legacy null voters.
+ * 4. Exact non-destructive archiving into votes_dedup_archive (5 active retained, 4 archived).
+ * 5. Migration 4 idempotency: second sequential execution results in 0 additional archive rows.
+ * 6. Live PostgreSQL Row Level Security (RLS) and privilege verification under roles:
  *    - `anon`: access denied on private tables and votes_dedup_archive; public catalog (venues, reviews) readable.
  *    - `authenticated`: access denied on votes_dedup_archive and private tables.
  *    - `service_role`: full administrative management permitted across all tables.
@@ -18,9 +19,89 @@
 
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 const { Client } = require('pg');
 
 const POSTGRES_URL = process.env.TEST_POSTGRES_URL || 'postgresql://postgres:postgrespassword@localhost:5432/gathermap_test';
+
+/**
+ * Validates that a database URL strictly targets an isolated test environment.
+ * Throws an explicit error if the host or database name indicates production or remote services.
+ */
+function validateSafeTestDatabaseUrl(urlStr) {
+    if (!urlStr || typeof urlStr !== 'string') {
+        throw new Error('[SAFETY GUARD] Database URL must be a non-empty string');
+    }
+
+    let parsed;
+    try {
+        parsed = new URL(urlStr);
+    } catch (e) {
+        throw new Error(`[SAFETY GUARD] Invalid URL format: ${e.message}`);
+    }
+
+    const hostname = (parsed.hostname || '').toLowerCase();
+    const dbName = (parsed.pathname || '').replace(/^\//, '').toLowerCase();
+
+    // 1. Forbidden hostnames and providers
+    const forbiddenHostPatterns = [
+        'supabase.co',
+        'supabase.com',
+        'pooler.supabase.com',
+        'render.com',
+        'neon.tech',
+        'elephantsql.com',
+        'aws.connect.psdb.cloud',
+        'amazonaws.com',
+        'azure.com',
+        'google.com',
+        'prod',
+        'production'
+    ];
+
+    for (const pattern of forbiddenHostPatterns) {
+        if (hostname.includes(pattern)) {
+            throw new Error(`[SAFETY GUARD] Forbidden host pattern "${pattern}" detected in hostname "${hostname}". Destructive migrations are strictly forbidden on remote/production hosts.`);
+        }
+    }
+
+    // 2. Allowed test hosts
+    const allowedHosts = ['localhost', '127.0.0.1', 'postgres', '0.0.0.0'];
+    if (!allowedHosts.includes(hostname)) {
+        throw new Error(`[SAFETY GUARD] Hostname "${hostname}" is not in the approved isolated test hosts list (${allowedHosts.join(', ')}).`);
+    }
+
+    // 3. Forbidden database name patterns
+    const forbiddenDbPatterns = ['prod', 'production', 'live', 'main', 'master', 'supabase'];
+    for (const pattern of forbiddenDbPatterns) {
+        if (dbName === pattern || dbName.startsWith(`${pattern}_`) || dbName.endsWith(`_${pattern}`)) {
+            throw new Error(`[SAFETY GUARD] Forbidden database name pattern "${pattern}" detected in database name "${dbName}".`);
+        }
+    }
+
+    // 4. Allowed database name suffix or explicit test name
+    const isExplicitTestDb = dbName === 'gathermap_test' || dbName.endsWith('_test') || dbName.endsWith('_temp') || dbName.endsWith('_fixture');
+    if (!isExplicitTestDb) {
+        throw new Error(`[SAFETY GUARD] Database name "${dbName}" must end with "_test", "_temp", "_fixture", or be "gathermap_test".`);
+    }
+
+    return true;
+}
+
+/**
+ * Validates the live connected database name before any DROP or destructive operation.
+ */
+async function assertSafeConnectedDatabase(client) {
+    const res = await client.query('SELECT current_database() as db');
+    const liveDbName = res.rows[0]?.db?.toLowerCase() || '';
+
+    const isExplicitTestDb = liveDbName === 'gathermap_test' || liveDbName.endsWith('_test') || liveDbName.endsWith('_temp') || liveDbName.endsWith('_fixture');
+    if (!isExplicitTestDb) {
+        throw new Error(`[SAFETY GUARD] Live connected database "${liveDbName}" is not an authorized test database. Refusing destructive operations.`);
+    }
+
+    return liveDbName;
+}
 
 async function runPostgresMigrationAndRlsTests() {
     console.log('================================================================');
@@ -43,6 +124,42 @@ async function runPostgresMigrationAndRlsTests() {
         }
     }
 
+    // --- STEP 0A: TEST SAFETY GUARD RAIL REJECTIONS & ACCEPTANCE ---
+    await test('Safety Guard: Validate URL guard rail blocks production and non-test databases', async () => {
+        // Test 1: Production Supabase host rejection
+        assert.throws(() => {
+            validateSafeTestDatabaseUrl('postgresql://postgres:mysecretpassword@db.supabase.co:5432/postgres');
+        }, /Forbidden host pattern "supabase\.co"/);
+
+        // Test 2: Remote unapproved host rejection
+        assert.throws(() => {
+            validateSafeTestDatabaseUrl('postgresql://user:pass@remote-db.mycloud.com:5432/gathermap_test');
+        }, /Hostname "remote-db\.mycloud\.com" is not in the approved/);
+
+        // Test 3: Production database name on localhost rejection
+        assert.throws(() => {
+            validateSafeTestDatabaseUrl('postgresql://postgres:pass@localhost:5432/production');
+        }, /Forbidden database name pattern "production"/);
+
+        // Test 4: Default postgres database on localhost (not ending in _test) rejection
+        assert.throws(() => {
+            validateSafeTestDatabaseUrl('postgresql://postgres:pass@localhost:5432/postgres');
+        }, /Database name "postgres" must end with "_test"/);
+
+        // Test 5: Authorized test databases acceptance
+        assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@localhost:5432/gathermap_test'), true);
+        assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@127.0.0.1:5432/my_app_test'), true);
+        assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@postgres:5432/gathermap_test'), true);
+    });
+
+    // Validate active configured URL before connecting
+    try {
+        validateSafeTestDatabaseUrl(POSTGRES_URL);
+    } catch (guardErr) {
+        console.error(`\n🛑 SAFETY GUARD ENFORCED: ${guardErr.message}`);
+        process.exit(1);
+    }
+
     const client = new Client({
         connectionString: POSTGRES_URL,
         connectionTimeoutMillis: 3000,
@@ -59,14 +176,18 @@ async function runPostgresMigrationAndRlsTests() {
         } else {
             console.log(`⚠️  Local PostgreSQL instance not detected at ${POSTGRES_URL}.`);
             console.log('   (This suite executes live against PostgreSQL 16 in GitHub Actions CI with full RLS verification).');
-            console.log('\n📊 POSTGRESQL SUITE: 0 PASSED, 0 FAILED (Skipped locally due to no listening database)\n');
+            console.log(`\n📊 POSTGRESQL SUITE: ${passed} PASSED, ${failed} FAILED (Remaining stages skipped locally due to no listening database)\n`);
             return;
         }
     }
 
     try {
-        // --- STEP 0: ENVIRONMENT INITIALIZATION & SUPABASE ROLES SETUP ---
-        await test('Stage 0: Initialize test database schema and Supabase auth roles', async () => {
+        // --- STEP 0B: ENVIRONMENT INITIALIZATION & SUPABASE ROLES SETUP ---
+        await test('Stage 0: Verify connected test database and initialize schema & Supabase auth roles', async () => {
+            // Guard rail check on the live connected database BEFORE executing any DROP
+            const dbName = await assertSafeConnectedDatabase(client);
+            assert(dbName === 'gathermap_test' || dbName.endsWith('_test') || dbName.endsWith('_temp') || dbName.endsWith('_fixture'), 'Connected DB must be test DB');
+
             // Re-create public schema for fresh isolated test
             await client.query(`
                 DROP SCHEMA IF EXISTS public CASCADE;
@@ -400,4 +521,8 @@ if (require.main === module) {
     });
 }
 
-module.exports = runPostgresMigrationAndRlsTests;
+module.exports = {
+    runPostgresMigrationAndRlsTests,
+    validateSafeTestDatabaseUrl,
+    assertSafeConnectedDatabase
+};
