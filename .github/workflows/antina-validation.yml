@@ -13,6 +13,20 @@ jobs:
     if: startsWith(github.head_ref, 'agent/') || github.head_ref == 'refactor/ui-map-architecture'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: gathermap_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -27,9 +41,14 @@ jobs:
           cache: npm
       - name: Install product dependencies
         run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
       - name: Run Python regression tests
         run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Check PR diff whitespace
         run: git diff --check "$(git merge-base HEAD origin/main)" HEAD
       - name: Run product regression tests
+        env:
+          CI: 'true'
+          TEST_POSTGRES_URL: 'postgresql://postgres:postgrespassword@localhost:5432/gathermap_test'
         run: npm test
