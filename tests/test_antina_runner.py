@@ -102,6 +102,7 @@ class RunnerTests(unittest.TestCase):
             ("to:antina", "state:ready", "state:revision"),
             ("to:antina", "state:ready", "state:working"),
             ("to:antina", "state:ready", "state:needs-kiris"),
+            ("to:antina", "state:ready", "needs:kiris"),
             ("state:ready",),
         ]:
             with self.assertRaises(runner.IgnoreEvent):
@@ -324,6 +325,28 @@ class RunnerTests(unittest.TestCase):
                 runner.execute(event_path, Path(temp))
             route.assert_called_once()
             prepare.assert_not_called()
+
+    def test_escalation_adds_existing_blocker_before_removing_work_state(self):
+        snapshots = [issue("to:antina", "state:working"),
+                     issue("to:antina", "state:working", "needs:kiris"),
+                     issue("needs:kiris")]
+        with patch.object(runner.agent_cycle, "issue_view", side_effect=snapshots), \
+             patch.object(runner, "run") as run:
+            runner.route_needs_kiris(8, "GAT-008", "provider 503")
+        actions = [call.args for call in run.call_args_list]
+        self.assertEqual(actions[0][-2:], ("--add-label", "needs:kiris"))
+        self.assertEqual(actions[1][-2:], ("--remove-label", "state:working,to:antina"))
+        self.assertIn("NEEDS_KIRIS", actions[2][-1])
+        self.assertIn("provider 503", actions[2][-1])
+
+    def test_escalation_preserves_work_state_if_blocker_cannot_be_added(self):
+        with patch.object(runner.agent_cycle, "issue_view", return_value=issue(
+                "to:antina", "state:working")), \
+             patch.object(runner, "run", side_effect=runner.RunnerError("label failed")) as run:
+            with self.assertRaisesRegex(runner.RunnerError, "label failed"):
+                runner.route_needs_kiris(8, "GAT-008", "provider 503")
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.args[-2:], ("--add-label", "needs:kiris"))
 
     def test_sensitive_environment_is_removed(self):
         with patch.dict(runner.os.environ, {
