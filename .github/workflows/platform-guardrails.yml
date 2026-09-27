@@ -4,14 +4,23 @@ on:
   push:
     branches:
       - chore/agent-orchestrator-v1
+      - feat/platform-antina-runner-v1
     paths:
       - scripts/agent_cycle.py
+      - scripts/antina_runner.py
       - tests/test_agent_cycle.py
+      - tests/test_antina_runner.py
+      - requirements-antina.txt
+      - .github/workflows/antina-runner.yml
       - .github/workflows/platform-guardrails.yml
   pull_request:
     paths:
       - scripts/agent_cycle.py
+      - scripts/antina_runner.py
       - tests/test_agent_cycle.py
+      - tests/test_antina_runner.py
+      - requirements-antina.txt
+      - .github/workflows/antina-runner.yml
       - .github/workflows/platform-guardrails.yml
 
 permissions:
@@ -25,5 +34,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
       - name: Run guarded handoff tests
-        run: python -m unittest discover -s tests -p 'test_agent_cycle.py' -v
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Install product dependencies
+        run: npm ci
+      - name: Run product regression tests
+        run: npm test
