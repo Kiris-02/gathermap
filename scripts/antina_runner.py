@@ -613,7 +613,14 @@ def execute(event_path: Path, root: Path) -> dict:
     payload = json.loads(event_path.read_text(encoding="utf-8"))
     issue_number, association = validate_event(payload)
     live = agent_cycle.issue_view(issue_number)
-    task = task_from_issue(live, association)
+    try:
+        task = task_from_issue(live, association)
+    except RunnerError as exc:
+        # An eligible owner Issue with an unsafe/missing Product pin needs an
+        # explicit human state, not an indefinitely re-triggerable revision.
+        identifier = task_identifier(live.get("body") or "")
+        route_needs_kiris(issue_number, identifier, str(exc))
+        raise
     if not os.environ.get("GEMINI_API_KEY"):
         route_needs_kiris(task.issue, task.task_id, "Repository secret GEMINI_API_KEY is not configured")
         raise RunnerError("GEMINI_API_KEY is not configured")

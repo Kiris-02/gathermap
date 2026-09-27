@@ -310,6 +310,21 @@ class RunnerTests(unittest.TestCase):
                 route.assert_called_once()
                 prepare.assert_not_called()
 
+    def test_unpinned_product_issue_routes_to_kiris_before_sdk(self):
+        payload = event("to:antina", "state:revision", trigger="to:antina")
+        live = issue("to:antina", "state:revision",
+                     body="## GRUM_TASK\n\n- **task_id**: `GAT-008`\n- goal: revise PR #2\n")
+        with tempfile.TemporaryDirectory() as temp:
+            event_path = Path(temp) / "event.json"
+            event_path.write_text(__import__("json").dumps(payload), encoding="utf-8")
+            with patch.object(runner.agent_cycle, "issue_view", return_value=live), \
+                 patch.object(runner, "route_needs_kiris") as route, \
+                 patch.object(runner, "prepare_branch") as prepare, \
+                 self.assertRaisesRegex(runner.RunnerError, "explicit owner Issue"):
+                runner.execute(event_path, Path(temp))
+            route.assert_called_once()
+            prepare.assert_not_called()
+
     def test_sensitive_environment_is_removed(self):
         with patch.dict(runner.os.environ, {
             "PATH": "/bin", "GEMINI_API_KEY": "gemini", "GH_TOKEN": "github",
