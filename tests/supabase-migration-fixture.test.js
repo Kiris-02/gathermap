@@ -260,41 +260,25 @@ async function runMigrationFixtureTests() {
             assert.strictEqual(secondPassArchive, 4, 'Archived votes must remain 4 (zero duplicates added)');
         });
 
-        // --- STEP 6: RLS & PERMISSIONS AUDIT MOCK ---
-        await test('Stage 6: RLS & access control specification verification (anon blocked from private tables and archive)', async () => {
-            // Private tables that must have RLS and zero anon permissions
-            const privateTables = ['outings', 'participants', 'recommendations', 'votes', 'votes_dedup_archive'];
-            const publicCatalogTables = ['venues', 'reviews'];
+        // --- STEP 6: SQLITE OFFLINE FALLBACK SCHEMA INTEGRITY ---
+        await test('Stage 6: SQLite offline schema & audit table structure verification', async () => {
+            const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(t => t.name);
+            assert(tables.includes('votes_dedup_archive'), 'votes_dedup_archive table exists');
+            assert(tables.includes('outings'), 'outings table exists');
+            assert(tables.includes('participants'), 'participants table exists');
+            assert(tables.includes('recommendations'), 'recommendations table exists');
+            assert(tables.includes('votes'), 'votes table exists');
 
-            // Simulate RLS authorization engine check
-            function checkAccess(table, role, operation) {
-                if (publicCatalogTables.includes(table)) {
-                    if (operation === 'SELECT') return true;
-                    return role === 'service_role';
-                }
-                if (privateTables.includes(table)) {
-                    return role === 'service_role';
-                }
-                return false;
-            }
+            // Verify votes columns
+            const voteCols = db.pragma('table_info(votes)').map(c => c.name);
+            assert(voteCols.includes('voter_id'), 'votes.voter_id column exists');
+            assert(voteCols.includes('voter_name'), 'votes.voter_name column exists');
+            assert(voteCols.includes('venue_id'), 'votes.venue_id column exists');
 
-            // Anon role checks
-            assert.strictEqual(checkAccess('outings', 'anon', 'SELECT'), false, 'Anon cannot SELECT outings');
-            assert.strictEqual(checkAccess('participants', 'anon', 'SELECT'), false, 'Anon cannot SELECT participants');
-            assert.strictEqual(checkAccess('votes', 'anon', 'SELECT'), false, 'Anon cannot SELECT votes');
-            assert.strictEqual(checkAccess('votes_dedup_archive', 'anon', 'SELECT'), false, 'Anon cannot SELECT votes_dedup_archive');
-            assert.strictEqual(checkAccess('votes_dedup_archive', 'anon', 'INSERT'), false, 'Anon cannot INSERT votes_dedup_archive');
-            assert.strictEqual(checkAccess('venues', 'anon', 'SELECT'), true, 'Anon CAN SELECT public venues');
-            assert.strictEqual(checkAccess('reviews', 'anon', 'SELECT'), true, 'Anon CAN SELECT public reviews');
-
-            // Authenticated role checks
-            assert.strictEqual(checkAccess('votes_dedup_archive', 'authenticated', 'SELECT'), false, 'Authenticated cannot SELECT archive');
-            assert.strictEqual(checkAccess('votes_dedup_archive', 'authenticated', 'DELETE'), false, 'Authenticated cannot DELETE archive');
-
-            // Service role checks
-            assert.strictEqual(checkAccess('outings', 'service_role', 'ALL'), true, 'Service role can manage outings');
-            assert.strictEqual(checkAccess('votes', 'service_role', 'ALL'), true, 'Service role can manage votes');
-            assert.strictEqual(checkAccess('votes_dedup_archive', 'service_role', 'ALL'), true, 'Service role can manage archive');
+            // Verify archive columns
+            const archiveCols = db.pragma('table_info(votes_dedup_archive)').map(c => c.name);
+            assert(archiveCols.includes('archive_reason'), 'archive_reason exists');
+            assert(archiveCols.includes('archived_at'), 'archived_at exists');
         });
 
     } finally {
