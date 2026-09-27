@@ -13,7 +13,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
+        SELECT 1 FROM information_schema.columns
         WHERE table_name = 'outings' AND column_name = 'share_token_hash'
     ) THEN
         ALTER TABLE outings ADD COLUMN share_token_hash TEXT;
@@ -24,13 +24,13 @@ END $$;
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
+        SELECT 1 FROM information_schema.columns
         WHERE table_name = 'recommendations' AND column_name = 'dist_from_center_km'
     ) THEN
         ALTER TABLE recommendations ADD COLUMN dist_from_center_km REAL;
     END IF;
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
+        SELECT 1 FROM information_schema.columns
         WHERE table_name = 'recommendations' AND column_name = 'member_breakdowns'
     ) THEN
         ALTER TABLE recommendations ADD COLUMN member_breakdowns TEXT;

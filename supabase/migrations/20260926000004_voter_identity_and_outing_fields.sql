@@ -13,14 +13,14 @@
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
+        SELECT 1 FROM information_schema.columns
         WHERE table_name = 'outings' AND column_name = 'name'
     ) THEN
         ALTER TABLE outings ADD COLUMN name TEXT DEFAULT 'Weekend Hangout';
     END IF;
 
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
+        SELECT 1 FROM information_schema.columns
         WHERE table_name = 'outings' AND column_name = 'mode'
     ) THEN
         ALTER TABLE outings ADD COLUMN mode TEXT DEFAULT 'representative';
@@ -31,7 +31,7 @@ END $$;
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
+        SELECT 1 FROM information_schema.columns
         WHERE table_name = 'votes' AND column_name = 'voter_id'
     ) THEN
         ALTER TABLE votes ADD COLUMN voter_id TEXT;
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS votes_dedup_archive (
 WITH ranked_voter_id_votes AS (
     SELECT id, outing_id, venue_id, voter_name, voter_id, created_at,
            ROW_NUMBER() OVER (
-               PARTITION BY outing_id, voter_id 
+               PARTITION BY outing_id, voter_id
                ORDER BY created_at DESC NULLS LAST, id DESC
            ) as rn
     FROM votes
@@ -78,7 +78,7 @@ FROM duplicates_voter_id;
 WITH ranked_voter_id_votes AS (
     SELECT id,
            ROW_NUMBER() OVER (
-               PARTITION BY outing_id, voter_id 
+               PARTITION BY outing_id, voter_id
                ORDER BY created_at DESC NULLS LAST, id DESC
            ) as rn
     FROM votes
@@ -94,7 +94,7 @@ WHERE id IN (
 WITH ranked_legacy_votes AS (
     SELECT id, outing_id, venue_id, voter_name, voter_id, created_at,
            ROW_NUMBER() OVER (
-               PARTITION BY outing_id, voter_name 
+               PARTITION BY outing_id, voter_name
                ORDER BY created_at DESC NULLS LAST, id DESC
            ) as rn
     FROM votes
@@ -113,7 +113,7 @@ FROM duplicates_legacy;
 WITH ranked_legacy_votes AS (
     SELECT id,
            ROW_NUMBER() OVER (
-               PARTITION BY outing_id, voter_name 
+               PARTITION BY outing_id, voter_name
                ORDER BY created_at DESC NULLS LAST, id DESC
            ) as rn
     FROM votes
@@ -126,13 +126,13 @@ WHERE id IN (
 
 -- 7. Create partial unique indexes for stable voter identity
 -- Enforce 1 vote per participant per outing when voter_id is present
-CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_votes_outing_voter_id 
-ON votes(outing_id, voter_id) 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_votes_outing_voter_id
+ON votes(outing_id, voter_id)
 WHERE voter_id IS NOT NULL;
 
 -- Enforce 1 vote per participant per outing for legacy records where voter_id is NULL
-CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_votes_outing_voter_name_legacy 
-ON votes(outing_id, voter_name) 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_votes_outing_voter_name_legacy
+ON votes(outing_id, voter_name)
 WHERE voter_id IS NULL;
 
 -- 8. Strict Row Level Security & Access Control for votes_dedup_archive (Private Audit Table)
@@ -146,8 +146,8 @@ DROP POLICY IF EXISTS "Service write votes_dedup_archive" ON public.votes_dedup_
 DROP POLICY IF EXISTS "Service manage votes_dedup_archive" ON public.votes_dedup_archive;
 
 -- Policy granting backend service_role full management access; NO client policies (anon/authenticated denied by default)
-CREATE POLICY "Service manage votes_dedup_archive" ON public.votes_dedup_archive 
-FOR ALL TO service_role 
+CREATE POLICY "Service manage votes_dedup_archive" ON public.votes_dedup_archive
+FOR ALL TO service_role
 USING (true) WITH CHECK (true);
 
 -- Revoke all direct client privileges from anon and authenticated roles
@@ -198,4 +198,3 @@ GRANT SELECT ON TABLE public.venues TO anon, authenticated;
 GRANT SELECT ON TABLE public.reviews TO anon, authenticated;
 GRANT ALL ON TABLE public.venues TO service_role;
 GRANT ALL ON TABLE public.reviews TO service_role;
-
