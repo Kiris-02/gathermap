@@ -3,6 +3,7 @@
 import asyncio
 import builtins
 import importlib.util
+from dataclasses import replace
 import re
 import subprocess
 import sys
@@ -58,11 +59,14 @@ class RunnerTests(unittest.TestCase):
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn("timeout-minutes: 45", workflow)
+        self.assertIn("github.event.label.name == 'to:antina'", workflow)
+        self.assertNotIn("github.event.label.name == 'state:revision'", workflow)
         self.assertNotIn("pull_request_target", workflow)
         self.assertNotIn("npm ci", workflow)
         self.assertNotIn("npm test", workflow)
         self.assertIn("name: Antina required validation", validation)
-        self.assertIn("if: startsWith(github.head_ref, 'agent/')", validation)
+        self.assertIn("github.head_ref == 'refactor/ui-map-architecture'", validation)
+        self.assertIn("git diff --check", validation)
         self.assertIn("contents: read", validation)
         self.assertIn("persist-credentials: false", validation)
         self.assertIn("npm ci", validation)
@@ -79,7 +83,9 @@ class RunnerTests(unittest.TestCase):
                 self.assertRegex(ref, r"^[0-9a-f]{40}$", f"{path}: {ref}")
 
     def test_event_requires_owner_issue_label_event(self):
-        self.assertEqual(runner.validate_event(event())[0], 8)
+        self.assertEqual(runner.validate_event(event(trigger="to:antina"))[0], 8)
+        with self.assertRaises(runner.IgnoreEvent):
+            runner.validate_event(event(trigger="state:revision"))
         with self.assertRaises(runner.IgnoreEvent):
             runner.validate_event(event(association="CONTRIBUTOR"))
         with self.assertRaises(runner.IgnoreEvent):
@@ -101,10 +107,25 @@ class RunnerTests(unittest.TestCase):
             with self.assertRaises(runner.IgnoreEvent):
                 runner.task_from_issue(issue(*labels), "OWNER")
 
-    def test_product_pr_two_is_never_automated(self):
+    def test_product_pr_two_requires_exact_owner_pin_and_revision(self):
         body = "## GRUM_TASK\n\n- **task_id**: `GAT-002`\n- goal: revise PR #2\n"
-        with self.assertRaisesRegex(runner.RunnerError, "Product PR #2"):
+        with self.assertRaisesRegex(runner.RunnerError, "requires an explicit"):
             runner.task_from_issue(issue("to:antina", "state:ready", body=body), "OWNER")
+        pinned = body + ("- **revision_pr**: `2`\n"
+                         "- **revision_branch**: `refactor/ui-map-architecture`\n"
+                         f"- **revision_head**: `{'a' * 40}`\n")
+        with self.assertRaisesRegex(runner.RunnerError, "only for a pinned revision"):
+            runner.task_from_issue(issue("to:antina", "state:ready", body=pinned), "OWNER")
+        task = runner.task_from_issue(issue("to:antina", "state:revision", body=pinned), "OWNER")
+        self.assertEqual((task.branch, task.revision_pr, task.revision_head),
+                         ("refactor/ui-map-architecture", 2, "a" * 40))
+        with self.assertRaises(runner.IgnoreEvent):
+            runner.task_from_issue(issue("to:antina", "state:revision", body=pinned), "CONTRIBUTOR")
+        for altered in (pinned.replace("`2`", "`3`"),
+                        pinned.replace("`a" + "a" * 39 + "`", "`bad`"),
+                        pinned + "- **revision_pr**: `2`\n"):
+            with self.assertRaises(runner.RunnerError):
+                runner.task_from_issue(issue("to:antina", "state:revision", body=altered), "OWNER")
 
     def test_paths_must_stay_in_workspace_and_avoid_control_surfaces(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -208,6 +229,46 @@ class RunnerTests(unittest.TestCase):
         }]):
             self.assertEqual(runner.find_revision_pr(task)["number"], 9)
 
+    def test_product_revision_requires_live_pr_owner_branch_and_exact_head(self):
+        task = replace(runner.task_from_issue(issue("to:antina", "state:revision"), "OWNER"),
+                       branch="refactor/ui-map-architecture", revision_pr=2,
+                       revision_head="a" * 40)
+        good = {"number": 2, "url": "https://github.com/Kiris-02/gathermap/pull/2",
+                "state": "OPEN", "headRefName": task.branch, "baseRefName": "main",
+                "headRefOid": task.revision_head,
+                "headRepositoryOwner": {"login": "Kiris-02"}, "isCrossRepository": False}
+        with patch.object(runner, "gh_json", return_value=good):
+            self.assertEqual(runner.find_revision_pr(task)["number"], 2)
+        for changed in ({"headRefOid": "b" * 40}, {"isCrossRepository": True},
+                        {"headRefName": "agent/other"}, {"baseRefName": "other"},
+                        {"state": "CLOSED"}, {"headRepositoryOwner": {"login": "other"}}):
+            with patch.object(runner, "gh_json", return_value=good | changed), \
+                 self.assertRaisesRegex(runner.RunnerError, "revision pin"):
+                runner.find_revision_pr(task)
+
+    def test_product_revision_refuses_moved_remote_before_fetch_or_claim(self):
+        task = replace(runner.task_from_issue(issue("to:antina", "state:revision"), "OWNER"),
+                       branch="refactor/ui-map-architecture", revision_pr=2,
+                       revision_head="a" * 40)
+        with patch.object(runner, "run", side_effect=["", "https://github.com/Kiris-02/gathermap.git", "b" * 40 + "\trefs/heads/refactor/ui-map-architecture"]) as run, \
+             patch.object(runner, "find_revision_pr", return_value={"number": 2}), \
+             self.assertRaisesRegex(runner.RunnerError, "moved"):
+            runner.prepare_branch(task, Path("."))
+        self.assertFalse(any(call.args[1] == "fetch" for call in run.call_args_list))
+
+    def test_product_revision_preflights_protected_baseline_whitespace(self):
+        task = replace(runner.task_from_issue(issue("to:antina", "state:revision"), "OWNER"),
+                       branch="refactor/ui-map-architecture", revision_pr=2,
+                       revision_head="a" * 40)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            outputs = ["", "b" * 40,
+                       "src/app.js:4: trailing whitespace.\n"
+                       "supabase/migrations/001.sql:9: trailing whitespace."]
+            with patch.object(runner, "run", side_effect=outputs), \
+                 self.assertRaisesRegex(runner.RunnerError, "protected paths"):
+                runner.ensure_product_revision_fixable(task, root)
+
     def test_check_rollup_distinguishes_pending_failure_and_success(self):
         self.assertEqual(runner.checks_state([]), "pending")
         self.assertEqual(runner.checks_state([
@@ -235,7 +296,7 @@ class RunnerTests(unittest.TestCase):
             runner.validate_changes(Path(temp))
 
     def test_missing_key_routes_to_kiris_without_starting_agent(self):
-        payload = event("to:antina", "state:ready")
+        payload = event("to:antina", "state:ready", trigger="to:antina")
         with tempfile.TemporaryDirectory() as temp:
             event_path = Path(temp) / "event.json"
             event_path.write_text(__import__("json").dumps(payload), encoding="utf-8")

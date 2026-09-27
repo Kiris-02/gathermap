@@ -5,6 +5,7 @@ on:
     branches:
       - chore/agent-orchestrator-v1
       - feat/platform-antina-runner-v1
+      - feat/platform-existing-pr-revision-v1
     paths:
       - scripts/agent_cycle.py
       - scripts/antina_runner.py

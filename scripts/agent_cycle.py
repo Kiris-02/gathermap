@@ -74,10 +74,23 @@ def require_task(issue):
     task_id(issue)
 
 
-def require_branch(branch):
+def require_branch(branch, issue=None, pr_number=None):
     actual = run("git", "branch", "--show-current")
-    if not branch or branch in {"main", "master", "refactor/ui-map-architecture"}:
+    if not branch or branch in {"main", "master"}:
         raise CycleError("A dedicated, non-product task branch is required")
+    if branch == "refactor/ui-map-architecture":
+        body = (issue or {}).get("body") or ""
+        pinned = all(len(re.findall(rf"^- \*\*{name}\*\*: `{value}`\s*$", body,
+                                    re.MULTILINE)) == 1
+                     for name, value in (("revision_pr", "2"),
+                                         ("revision_branch", "refactor/ui-map-architecture")))
+        fields = [name for name in ("revision_pr", "revision_branch", "revision_head")
+                  if len(re.findall(rf"^- \*\*{name}\*\*:", body, re.MULTILINE)) != 1]
+        head_pins = re.findall(
+            r"^- \*\*revision_head\*\*: `([0-9a-f]{40})`\s*$", body, re.MULTILINE
+        )
+        if fields or not pinned or len(head_pins) != 1 or pr_number not in (None, 2):
+            raise CycleError("Product branch requires an exact owner Issue pin to PR #2")
     if actual != branch:
         raise CycleError(f"Checkout is on {actual!r}, expected {branch!r}")
     if run("git", "status", "--porcelain"):
@@ -99,13 +112,15 @@ def pending():
 
 
 def claim(number, branch):
-    require_branch(branch)
     issue = issue_view(number)
     require_task(issue)
+    require_branch(branch, issue=issue)
     current = labels(issue)
     if ("to:antina" not in current or len(current & READY) != 1 or
             current & BUSY):
         raise CycleError("Issue is not in exactly one ready/revision state for Antina")
+    if branch == "refactor/ui-map-architecture" and "state:revision" not in current:
+        raise CycleError("Product branch can only be claimed for an exact revision")
     old = next(iter(current & READY))
     identifier = task_id(issue)
     run("gh", "issue", "edit", str(number), "--repo", REPO,
@@ -121,9 +136,9 @@ def claim(number, branch):
 
 
 def handoff(number, branch, pr_number, report_path):
-    require_branch(branch)
     issue = issue_view(number)
     require_task(issue)
+    require_branch(branch, issue=issue, pr_number=pr_number)
     if not {"to:antina", "state:working"} <= labels(issue):
         raise CycleError("Issue must be owned by Antina and working")
     identifier = task_id(issue)
@@ -140,8 +155,14 @@ def handoff(number, branch, pr_number, report_path):
         raise CycleError("Report must contain ANTINA_REPORT, PR URL, and exact HEAD SHA")
     # A nonzero exit includes failed or pending checks; never hand off as green.
     run("gh", "pr", "checks", str(pr_number), "--repo", REPO)
-    run("gh", "pr", "edit", str(pr_number), "--repo", REPO,
-        "--body-file", str(report_path))
+    # Product PR descriptions are authored independently and must not be replaced
+    # by an automation report. The report is retained in the Issue/PR handoff.
+    if branch != "refactor/ui-map-architecture":
+        run("gh", "pr", "edit", str(pr_number), "--repo", REPO,
+            "--body-file", str(report_path))
+    else:
+        run("gh", "issue", "comment", str(number), "--repo", REPO,
+            "--body-file", str(report_path))
     run("gh", "issue", "edit", str(number), "--repo", REPO,
         "--remove-label", "to:antina,state:working",
         "--add-label", "to:grum,state:review")
