@@ -70,6 +70,26 @@ class Task:
     body: str
     state_label: str
     branch: str
+    revision_pr: int | None = None
+    revision_head: str | None = None
+
+
+def product_revision_pin(body: str) -> str | None:
+    """An owner Issue must pin the one exceptional Product PR and its exact HEAD."""
+    fields = {}
+    for name in ("revision_pr", "revision_branch", "revision_head"):
+        matches = re.findall(rf"^- \*\*{name}\*\*: `([^`\r\n]+)`\s*$", body, re.MULTILINE)
+        if len(matches) > 1:
+            raise RunnerError(f"Duplicate {name} pin")
+        fields[name] = matches[0] if matches else None
+    if not any(fields.values()):
+        return None
+    if (fields["revision_pr"] != "2"
+            or fields["revision_branch"] != "refactor/ui-map-architecture"
+            or not fields["revision_head"]
+            or not re.fullmatch(r"[0-9a-f]{40}", fields["revision_head"])):
+        raise RunnerError("Product revision requires exact PR #2, branch, and 40-hex HEAD pins")
+    return fields["revision_head"]
 
 
 def run(*args: str, cwd: Path | None = None, check: bool = True) -> str:
@@ -141,7 +161,7 @@ def validate_event(payload: dict) -> tuple[int, str]:
     if association not in ALLOWED_ASSOCIATIONS:
         raise IgnoreEvent("Issue author is not allowed to wake Antina")
     trigger_label = (payload.get("label") or {}).get("name", "")
-    if trigger_label not in {"to:antina", *READY}:
+    if trigger_label != "to:antina":
         raise IgnoreEvent("Unrelated label")
     number = issue.get("number")
     if not isinstance(number, int) or number < 1:
@@ -169,8 +189,12 @@ def task_from_issue(issue: dict, association: str) -> Task:
     expected = {"to:antina", next(iter(states))}
     if control != expected:
         raise IgnoreEvent("Task has conflicting control labels")
-    if re.search(r"refactor/ui-map-architecture|\bPR\s*#?2\b", body, re.IGNORECASE):
-        raise RunnerError("Product PR #2 is reserved for the Product lane")
+    pin = product_revision_pin(body)
+    mentions_product = re.search(r"refactor/ui-map-architecture|\bPR\s*#?2\b", body, re.IGNORECASE)
+    if mentions_product and pin is None:
+        raise RunnerError("Product PR #2 requires an explicit owner Issue revision pin")
+    if pin and next(iter(states)) != "state:revision":
+        raise RunnerError("Product PR #2 is available only for a pinned revision")
     identifier = task_identifier(body)
     return Task(
         issue=int(issue["number"]),
@@ -178,7 +202,9 @@ def task_from_issue(issue: dict, association: str) -> Task:
         title=issue.get("title") or identifier,
         body=body,
         state_label=next(iter(states)),
-        branch=branch_for(identifier),
+        branch="refactor/ui-map-architecture" if pin else branch_for(identifier),
+        revision_pr=2 if pin else None,
+        revision_head=pin,
     )
 
 
@@ -311,6 +337,17 @@ def remote_branch_exists(branch: str) -> bool:
 
 
 def find_revision_pr(task: Task) -> dict:
+    if task.revision_pr is not None:
+        pr = gh_json("pr", "view", str(task.revision_pr), "--repo", REPO, "--json",
+                     "number,url,state,headRefName,baseRefName,headRefOid,headRepositoryOwner,isCrossRepository")
+        if (pr.get("number") != 2 or pr.get("state") != "OPEN"
+                or pr.get("headRefName") != task.branch
+                or pr.get("baseRefName") != "main"
+                or pr.get("headRefOid") != task.revision_head
+                or (pr.get("headRepositoryOwner") or {}).get("login") != "Kiris-02"
+                or pr.get("isCrossRepository") is not False):
+            raise RunnerError("Product PR no longer matches its exact revision pin")
+        return pr
     items = gh_json(
         "pr", "list", "--repo", REPO, "--state", "open", "--head", task.branch,
         "--base", "main", "--json", "number,url,headRefName,baseRefName",
@@ -333,11 +370,33 @@ def prepare_branch(task: Task, root: Path) -> dict | None:
         run("git", "switch", "-c", task.branch, "origin/main", cwd=root)
         return None
     pr = find_revision_pr(task)
-    if pr.get("headRefName") == "refactor/ui-map-architecture" or pr.get("number") == 2:
+    if task.revision_pr is None and (pr.get("headRefName") == "refactor/ui-map-architecture" or pr.get("number") == 2):
         raise RunnerError("Refusing to revise Product PR #2")
+    if task.revision_pr is not None:
+        remote = run("git", "ls-remote", "--heads", "origin", task.branch, cwd=root).split()
+        if len(remote) != 2 or remote[0] != task.revision_head:
+            raise RunnerError("Product branch moved since the owner pinned its HEAD")
     run("git", "fetch", "origin", f"{task.branch}:refs/remotes/origin/{task.branch}", cwd=root)
+    if task.revision_pr is not None and run(
+        "git", "rev-parse", f"refs/remotes/origin/{task.branch}", cwd=root
+    ) != task.revision_head:
+        raise RunnerError("Fetched Product branch differs from the pinned HEAD")
     run("git", "switch", "-c", task.branch, f"origin/{task.branch}", cwd=root)
     return pr
+
+
+def ensure_product_revision_fixable(task: Task, root: Path) -> None:
+    """Do not spend an SDK run on known whitespace errors in forbidden files."""
+    if task.revision_pr is None:
+        return
+    run("git", "fetch", "origin", "main", cwd=root)
+    baseline = run("git", "merge-base", "HEAD", "FETCH_HEAD", cwd=root)
+    errors = run("git", "diff", "--check", baseline, "HEAD", cwd=root, check=False)
+    forbidden = sorted({line.split(":", 1)[0] for line in errors.splitlines()
+                        if ":" in line and not path_allowed(line.split(":", 1)[0], root)})
+    if forbidden:
+        raise RunnerError("Product PR has pre-existing whitespace in protected paths: "
+                          + ", ".join(forbidden))
 
 
 async def run_antigravity(task: Task, root: Path) -> str:
@@ -464,6 +523,8 @@ def publish(
     baseline_head: str,
 ) -> dict:
     assert_git_boundary(task, root, baseline_head)
+    if task.revision_pr is not None:
+        verify_remote_head(task, root, baseline_head)
     run("git", "add", "--all", cwd=root)
     assert_git_boundary(task, root, baseline_head)
     run(
@@ -474,6 +535,8 @@ def publish(
     )
     sha = run("git", "rev-parse", "HEAD", cwd=root)
     assert_git_boundary(task, root, sha)
+    if task.revision_pr is not None:
+        verify_remote_head(task, root, baseline_head)
     run("gh", "auth", "setup-git", cwd=root)
     assert_git_boundary(task, root, sha)
     run(
@@ -550,12 +613,20 @@ def execute(event_path: Path, root: Path) -> dict:
     payload = json.loads(event_path.read_text(encoding="utf-8"))
     issue_number, association = validate_event(payload)
     live = agent_cycle.issue_view(issue_number)
-    task = task_from_issue(live, association)
+    try:
+        task = task_from_issue(live, association)
+    except RunnerError as exc:
+        # An eligible owner Issue with an unsafe/missing Product pin needs an
+        # explicit human state, not an indefinitely re-triggerable revision.
+        identifier = task_identifier(live.get("body") or "")
+        route_needs_kiris(issue_number, identifier, str(exc))
+        raise
     if not os.environ.get("GEMINI_API_KEY"):
         route_needs_kiris(task.issue, task.task_id, "Repository secret GEMINI_API_KEY is not configured")
         raise RunnerError("GEMINI_API_KEY is not configured")
     try:
         prior_pr = prepare_branch(task, root)
+        ensure_product_revision_fixable(task, root)
         agent_cycle.claim(task.issue, task.branch)
         baseline_head = run("git", "rev-parse", "HEAD", cwd=root)
         assert_git_boundary(task, root, baseline_head)

@@ -18,9 +18,7 @@ jobs:
   antina:
     if: >-
       github.event.issue.author_association == 'OWNER' &&
-      (github.event.label.name == 'to:antina' ||
-       github.event.label.name == 'state:ready' ||
-       github.event.label.name == 'state:revision')
+      github.event.label.name == 'to:antina'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

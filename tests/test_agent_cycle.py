@@ -22,6 +22,14 @@ def issue(*names):
             "state": "OPEN", "labels": [{"name": name} for name in names]}
 
 
+def pinned_issue(*names):
+    result = issue(*names)
+    result["body"] += ("- **revision_pr**: `2`\n"
+                       "- **revision_branch**: `refactor/ui-map-architecture`\n"
+                       f"- **revision_head**: `{'a' * 40}`\n")
+    return result
+
+
 class CycleTests(unittest.TestCase):
     def test_pending_excludes_blocked_and_non_tasks(self):
         values = [issue("to:antina", "state:ready"),
@@ -84,6 +92,16 @@ class CycleTests(unittest.TestCase):
         with patch.object(cycle, "run", side_effect=["chore/task-8", " M app.js"]):
             with self.assertRaises(cycle.CycleError):
                 cycle.require_branch("chore/task-8")
+
+    def test_product_branch_requires_pinned_issue_and_matching_pr(self):
+        with patch.object(cycle, "run", side_effect=[
+            "refactor/ui-map-architecture", "", "https://github.com/Kiris-02/gathermap.git"
+        ]):
+            cycle.require_branch("refactor/ui-map-architecture", pinned_issue(), 2)
+        for candidate, pr in ((issue(), 2), (pinned_issue(), 3)):
+            with patch.object(cycle, "run", return_value="refactor/ui-map-architecture"), \
+                 self.assertRaisesRegex(cycle.CycleError, "Product branch"):
+                cycle.require_branch("refactor/ui-map-architecture", candidate, pr)
 
     def test_branch_refuses_lookalike_origin(self):
         with patch.object(cycle, "run", side_effect=[
@@ -172,6 +190,29 @@ class CycleTests(unittest.TestCase):
                                ("gh", "pr", "comment") and
                                "ANTINA_HANDOFF" in cmd[-1])
                 self.assertIn("**task_id**: `GAT-TEST-008`", handoff)
+
+    def test_product_handoff_keeps_existing_pr_description(self):
+        pr = {"number": 2, "state": "OPEN", "headRefName": "refactor/ui-map-architecture",
+              "baseRefName": "main", "headRefOid": SHA,
+              "url": "https://github.com/Kiris-02/gathermap/pull/2"}
+        with tempfile.TemporaryDirectory() as temp:
+            report = Path(temp) / "report.md"
+            report.write_text(f"ANTINA_REPORT {SHA} {pr['url']}\n", encoding="utf-8")
+            with patch.object(cycle, "require_branch") as boundary, \
+                 patch.object(cycle, "issue_view", side_effect=[
+                     pinned_issue("to:antina", "state:working"),
+                     pinned_issue("to:grum", "state:review")]), \
+                 patch.object(cycle, "gh_json", return_value=pr), \
+                 patch.object(cycle, "run", side_effect=lambda *args:
+                              SHA if args[:2] == ("git", "rev-parse") else "") as run:
+                cycle.handoff(8, "refactor/ui-map-architecture", 2, report)
+                boundary.assert_called_once()
+                self.assertFalse(any(call.args[:3] == ("gh", "pr", "edit")
+                                     and "--body-file" in call.args
+                                     for call in run.call_args_list))
+                self.assertTrue(any(call.args[:3] == ("gh", "issue", "comment")
+                                    and "--body-file" in call.args
+                                    for call in run.call_args_list))
 
     def test_handoff_rejects_residual_control_labels_before_pr_routing(self):
         pr = {"state": "OPEN", "headRefName": "chore/task-8", "baseRefName": "main",

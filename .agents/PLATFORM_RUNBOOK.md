@@ -47,7 +47,9 @@ handoff is possible.
 
 ## Automatic Antina runner (v2)
 
-`.github/workflows/antina-runner.yml` wakes only on an Issue label event. The
+`.github/workflows/antina-runner.yml` wakes only when `to:antina` is newly
+applied to an Issue. Apply the state label first and `to:antina` last; state
+label events do not start a second run. The
 Issue must be open, authored by the repository owner, contain a structured
 `GRUM_TASK`, and have the exact control labels `to:antina` plus one of
 `state:ready` or `state:revision`. GitHub Actions concurrency permits one run
@@ -60,7 +62,7 @@ branch preparation, claim, Git-boundary verification, commit, push, PR
 creation/update, CI wait, and the v1 handoff to Grum. Before every privileged
 commit or push, the harness rechecks the exact branch and HEAD, canonical
 origin, local Git includes/hook path, and active hooks; harness Git commands
-also disable hooks explicitly. It refuses Product PR #2,
+also disable hooks explicitly. It refuses un-pinned Product PR #2,
 protocol/workflow/runner files, migrations, secrets, force operations, and
 self-merge.
 
@@ -90,6 +92,29 @@ For a Grum revision on the deterministic existing task branch, use:
 to:antina + state:revision
 ```
 
+Exception for Product PR #2: an owner-authored Issue with `state:revision`
+may explicitly authorize only the existing `refactor/ui-map-architecture`
+branch by adding these three structured fields to its `GRUM_TASK` body:
+
+```text
+- **revision_pr**: `2`
+- **revision_branch**: `refactor/ui-map-architecture`
+- **revision_head**: `<exact 40-character lowercase SHA of PR #2 HEAD>`
+```
+
+Record the current PR HEAD immediately before activation. The runner verifies
+the PR is open, targets `main`, belongs to this repository, and still has the
+exact pinned SHA. It verifies the remote before fetch, after fetch, and before
+commit/push; normal non-force push fails if the branch moves in between. The
+Product PR description is preserved on handoff. An absent or stale pin stops
+the job; do not retry blindly. The branch remains subject to protected-path
+rules: `.agents/`, `.github/`, migrations, secrets, and the runner itself may
+not be edited by the SDK. The independent validation check also requires the
+full PR diff to pass `git diff --check` and all product tests. If a required
+fix lies in a protected path, stop at `NEEDS_KIRIS` and assign that change to
+the appropriate separately reviewed lane. A preflight catches pre-existing
+whitespace errors in protected paths before the SDK session starts.
+
 The runner creates new branches as `agent/<normalized-task-id>`. A ready task
 with a pre-existing remote branch, or a revision without exactly one open PR,
 stops at `NEEDS_KIRIS` for recovery rather than guessing.
@@ -110,8 +135,8 @@ deploy code.
    prevents duplicate executions in the supported path, but manual/local v1
    claimers must not run concurrently with the workflow.
 
-Until v2 is merged, the secret is configured, and an end-to-end disposable task
-passes, Kiris remains the Antina trigger. Production migrations, deployment,
+Until an end-to-end disposable task passes, the automatic runner remains
+unproven in production use. Production migrations, deployment,
 secrets, self-merging, and force-push remain outside this utility and subject
 to `SAFETY.md`.
 
