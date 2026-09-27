@@ -6,6 +6,7 @@
  *    - Pre-connection URL whitelist/blacklist inspection.
  *    - Post-connection live database name verification before any DROP/migration.
  *    - Immediate process termination on safety violation with zero mutations.
+ *    - Main execution flow tested in-process and via subprocess with invalid databases.
  * 2. Sequential execution of production SQL migrations:
  *    - 20260913000001_gathermap_complete.sql
  *    - 20260926000002_tighten_rls_and_voting.sql
@@ -23,9 +24,10 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
+const { spawnSync } = require('child_process');
 const { Client } = require('pg');
 
-const POSTGRES_URL = process.env.TEST_POSTGRES_URL || 'postgresql://postgres:postgrespassword@localhost:5432/gathermap_test';
+const DEFAULT_POSTGRES_URL = process.env.TEST_POSTGRES_URL || 'postgresql://postgres:postgrespassword@localhost:5432/gathermap_test';
 
 /**
  * Validates that a database URL strictly targets an isolated test environment.
@@ -110,94 +112,142 @@ async function assertSafeConnectedDatabase(client) {
     return liveDbName;
 }
 
-async function runPostgresMigrationAndRlsTests() {
-    console.log('================================================================');
-    console.log('🐘 RUNNING LIVE POSTGRESQL MIGRATION & RLS SECURITY SUITE');
-    console.log('================================================================\n');
+/**
+ * Main PostgreSQL Migration & Live RLS Test Runner
+ */
+async function runPostgresMigrationAndRlsTests(options = {}) {
+    const targetUrl = options.postgresUrl || DEFAULT_POSTGRES_URL;
+    const exitOnError = options.exitOnError !== false;
+    const clientFactory = options.clientFactory || ((url) => new Client({ connectionString: url, connectionTimeoutMillis: 3000 }));
+    const isDryRunTest = options.isDryRunTest === true;
+
+    // 1. Mandatory Pre-Connection URL Check (Fail-Closed at entry point)
+    try {
+        validateSafeTestDatabaseUrl(targetUrl);
+    } catch (guardErr) {
+        console.error(`\n🛑 SAFETY GUARD ENFORCED: ${guardErr.message}`);
+        if (exitOnError) {
+            process.exit(1);
+        } else {
+            throw guardErr;
+        }
+    }
+
+    if (!isDryRunTest) {
+        console.log('================================================================');
+        console.log('🐘 RUNNING LIVE POSTGRESQL MIGRATION & RLS SECURITY SUITE');
+        console.log('================================================================\n');
+    }
 
     let passed = 0;
     let failed = 0;
 
     async function test(name, fn) {
-        process.stdout.write(`  ⏳ ${name} ... `);
+        if (!isDryRunTest) {
+            process.stdout.write(`  ⏳ ${name} ... `);
+        }
         try {
             await fn();
-            console.log('✅ PASS');
+            if (!isDryRunTest) console.log('✅ PASS');
             passed++;
         } catch (err) {
-            console.log(`❌ FAIL: ${err.message}`);
-            console.error(err);
+            if (!isDryRunTest) {
+                console.log(`❌ FAIL: ${err.message}`);
+                console.error(err);
+            }
             failed++;
+            if (!isDryRunTest && exitOnError) {
+                throw err;
+            }
         }
     }
 
     // --- STEP 0A: TEST SAFETY GUARD RAIL REJECTIONS & FAIL-CLOSED BEHAVIOR ---
-    await test('Safety Guard: Validate URL guard rail blocks production and non-test databases', async () => {
-        // Test 1: Production Supabase host rejection
-        assert.throws(() => {
-            validateSafeTestDatabaseUrl('postgresql://postgres:mysecretpassword@db.supabase.co:5432/postgres');
-        }, /Forbidden host pattern "supabase\.co"/);
+    if (!isDryRunTest) {
+        await test('Safety Guard: Validate URL guard rail blocks production and non-test databases', async () => {
+            // Test 1: Production Supabase host rejection
+            assert.throws(() => {
+                validateSafeTestDatabaseUrl('postgresql://postgres:mysecretpassword@db.supabase.co:5432/postgres');
+            }, /Forbidden host pattern "supabase\.co"/);
 
-        // Test 2: Remote unapproved host rejection
-        assert.throws(() => {
-            validateSafeTestDatabaseUrl('postgresql://user:pass@remote-db.mycloud.com:5432/gathermap_test');
-        }, /Hostname "remote-db\.mycloud\.com" is not in the approved/);
+            // Test 2: Remote unapproved host rejection
+            assert.throws(() => {
+                validateSafeTestDatabaseUrl('postgresql://user:pass@remote-db.mycloud.com:5432/gathermap_test');
+            }, /Hostname "remote-db\.mycloud\.com" is not in the approved/);
 
-        // Test 3: Production database name on localhost rejection
-        assert.throws(() => {
-            validateSafeTestDatabaseUrl('postgresql://postgres:pass@localhost:5432/production');
-        }, /Forbidden database name pattern "production"/);
+            // Test 3: Production database name on localhost rejection
+            assert.throws(() => {
+                validateSafeTestDatabaseUrl('postgresql://postgres:pass@localhost:5432/production');
+            }, /Forbidden database name pattern "production"/);
 
-        // Test 4: Default postgres database on localhost (not ending in _test) rejection
-        assert.throws(() => {
-            validateSafeTestDatabaseUrl('postgresql://postgres:pass@localhost:5432/postgres');
-        }, /Database name "postgres" must end with "_test"/);
+            // Test 4: Default postgres database on localhost (not ending in _test) rejection
+            assert.throws(() => {
+                validateSafeTestDatabaseUrl('postgresql://postgres:pass@localhost:5432/postgres');
+            }, /Database name "postgres" must end with "_test"/);
 
-        // Test 5: Authorized test databases acceptance
-        assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@localhost:5432/gathermap_test'), true);
-        assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@127.0.0.1:5432/my_app_test'), true);
-        assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@postgres:5432/gathermap_test'), true);
-    });
+            // Test 5: Authorized test databases acceptance
+            assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@localhost:5432/gathermap_test'), true);
+            assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@127.0.0.1:5432/my_app_test'), true);
+            assert.strictEqual(validateSafeTestDatabaseUrl('postgresql://postgres:postgrespassword@postgres:5432/gathermap_test'), true);
+        });
 
-    await test('Safety Guard (Fail-Closed): Mock client connected to unapproved database halts with zero mutations', async () => {
-        const executedQueries = [];
-        const mockUnsafeClient = {
-            query: async (sql, params) => {
-                executedQueries.push({ sql, params });
-                if (typeof sql === 'string' && sql.includes('current_database')) {
-                    return { rows: [{ db: 'production_customer_data' }] };
+        await test('Safety Guard (Fail-Closed Subprocess): Process terminates with code 1 on unapproved DB URL', async () => {
+            const result = spawnSync(process.execPath, [__filename], {
+                env: {
+                    ...process.env,
+                    TEST_POSTGRES_URL: 'postgresql://postgres:pass@localhost:5432/production_finance_db'
+                },
+                encoding: 'utf-8'
+            });
+
+            assert.strictEqual(result.status, 1, 'Subprocess must exit with status 1 on unsafe DB URL');
+            const combinedOutput = (result.stdout || '') + (result.stderr || '');
+            assert(combinedOutput.includes('SAFETY GUARD ENFORCED'), 'Subprocess output must include safety guard enforcement message');
+            assert(combinedOutput.includes('Forbidden database name pattern "production"'), 'Subprocess must identify the forbidden pattern');
+        });
+
+        await test('Safety Guard (Fail-Closed Main Flow): Main execution halts on unsafe live database with zero migrations', async () => {
+            const executedQueries = [];
+            const mockUnsafeClient = {
+                connect: async () => {},
+                end: async () => {},
+                query: async (sql, params) => {
+                    executedQueries.push({ sql, params });
+                    if (typeof sql === 'string' && sql.includes('current_database')) {
+                        return { rows: [{ db: 'production_customer_data' }] };
+                    }
+                    return { rows: [] };
                 }
-                return { rows: [] };
+            };
+
+            // Run main flow with mock client targeting unapproved database
+            let caughtError = null;
+            try {
+                await runPostgresMigrationAndRlsTests({
+                    postgresUrl: 'postgresql://postgres:pass@localhost:5432/gathermap_test',
+                    clientFactory: () => mockUnsafeClient,
+                    exitOnError: false,
+                    isDryRunTest: true
+                });
+            } catch (err) {
+                caughtError = err;
             }
-        };
 
-        // Assert that assertSafeConnectedDatabase throws on the unsafe database
-        await assert.rejects(async () => {
-            await assertSafeConnectedDatabase(mockUnsafeClient);
-        }, /Live connected database "production_customer_data" is not an authorized test database/);
+            assert(caughtError !== null, 'Main execution flow must throw/abort on unapproved connected database');
+            assert(caughtError.message.includes('Live connected database "production_customer_data" is not an authorized test database'));
 
-        // Assert that no destructive or mutation queries were executed
-        const destructiveKeywords = ['DROP', 'CREATE', 'ALTER', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'GRANT', 'REVOKE'];
-        const dangerousQueries = executedQueries.filter(q => 
-            destructiveKeywords.some(kw => q.sql.toUpperCase().includes(kw))
-        );
+            // Assert zero mutation queries occurred
+            const destructiveKeywords = ['DROP', 'CREATE', 'ALTER', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'GRANT', 'REVOKE'];
+            const dangerousQueries = executedQueries.filter(q => 
+                destructiveKeywords.some(kw => q.sql.toUpperCase().includes(kw))
+            );
 
-        assert.strictEqual(dangerousQueries.length, 0, 'Zero destructive or modification queries must be executed when live database safety check fails');
-        assert.strictEqual(executedQueries.length, 1, 'Only the safety check current_database query was executed');
-    });
-
-    // 1. Validate active configured URL before connecting
-    try {
-        validateSafeTestDatabaseUrl(POSTGRES_URL);
-    } catch (guardErr) {
-        console.error(`\n🛑 SAFETY GUARD ENFORCED: ${guardErr.message}`);
-        process.exit(1);
+            assert.strictEqual(dangerousQueries.length, 0, 'Zero destructive or modification queries must be executed when live database safety check fails in main flow');
+            assert.strictEqual(executedQueries.length, 1, 'Only the safety check current_database query was executed in main flow');
+        });
     }
 
-    const client = new Client({
-        connectionString: POSTGRES_URL,
-        connectionTimeoutMillis: 3000,
-    });
+    const client = clientFactory(targetUrl);
 
     let isConnected = false;
     try {
@@ -205,12 +255,15 @@ async function runPostgresMigrationAndRlsTests() {
         isConnected = true;
     } catch (err) {
         if (process.env.CI === 'true') {
-            console.error(`❌ CRITICAL: Failed to connect to PostgreSQL in CI environment at ${POSTGRES_URL}:`, err.message);
-            process.exit(1);
+            console.error(`❌ CRITICAL: Failed to connect to PostgreSQL in CI environment at ${targetUrl}:`, err.message);
+            if (exitOnError) process.exit(1);
+            throw err;
         } else {
-            console.log(`⚠️  Local PostgreSQL instance not detected at ${POSTGRES_URL}.`);
-            console.log('   (This suite executes live against PostgreSQL 16 in GitHub Actions CI with full RLS verification).');
-            console.log(`\n📊 POSTGRESQL SUITE: ${passed} PASSED, ${failed} FAILED (Remaining stages skipped locally due to no listening database)\n`);
+            if (!isDryRunTest) {
+                console.log(`⚠️  Local PostgreSQL instance not detected at ${targetUrl}.`);
+                console.log('   (This suite executes live against PostgreSQL 16 in GitHub Actions CI with full RLS verification).');
+                console.log(`\n📊 POSTGRESQL SUITE: ${passed} PASSED, ${failed} FAILED (Live stages skipped locally due to no listening database)\n`);
+            }
             return;
         }
     }
@@ -222,7 +275,11 @@ async function runPostgresMigrationAndRlsTests() {
     } catch (guardErr) {
         console.error(`\n🛑 SAFETY GUARD ENFORCED: ${guardErr.message}`);
         try { await client.end(); } catch (_) {}
-        process.exit(1);
+        if (exitOnError) {
+            process.exit(1);
+        } else {
+            throw guardErr;
+        }
     }
 
     try {
@@ -547,11 +604,15 @@ async function runPostgresMigrationAndRlsTests() {
         }
     }
 
-    console.log(`\n📊 POSTGRESQL MIGRATION & RLS RESULTS: ${passed} PASSED, ${failed} FAILED\n`);
+    if (!isDryRunTest) {
+        console.log(`\n📊 POSTGRESQL MIGRATION & RLS RESULTS: ${passed} PASSED, ${failed} FAILED\n`);
+    }
 
-    if (failed > 0) {
+    if (failed > 0 && exitOnError) {
         process.exit(1);
     }
+
+    return { passed, failed };
 }
 
 if (require.main === module) {
