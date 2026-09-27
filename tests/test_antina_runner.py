@@ -1,6 +1,9 @@
 """Offline safety tests for the automatic Antina runner."""
 
+import asyncio
+import builtins
 import importlib.util
+import re
 import subprocess
 import sys
 import tempfile
@@ -12,6 +15,9 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "antina_runner.py"
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "antina-runner.yml"
 VALIDATION_WORKFLOW = (
     Path(__file__).resolve().parents[1] / ".github" / "workflows" / "antina-validation.yml"
+)
+GUARDRAIL_WORKFLOW = (
+    Path(__file__).resolve().parents[1] / ".github" / "workflows" / "platform-guardrails.yml"
 )
 spec = importlib.util.spec_from_file_location("antina_runner", SCRIPT)
 runner = importlib.util.module_from_spec(spec)
@@ -63,6 +69,14 @@ class RunnerTests(unittest.TestCase):
         self.assertIn("npm test", validation)
         self.assertNotIn("contents: write", validation)
         self.assertNotIn("git push", validation)
+
+    def test_all_platform_actions_are_pinned_to_full_commit_shas(self):
+        for path in (WORKFLOW, VALIDATION_WORKFLOW, GUARDRAIL_WORKFLOW):
+            source = path.read_text(encoding="utf-8")
+            action_refs = re.findall(r"uses:\s+actions/[^@\s]+@([^\s]+)", source)
+            self.assertTrue(action_refs, path)
+            for ref in action_refs:
+                self.assertRegex(ref, r"^[0-9a-f]{40}$", f"{path}: {ref}")
 
     def test_event_requires_owner_issue_label_event(self):
         self.assertEqual(runner.validate_event(event())[0], 8)
@@ -240,11 +254,50 @@ class RunnerTests(unittest.TestCase):
             "PATH": "/bin", "GEMINI_API_KEY": "gemini", "GH_TOKEN": "github",
             "UNRELATED_SECRET": "hidden",
         }, clear=True):
-            removed = runner.pop_sensitive_environment()
-            self.assertEqual(removed["GEMINI_API_KEY"], "gemini")
+            api_key, transport = runner.scrub_sensitive_environment()
+            self.assertEqual(api_key, "gemini")
+            self.assertEqual(transport, {"GH_TOKEN": "github"})
             self.assertNotIn("GH_TOKEN", runner.os.environ)
             self.assertNotIn("UNRELATED_SECRET", runner.os.environ)
             self.assertEqual(runner.os.environ["PATH"], "/bin")
+
+    def test_sdk_import_cannot_observe_sensitive_environment(self):
+        task = runner.task_from_issue(issue("to:antina", "state:ready"), "OWNER")
+        observed = {}
+        real_import = builtins.__import__
+
+        def import_probe(name, *args, **kwargs):
+            if name.startswith("google.antigravity"):
+                observed.update({
+                    key: runner.os.environ.get(key)
+                    for key in (
+                        "GH_TOKEN", "GITHUB_TOKEN", "GEMINI_API_KEY",
+                        "ACTIONS_RUNTIME_TOKEN",
+                    )
+                })
+                raise ImportError("import probe")
+            return real_import(name, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as temp, patch.dict(runner.os.environ, {
+            "PATH": "/bin",
+            "GH_TOKEN": "gh-token",
+            "GITHUB_TOKEN": "github-token",
+            "GEMINI_API_KEY": "gemini-key",
+            "ACTIONS_RUNTIME_TOKEN": "runtime-secret",
+        }, clear=True), patch("builtins.__import__", side_effect=import_probe):
+            with self.assertRaisesRegex(runner.RunnerError, "not installed"):
+                asyncio.run(runner.run_antigravity(task, Path(temp)))
+
+            self.assertEqual(observed, {
+                "GH_TOKEN": None,
+                "GITHUB_TOKEN": None,
+                "GEMINI_API_KEY": None,
+                "ACTIONS_RUNTIME_TOKEN": None,
+            })
+            self.assertEqual(runner.os.environ["GH_TOKEN"], "gh-token")
+            self.assertEqual(runner.os.environ["GITHUB_TOKEN"], "github-token")
+            self.assertNotIn("GEMINI_API_KEY", runner.os.environ)
+            self.assertNotIn("ACTIONS_RUNTIME_TOKEN", runner.os.environ)
 
 
 if __name__ == "__main__":

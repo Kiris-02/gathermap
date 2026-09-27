@@ -230,11 +230,18 @@ def edit_args_allowed(args: dict, root: Path) -> bool:
     return path_allowed(str(path), root)
 
 
-def pop_sensitive_environment() -> dict[str, str]:
-    removed = {name: value for name, value in os.environ.items() if SENSITIVE_ENV.search(name)}
-    for name in removed:
-        os.environ.pop(name, None)
-    return removed
+def scrub_sensitive_environment() -> tuple[str | None, dict[str, str]]:
+    """Remove secrets before importing or invoking any SDK-controlled code."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    github_transport = {
+        name: os.environ[name]
+        for name in ("GH_TOKEN", "GITHUB_TOKEN")
+        if name in os.environ
+    }
+    for name in list(os.environ):
+        if SENSITIVE_ENV.search(name):
+            os.environ.pop(name, None)
+    return api_key, github_transport
 
 
 def changed_paths(root: Path) -> set[str]:
@@ -334,20 +341,17 @@ def prepare_branch(task: Task, root: Path) -> dict | None:
 
 
 async def run_antigravity(task: Task, root: Path) -> str:
-    try:
-        from google.antigravity import Agent, LocalAgentConfig, types
-        from google.antigravity.hooks import policy
-    except ImportError as exc:
-        raise RunnerError("google-antigravity is not installed") from exc
-
-    secret_environment = pop_sensitive_environment()
-    api_key = secret_environment.get("GEMINI_API_KEY")
+    api_key, github_transport = scrub_sensitive_environment()
     if not api_key:
-        for name in ("GH_TOKEN", "GITHUB_TOKEN"):
-            if name in secret_environment:
-                os.environ[name] = secret_environment[name]
+        os.environ.update(github_transport)
         raise RunnerError("GEMINI_API_KEY disappeared before SDK startup")
     try:
+        try:
+            from google.antigravity import Agent, LocalAgentConfig, types
+            from google.antigravity.hooks import policy
+        except ImportError as exc:
+            raise RunnerError("google-antigravity is not installed") from exc
+
         policies = [
             policy.allow("view_file", when=lambda args: read_args_allowed(args, root)),
             policy.allow("list_directory", when=lambda args: read_args_allowed(args, root)),
@@ -396,9 +400,7 @@ ISSUE #{task.issue}
     finally:
         # Restore only the GitHub transport credentials needed by the outer
         # harness. The model API key and every unrelated secret remain absent.
-        for name in ("GH_TOKEN", "GITHUB_TOKEN"):
-            if name in secret_environment:
-                os.environ[name] = secret_environment[name]
+        os.environ.update(github_transport)
 
 
 def check_state(check: dict) -> str:
