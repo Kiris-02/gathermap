@@ -30,7 +30,7 @@ REPO = "Kiris-02/gathermap"
 ALLOWED_ASSOCIATIONS = {"OWNER"}
 READY = {"state:ready", "state:revision"}
 CONTROL_PREFIXES = ("to:", "state:")
-FORBIDDEN_CONTROL = {"NEEDS_KIRIS", "state:blocked", "state:needs-kiris"}
+FORBIDDEN_CONTROL = {"NEEDS_KIRIS", "needs:kiris", "state:blocked", "state:needs-kiris"}
 PROTECTED_PREFIXES = (
     ".agents/",
     ".github/",
@@ -178,7 +178,8 @@ def task_from_issue(issue: dict, association: str) -> Task:
     if "GRUM_TASK" not in body:
         raise IgnoreEvent("Issue is not a GRUM_TASK")
     names = label_names(issue)
-    control = {name for name in names if name.startswith(CONTROL_PREFIXES) or name == "NEEDS_KIRIS"}
+    control = {name for name in names
+               if name.startswith(CONTROL_PREFIXES) or name in {"NEEDS_KIRIS", "needs:kiris"}}
     states = names & READY
     if names & FORBIDDEN_CONTROL:
         raise IgnoreEvent("Task is blocked or needs Kiris")
@@ -592,15 +593,24 @@ def publish(
 def route_needs_kiris(issue_number: int, task_id: str, reason: str) -> None:
     issue = agent_cycle.issue_view(issue_number)
     existing = label_names(issue)
+    # The repository already provides needs:kiris. Add and verify the blocking
+    # label before removing task ownership, so a failed edit cannot orphan it.
+    if "needs:kiris" not in existing:
+        run("gh", "issue", "edit", str(issue_number), "--repo", REPO,
+            "--add-label", "needs:kiris")
+        existing = label_names(agent_cycle.issue_view(issue_number))
+        if "needs:kiris" not in existing:
+            raise RunnerError("NEEDS_KIRIS label transition was not confirmed")
     removable = sorted(
         name for name in existing
         if name == "to:antina" or name.startswith("state:") or name == "NEEDS_KIRIS"
     )
-    args = ["issue", "edit", str(issue_number), "--repo", REPO]
     if removable:
-        args += ["--remove-label", ",".join(removable)]
-    args += ["--add-label", "NEEDS_KIRIS,state:needs-kiris"]
-    run("gh", *args)
+        run("gh", "issue", "edit", str(issue_number), "--repo", REPO,
+            "--remove-label", ",".join(removable))
+    final = label_names(agent_cycle.issue_view(issue_number))
+    if "needs:kiris" not in final or final & set(removable):
+        raise RunnerError("NEEDS_KIRIS label transition was not confirmed")
     safe_reason = re.sub(r"[\r\n]+", " ", reason).strip()[:1000]
     run(
         "gh", "issue", "comment", str(issue_number), "--repo", REPO, "--body",

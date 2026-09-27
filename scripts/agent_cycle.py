@@ -15,7 +15,7 @@ from pathlib import Path
 
 REPO = "Kiris-02/gathermap"
 READY = {"state:ready", "state:revision"}
-FORBIDDEN = {"state:blocked", "state:needs-kiris", "NEEDS_KIRIS"}
+FORBIDDEN = {"state:blocked", "state:needs-kiris", "NEEDS_KIRIS", "needs:kiris"}
 BUSY = {"state:working", "state:review", "state:done", "to:grum"}
 EXPECTED_ORIGINS = {
     "https://github.com/Kiris-02/gathermap",
@@ -170,7 +170,7 @@ def handoff(number, branch, pr_number, report_path):
     expected = {"to:grum", "state:review"}
     control = {name for name in updated
                if name.startswith("to:") or name.startswith("state:")
-               or name == "NEEDS_KIRIS"}
+               or name in {"NEEDS_KIRIS", "needs:kiris"}}
     if control != expected:
         raise CycleError("Handoff requires exact to:grum + state:review labels")
     # Publish PR routing only after the Issue is confirmed in its exact state.

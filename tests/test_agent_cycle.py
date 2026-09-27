@@ -34,9 +34,10 @@ class CycleTests(unittest.TestCase):
     def test_pending_excludes_blocked_and_non_tasks(self):
         values = [issue("to:antina", "state:ready"),
                   issue("to:antina", "state:revision", "state:needs-kiris"),
+                  issue("to:antina", "state:revision", "needs:kiris"),
                   issue("to:antina", "state:ready", "state:working"),
                   issue("to:antina", "state:working")]
-        values[3]["body"] = "not a task"
+        values[4]["body"] = "not a task"
         with patch.object(cycle, "gh_json", return_value=values):
             self.assertEqual(cycle.pending(), [{"number": 8, "title": "Task"}])
 
@@ -71,6 +72,14 @@ class CycleTests(unittest.TestCase):
         with patch.object(cycle, "require_branch"), \
              patch.object(cycle, "issue_view", return_value=issue(
                  "to:antina", "state:ready", "state:needs-kiris")), \
+             patch.object(cycle, "run") as run:
+            with self.assertRaises(cycle.CycleError):
+                cycle.claim(8, "chore/task-8")
+            run.assert_not_called()
+
+        with patch.object(cycle, "require_branch"), \
+             patch.object(cycle, "issue_view", return_value=issue(
+                 "to:antina", "state:ready", "needs:kiris")), \
              patch.object(cycle, "run") as run:
             with self.assertRaises(cycle.CycleError):
                 cycle.claim(8, "chore/task-8")
