@@ -71,6 +71,10 @@ class RunnerTests(unittest.TestCase):
         self.assertIn("persist-credentials: false", validation)
         self.assertIn("npm ci", validation)
         self.assertIn("npm test", validation)
+        self.assertIn("image: postgres:16", validation)
+        self.assertIn("POSTGRES_DB: gathermap_test", validation)
+        self.assertIn("postgresql://postgres:postgrespassword@localhost:5432/gathermap_test", validation)
+        self.assertIn("npx playwright install --with-deps chromium", validation)
         self.assertNotIn("contents: write", validation)
         self.assertNotIn("git push", validation)
 
