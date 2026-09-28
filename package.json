@@ -5,14 +5,31 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/recommendation_architecture_tests.js && node tests/pipeline.test.js"
+    "test": "npm run test:architecture && npm run test:pipeline && npm run test:voting && npm run test:overwrite && npm run test:security && npm run test:radius && npm run test:legacy && npm run test:fixture && npm run test:postgres && npm run test:e2e",
+    "test:architecture": "node tests/recommendation_architecture_tests.js",
+    "test:pipeline": "node tests/pipeline.test.js",
+    "test:voting": "node tests/voting-session.test.js",
+    "test:overwrite": "node tests/supabase-outing-overwrite.test.js",
+    "test:security": "node tests/token-security-and-overwrite.test.js && node tests/review-fail-closed.test.js",
+    "test:radius": "node tests/radius-update-sync.test.js",
+    "test:legacy": "node tests/legacy-migration-transition.test.js",
+    "test:fixture": "node tests/supabase-migration-fixture.test.js",
+    "test:postgres": "node tests/postgres-migration-and-rls.test.js",
+    "test:e2e": "node scripts/test_shared_link_and_capture.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
     "better-sqlite3": "^13.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.21.0",
-    "sqlite3": "^6.0.1"
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "pg": "^8.23.0",
+    "pg-mem": "^3.0.14",
+    "playwright": "^1.63.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

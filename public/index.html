@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" class="dark h-full">
+<html lang="vi" class="dark h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <title>GatherMap — Equal-Weight Geometric Group Eatery Matchmaker</title>
+    <title>GatherMap — Định vị & Tìm quán ăn công bằng cho nhóm bạn</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -44,144 +44,24 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <!-- Modular CSS Stylesheets -->
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/map.css" />
+
+    <!-- Modular JS Controllers -->
+    <script src="/js/api-client.js"></script>
+    <script src="/js/state.js"></script>
+    <script src="/js/ui/notifications.js"></script>
+    <script src="/js/ui/venue-card.js"></script>
+    <script src="/js/ui/modals.js"></script>
+    <script src="/js/map-controller.js"></script>
+    <script src="/js/outing-controller.js"></script>
+    <script src="/js/recommendation-controller.js"></script>
+    <script src="/js/review-controller.js"></script>
+    <script src="/js/app.js"></script>
+
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
-
-    <style>
-        html, body {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #070a11;
-        }
-
-        #map {
-            height: 100%;
-            width: 100%;
-            min-height: 100%;
-            background-color: #0b0f19;
-        }
-
-        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #0b0f19; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #4b5563; }
-
-        /* Bulletproof Leaflet Marker & Layer Positioning Rules */
-        .leaflet-container {
-            position: relative !important;
-            overflow: hidden !important;
-        }
-        .leaflet-pane {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            opacity: 1;
-            z-index: 400;
-        }
-        .leaflet-map-pane { z-index: 400 !important; }
-        .leaflet-tile-pane { z-index: 200 !important; }
-        .leaflet-overlay-pane { z-index: 400 !important; }
-        .leaflet-shadow-pane { z-index: 500 !important; }
-        .leaflet-marker-pane { z-index: 600 !important; }
-        .leaflet-tooltip-pane { z-index: 650 !important; }
-        .leaflet-popup-pane { z-index: 700 !important; }
-
-        .leaflet-zoom-animated {
-            transform-origin: 0 0 !important;
-            -webkit-transform-origin: 0 0 !important;
-        }
-
-        .leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-div-icon {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            display: block !important;
-            background: transparent !important;
-            border: none !important;
-            outline: none !important;
-            padding: 0 !important;
-            user-select: none !important;
-            -webkit-user-drag: none !important;
-            pointer-events: auto !important;
-            transform-origin: 0 0 !important;
-        }
-
-        .leaflet-container img {
-            max-width: none !important;
-            max-height: none !important;
-        }
-
-        /* Dark Theme for Leaflet Controls & Tooltips */
-        .leaflet-bar {
-            border: 1px solid #334155 !important;
-            border-radius: 10px !important;
-            overflow: hidden;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
-        }
-        .leaflet-bar a {
-            background-color: #0f172a !important;
-            color: #f1f5f9 !important;
-            border-bottom: 1px solid #1e293b !important;
-            transition: all 0.2s ease;
-        }
-        .leaflet-bar a:hover {
-            background-color: #1e293b !important;
-            color: #f59e0b !important;
-        }
-        .leaflet-tooltip {
-            background: #0b0f19 !important;
-            color: #f8fafc !important;
-            border: 1px solid #334155 !important;
-            border-radius: 8px !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
-            padding: 5px 9px !important;
-            font-size: 11px !important;
-            font-family: 'Plus Jakarta Sans', sans-serif !important;
-        }
-        .leaflet-tooltip-top:before {
-            border-top-color: #0b0f19 !important;
-        }
-        .leaflet-tooltip-bottom:before {
-            border-bottom-color: #0b0f19 !important;
-        }
-
-        .friend-pin, .venue-pin {
-            display: block !important;
-            line-height: 0 !important;
-            pointer-events: auto !important;
-        }
-        .friend-pin svg, .venue-pin svg {
-            display: block;
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
-            pointer-events: none;
-        }
-
-        @keyframes radar-pulse {
-            0% { transform: scale(0.6); opacity: 0.95; }
-            70%, 100% { transform: scale(2.4); opacity: 0; }
-        }
-        .center-beacon-outer {
-            width: 26px;
-            height: 26px;
-            pointer-events: auto;
-        }
-        .center-beacon-outer::before {
-            content: '';
-            position: absolute;
-            left: -11px; top: -11px;
-            width: 48px; height: 48px;
-            border-radius: 50%;
-            background: rgba(245, 158, 11, 0.4);
-            animation: radar-pulse 2.2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
-            pointer-events: none;
-        }
-    </style>
 </head>
 <body class="h-full flex flex-col text-slate-100 selection:bg-amber-500 selection:text-dark-900" x-data="gatherApp()" x-init="initApp()">
 
@@ -196,7 +76,7 @@
                     <span class="font-extrabold text-base tracking-tight text-white">GATHER<span class="text-amber-400">MAP</span></span>
                     <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-amber-500/15 text-amber-400 border border-amber-500/30">Pro UX</span>
                 </div>
-                <p class="text-[10px] text-slate-400 hidden sm:block">Equal-Weight Geometric Center & Fair Group Eatery Matchmaker</p>
+                <p class="text-[10px] text-slate-400 hidden sm:block">Tâm hình học Weiszfeld & Tìm quán ăn công bằng cho nhóm</p>
             </div>
         </div>
 
@@ -215,15 +95,15 @@
         <!-- Right Side: GPS Button & Share -->
         <div class="flex items-center space-x-2">
             <!-- One-tap GPS Button -->
-            <button @click="useCurrentLocation()" :disabled="locating" class="px-2.5 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-xs font-semibold text-blue-300 transition flex items-center space-x-1.5 shadow-sm" title="Pin your real coordinates">
+            <button @click="useCurrentLocation()" :disabled="locating" class="px-2.5 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-xs font-semibold text-blue-300 transition flex items-center space-x-1.5 shadow-sm disabled:opacity-50" title="Định vị tọa độ thực tế của bạn">
                 <i class="fa-solid fa-crosshairs text-blue-400" :class="locating ? 'fa-spin' : ''"></i>
-                <span class="hidden sm:inline" x-text="locating ? 'Locating...' : 'My GPS'"></span>
+                <span class="hidden sm:inline" x-text="locating ? 'Đang định vị...' : 'GPS của tôi'"></span>
             </button>
 
             <!-- Outing Code / Share Button -->
-            <button @click="copyShareLink()" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-750 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center space-x-1.5 shadow-sm">
+            <button @click="copyShareLink()" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-750 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center space-x-1.5 shadow-sm active:scale-95" title="Sao chép link chia sẻ kèo">
                 <i class="fa-solid fa-share-nodes text-amber-400"></i>
-                <span x-text="copied ? 'Copied!' : outingCode"></span>
+                <span x-text="copied ? 'Đã chép link!' : (outingCode ? '#' + outingCode : 'Chia sẻ')"></span>
             </button>
         </div>
     </header>
@@ -249,7 +129,7 @@
                     <div class="flex items-center space-x-2">
                         <div class="flex -space-x-1.5 overflow-hidden">
                             <template x-for="f in friends" :key="f.id">
-                                <span :class="f.color" class="inline-block h-6 w-6 rounded-full text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-dark-900" x-text="f.name.charAt(0)"></span>
+                                <span :class="f.color" class="inline-block h-6 w-6 rounded-full text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-dark-900" x-text="(f.name || 'F').charAt(0)"></span>
                             </template>
                         </div>
                         <i class="fa-solid fa-chevron-right text-xs opacity-70 group-hover:translate-x-0.5 transition"></i>
@@ -264,28 +144,28 @@
                 <div class="p-3 rounded-xl bg-dark-850 border border-slate-800 text-xs space-y-2">
                     <div class="flex items-center space-x-1.5 font-bold text-slate-300">
                         <i class="fa-solid fa-brain text-amber-400"></i>
-                        <span>Interpreted Group Criteria</span>
+                        <span>Tiêu chí nhóm đang áp dụng</span>
                     </div>
 
                     <div class="flex flex-wrap gap-1.5 pt-0.5">
                         <template x-if="confirmedConstraints.vegetarian">
                             <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold flex items-center space-x-1">
-                                <i class="fa-solid fa-leaf text-[9px]"></i><span>Vegetarian</span>
+                                <i class="fa-solid fa-leaf text-[9px]"></i><span>Ăn chay</span>
                             </span>
                         </template>
                         <template x-if="confirmedConstraints.no_alcohol">
                             <span class="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold flex items-center space-x-1">
-                                <i class="fa-solid fa-ban-smoking text-[9px]"></i><span>No Alcohol</span>
+                                <i class="fa-solid fa-ban-smoking text-[9px]"></i><span>Không cồn</span>
                             </span>
                         </template>
                         <template x-if="confirmedConstraints.quiet_only">
                             <span class="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold flex items-center space-x-1">
-                                <i class="fa-solid fa-volume-xmark text-[9px]"></i><span>Quiet Only</span>
+                                <i class="fa-solid fa-volume-xmark text-[9px]"></i><span>Yên tĩnh</span>
                             </span>
                         </template>
                         <template x-if="confirmedConstraints.max_price_vnd && confirmedConstraints.max_price_vnd < 500000">
                             <span class="px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 text-[10px] font-bold flex items-center space-x-1">
-                                <i class="fa-solid fa-tag text-[9px]"></i><span x-text="'Max ' + (confirmedConstraints.max_price_vnd/1000) + 'k'"></span>
+                                <i class="fa-solid fa-tag text-[9px]"></i><span x-text="'Tối đa ' + (confirmedConstraints.max_price_vnd/1000) + 'k'"></span>
                             </span>
                         </template>
 
@@ -296,7 +176,7 @@
                         </template>
 
                         <template x-if="!confirmedConstraints.vegetarian && !confirmedConstraints.no_alcohol && !confirmedConstraints.quiet_only && (!confirmedSoftPreferences || confirmedSoftPreferences.length === 0)">
-                            <span class="text-slate-500 text-[11px] italic">Standard Discovery mode (unrestricted)</span>
+                            <span class="text-slate-500 text-[11px] italic">Chế độ khám phá tự do (Không giới hạn tiêu chí)</span>
                         </template>
                     </div>
                 </div>
@@ -307,7 +187,7 @@
                         <i class="fa-solid fa-award text-amber-400"></i>
                         <span>Top <span x-text="filteredShortlist.length"></span> Gợi ý Quán Ăn</span>
                     </span>
-                    <span class="text-[11px] text-amber-400/80 font-mono">Fairness: 65% Avg + 35% Min</span>
+                    <span class="text-[11px] text-amber-400/80 font-mono">Công bằng: 65% Trung bình + 35% Điểm thấp nhất</span>
                 </div>
 
                 <!-- QUICK FILTER CHIPS (1-TOUCH FILTERS) -->
@@ -338,15 +218,83 @@
                     </button>
                 </div>
 
-                <!-- Empty State -->
-                <template x-if="filteredShortlist.length === 0">
-                    <div class="p-8 text-center bg-dark-850 rounded-2xl border border-slate-800 space-y-3">
-                        <i class="fa-solid fa-store-slash text-3xl text-slate-600"></i>
-                        <p class="text-sm font-semibold text-slate-300">Không có quán nào khớp với bộ lọc</p>
-                        <p class="text-xs text-slate-500">Thử chọn bộ lọc "🌟 Tất cả" hoặc nới rộng bán kính tìm kiếm.</p>
-                        <button @click="setQuickFilter('all')" class="px-4 py-2 rounded-lg bg-amber-500 text-dark-950 font-bold text-xs">
-                            Hiện tất cả các quán
+                <!-- SEARCH FAILURE / STALE SHORTLIST RETRY BANNER -->
+                <template x-if="searchFailed">
+                    <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs flex items-center justify-between space-x-2">
+                        <div class="flex items-center space-x-2 text-amber-200">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
+                            <div>
+                                <p class="font-bold">Đã lưu bán kính nhưng chưa tải được danh sách mới.</p>
+                                <p class="text-[11px] text-amber-300/80" x-text="searchErrorMessage || 'Danh sách bên dưới đang là kết quả cũ. Bấm Tìm lại để cập nhật.'"></p>
+                            </div>
+                        </div>
+                        <button @click="retrySearchOnly()" :disabled="ranking" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-dark-950 font-bold text-xs shrink-0 flex items-center space-x-1 transition shadow">
+                            <i class="fa-solid fa-rotate-right" :class="ranking ? 'fa-spin' : ''"></i>
+                            <span>Tìm lại</span>
                         </button>
+                    </div>
+                </template>
+
+                <!-- LOADING INDICATOR -->
+                <template x-if="ranking">
+                    <div class="p-8 text-center bg-dark-850 rounded-2xl border border-slate-800 space-y-3">
+                        <i class="fa-solid fa-spinner fa-spin text-3xl text-amber-400"></i>
+                        <p class="text-sm font-semibold text-slate-200">Đang phân tích và tìm quán tối ưu cho cả nhóm...</p>
+                        <p class="text-xs text-slate-400">Tính toán tâm Weiszfeld và mức độ công bằng di chuyển</p>
+                    </div>
+                </template>
+
+                <!-- DISTINCT EMPTY STATES (Truthful, non-fake feedback) -->
+                <template x-if="!ranking && filteredShortlist.length === 0">
+                    <div class="p-8 text-center bg-dark-850 rounded-2xl border border-slate-800 space-y-3">
+                        <template x-if="emptyStateReason === 'hard_constraint_filtered'">
+                            <div>
+                                <i class="fa-solid fa-filter-circle-xmark text-3xl text-amber-400 mb-2 block"></i>
+                                <p class="text-sm font-semibold text-slate-200">Không có quán nào thỏa mãn tất cả tiêu chí khắt khe</p>
+                                <p class="text-xs text-slate-400 mt-1">Các điều kiện như ăn chay, không cồn hoặc ngân sách giới hạn có thể đã lọc hết địa điểm trong bán kính này.</p>
+                                <div class="pt-3 flex justify-center space-x-2">
+                                    <button @click="openGroupModal()" class="px-3 py-1.5 rounded-lg bg-amber-500 text-dark-950 font-bold text-xs">
+                                        Nới lỏng tiêu chí
+                                    </button>
+                                    <button @click="setRadius(5000)" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-750 text-slate-200 font-bold text-xs border border-slate-700">
+                                        Tăng bán kính lên 5km
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="emptyStateReason === 'no_data'">
+                            <div>
+                                <i class="fa-solid fa-store-slash text-3xl text-slate-500 mb-2 block"></i>
+                                <p class="text-sm font-semibold text-slate-200">Không tìm thấy quán nào trong bán kính <span x-text="(searchRadiusMeters/1000).toFixed(1) + 'km'"></span></p>
+                                <p class="text-xs text-slate-400 mt-1">Thử nới rộng bán kính tìm kiếm quanh tâm Weiszfeld.</p>
+                                <button @click="setRadius(5000)" class="mt-3 px-4 py-2 rounded-lg bg-amber-500 text-dark-950 font-bold text-xs">
+                                    Mở rộng bán kính lên 5km
+                                </button>
+                            </div>
+                        </template>
+
+                        <template x-if="emptyStateReason === 'api_error'">
+                            <div>
+                                <i class="fa-solid fa-triangle-exclamation text-3xl text-rose-400 mb-2 block"></i>
+                                <p class="text-sm font-semibold text-slate-200">Không thể kết nối máy chủ</p>
+                                <p class="text-xs text-slate-400 mt-1">Đã có lỗi xảy ra trong quá trình tính toán gợi ý.</p>
+                                <button @click="executeSearchAndRank()" class="mt-3 px-4 py-2 rounded-lg bg-amber-500 text-dark-950 font-bold text-xs">
+                                    Thử lại
+                                </button>
+                            </div>
+                        </template>
+
+                        <template x-if="!emptyStateReason && shortlist.length > 0">
+                            <div>
+                                <i class="fa-solid fa-list-check text-3xl text-slate-500 mb-2 block"></i>
+                                <p class="text-sm font-semibold text-slate-200">Không có quán nào khớp với bộ lọc nhanh</p>
+                                <p class="text-xs text-slate-400 mt-1">Vui lòng bấm "🌟 Tất cả" để xem toàn bộ danh sách quán đã tìm được.</p>
+                                <button @click="setQuickFilter('all')" class="mt-3 px-4 py-2 rounded-lg bg-amber-500 text-dark-950 font-bold text-xs">
+                                    Hiện tất cả các quán
+                                </button>
+                            </div>
+                        </template>
                     </div>
                 </template>
 
@@ -364,7 +312,7 @@
                                 <span :class="index === 0 ? 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-dark-950 shadow-amber-500/40' : 'bg-slate-900/90 text-slate-200 border border-slate-700'" class="h-6 px-2 rounded-md font-black text-xs flex items-center justify-center shadow-md">
                                     <span x-text="'#' + (index + 1)"></span>
                                 </span>
-                                <!-- Opening Hours Badge -->
+                                <!-- Truthful Opening Hours Badge -->
                                 <span :class="getOpeningBadge(venue).colorClass" class="text-[10px] font-extrabold px-2 py-0.5 rounded shadow flex items-center space-x-1 backdrop-blur-md border">
                                     <i class="fa-solid" :class="getOpeningBadge(venue).icon"></i>
                                     <span x-text="getOpeningBadge(venue).label"></span>
@@ -401,7 +349,7 @@
                             <!-- Address & Travel Preview -->
                             <div class="flex items-center justify-between text-[11px] text-slate-400">
                                 <span class="truncate flex-1 pr-2" x-text="venue.address"></span>
-                                <span class="text-slate-300 font-semibold shrink-0" x-text="venue.distFromCenterKm + ' km from center'"></span>
+                                <span class="text-slate-300 font-semibold shrink-0" x-text="(venue.distFromCenterKm != null && !isNaN(venue.distFromCenterKm)) ? Number(venue.distFromCenterKm).toFixed(1) + ' km từ tâm' : ''"></span>
                             </div>
 
                             <!-- Live Gemini Concierge Rationale -->
@@ -415,30 +363,50 @@
                                 </div>
                             </template>
 
-                            <!-- Individual Member Satisfaction Breakdown (Hidden per user request) -->
-                            <div class="hidden space-y-1.5 bg-dark-950/70 p-2.5 rounded-xl border border-slate-800" style="display: none;">
-                                <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
-                                    <span>Member Satisfaction & Travel:</span>
-                                    <span class="text-[10px] text-emerald-400">Fairness: <strong x-text="venue.fairnessIndex"></strong></span>
-                                </div>
-                                <div class="space-y-1">
-                                    <template x-for="mb in venue.memberBreakdowns" :key="mb.friendName">
-                                        <div class="flex items-center justify-between text-[11px]">
-                                             <span class="text-slate-300 w-20 truncate font-medium" x-text="mb.friendName"></span>
-                                            <div class="flex-1 mx-2 bg-slate-800 h-2 rounded-full overflow-hidden">
-                                                <div :style="'width: ' + mb.score + '%'" :class="mb.score >= 80 ? 'bg-emerald-400' : (mb.score >= 65 ? 'bg-amber-400' : 'bg-rose-400')" class="h-full rounded-full transition-all"></div>
+                            <!-- EXPANDABLE: Vì sao quán này được chọn? (Member Satisfaction & Travel Distance Breakdown) -->
+                            <div class="border-t border-slate-800/60 pt-2">
+                                <button @click.stop="toggleBreakdown(venue.id)" class="w-full flex items-center justify-between text-[11px] text-amber-400/90 hover:text-amber-300 font-semibold py-1 transition">
+                                    <span class="flex items-center space-x-1.5">
+                                        <i class="fa-solid fa-chart-pie text-xs"></i>
+                                        <span>Vì sao quán này được chọn?</span>
+                                    </span>
+                                    <span class="flex items-center space-x-1 text-[10px] text-slate-400">
+                                        <span>Chi tiết hài lòng</span>
+                                        <i class="fa-solid fa-chevron-down text-[9px] transition-transform duration-200" :class="isBreakdownExpanded(venue.id) ? 'rotate-180' : ''"></i>
+                                    </span>
+                                </button>
+
+                                <div x-show="isBreakdownExpanded(venue.id)" class="mt-2 space-y-2 bg-dark-950/70 p-2.5 rounded-xl border border-slate-800">
+                                    <div class="flex items-center justify-between text-[11px] font-bold text-slate-300">
+                                        <span>Mức độ hài lòng từng thành viên:</span>
+                                        <span class="text-[10px] text-emerald-400 font-mono">Chỉ số công bằng: <strong x-text="venue.fairnessIndex"></strong></span>
+                                    </div>
+                                    <div class="space-y-1.5 pt-1">
+                                        <template x-for="mb in (venue.memberBreakdowns || [])" :key="mb.friendName">
+                                            <div class="space-y-0.5">
+                                                <div class="flex items-center justify-between text-[11px]">
+                                                    <span class="text-slate-300 w-24 truncate font-medium" x-text="mb.friendName"></span>
+                                                    <div class="flex-1 mx-2 bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                        <div :style="'width: ' + mb.score + '%'" :class="mb.score >= 80 ? 'bg-emerald-400' : (mb.score >= 65 ? 'bg-amber-400' : 'bg-rose-400')" class="h-full rounded-full transition-all"></div>
+                                                    </div>
+                                                    <div class="text-right w-24 text-[10px] text-slate-400">
+                                                        <span class="font-extrabold text-slate-200" x-text="mb.score + '%'"></span>
+                                                        <span class="ml-1 text-amber-400 font-semibold" x-text="'(~' + mb.travelMins + 'p)'"></span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="text-right w-24 text-[10px] text-slate-400">
-                                                <span class="font-extrabold text-slate-200" x-text="mb.score + '%'"></span>
-                                                <span class="ml-1 text-amber-400 font-semibold" x-text="'(~' + mb.travelMins + 'm)'"></span>
-                                            </div>
-                                        </div>
-                                    </template>
+                                        </template>
+                                    </div>
+                                    <!-- Explicit Travel Time Disclaimer -->
+                                    <p class="text-[9px] text-slate-400/90 italic pt-1.5 flex items-start space-x-1 border-t border-slate-800/80">
+                                        <i class="fa-solid fa-circle-info text-[9px] text-slate-500 mt-0.5 shrink-0"></i>
+                                        <span>Thời gian di chuyển là ước tính dựa trên khoảng cách địa lý (tốc độ trung bình nội thành), không phản ánh tình trạng ùn tắc giao thông thực tế.</span>
+                                    </p>
                                 </div>
                             </div>
 
                             <!-- Structured Evidence Badges (Matches, Partials, Unknowns, Mismatches) -->
-                            <div class="flex flex-wrap gap-1 text-[10px] pt-1">
+                            <div class="flex flex-wrap gap-1 text-[10px] pt-0.5">
                                 <template x-for="m in (venue.matches || [])" :key="'m-' + m">
                                     <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-medium flex items-center space-x-1">
                                         <i class="fa-solid fa-check text-[9px]"></i><span x-text="m"></span>
@@ -487,14 +455,14 @@
                                 </button>
 
                                 <div class="flex items-center space-x-1.5">
-                                    <!-- NÚT BÌNH CHỌN VỚI POP ANIMATION -->
-                                    <button @click.stop="voteForVenue(venue)" :class="votedVenueId === venue.id ? 'scale-110 bg-amber-500 text-dark-950 font-black ring-2 ring-white' : 'bg-dark-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700'" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center space-x-1.5 shadow-sm active:scale-95" title="Bình chọn cho quán này">
-                                        <i class="fa-solid fa-thumbs-up text-xs" :class="votedVenueId === venue.id ? 'text-dark-950' : 'text-amber-400'"></i>
+                                    <!-- NÚT BÌNH CHỌN VỚI DEDUPLICATION & TOGGLE -->
+                                    <button @click.stop="voteForVenue(venue)" :class="myVotedVenueId === venue.id ? 'scale-105 bg-amber-500 text-dark-950 font-black ring-2 ring-white' : 'bg-dark-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700'" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center space-x-1.5 shadow-sm active:scale-95" title="Bình chọn hoặc bấm lại để hủy phiếu">
+                                        <i class="fa-solid fa-thumbs-up text-xs" :class="myVotedVenueId === venue.id ? 'text-dark-950' : 'text-amber-400'"></i>
                                         <span>Vote</span>
                                         <span class="px-1.5 py-0.2 rounded text-[10px] bg-dark-950/80 text-amber-400 font-bold" x-text="venue.votes || 0"></span>
                                     </button>
 
-                                    <!-- NÚT XEM CÁC REVIEWER TRƯỚC (BOTTOMLINE) -->
+                                    <!-- NÚT XEM CÁC REVIEWER TRƯỚC -->
                                     <button @click.stop="openReviewersDrawer(venue)" class="px-2.5 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm active:scale-95" title="Xem đánh giá từ các reviewer trước">
                                         <i class="fa-solid fa-comments text-amber-400 text-xs"></i>
                                         <span>Reviewer</span>
@@ -553,26 +521,43 @@
         <div id="map-container" class="flex-1 relative h-full w-full bg-dark-950 flex flex-col" :class="mobileView === 'list' ? 'hidden lg:flex' : 'flex'">
             <div id="map"></div>
 
+            <!-- Map Tile Error Notice -->
+            <div x-show="mapTileError" class="absolute top-4 left-4 z-[1000] bg-rose-950/95 backdrop-blur border border-rose-600/50 rounded-xl p-3 shadow-2xl text-xs space-y-2 max-w-xs text-rose-200 pointer-events-auto" x-cloak>
+                <div class="flex items-center space-x-2 font-bold text-rose-300">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                    <span>Không thể tải lớp bản đồ</span>
+                </div>
+                <p class="text-[11px] text-rose-200/90 leading-relaxed">Máy chủ tile bản đồ nền đang bị gián đoạn. Các điểm ghim và bán kính vẫn hoạt động bình thường.</p>
+                <div class="pt-1 flex items-center space-x-2">
+                    <button @click="switchMapStyle('osm'); retryMapTiles()" class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition shadow">
+                        Đổi sang OpenStreetMap
+                    </button>
+                    <button @click="retryMapTiles()" class="px-2 py-1 rounded-lg bg-dark-900 hover:bg-dark-800 text-rose-200 border border-rose-700/50 text-[10px] transition">
+                        Thử lại
+                    </button>
+                </div>
+            </div>
+
             <!-- Floating Map Legend & Guide -->
             <div class="absolute top-4 right-4 z-[1000] bg-dark-900/90 backdrop-blur border border-slate-800 rounded-xl p-3 shadow-2xl text-xs space-y-1.5 max-w-xs pointer-events-auto">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-                    <span class="font-bold text-slate-200">Map Controls</span>
+                    <span class="font-bold text-slate-200">Điều khiển Bản đồ</span>
                     <span class="text-[10px] text-amber-400 font-mono" x-text="centerCoords.lat.toFixed(4) + ', ' + centerCoords.lng.toFixed(4)"></span>
                 </div>
                 <div class="flex items-center space-x-2 text-[11px]">
                     <span class="w-3 h-3 rounded-full bg-amber-400 shrink-0 shadow-sm shadow-amber-400"></span>
-                    <span class="text-slate-300">Tâm hình học Weiszfeld (Cố định chuẩn xác)</span>
+                    <span class="text-slate-300">Tâm hình học Weiszfeld (Công bằng)</span>
                 </div>
                 <div class="flex items-center space-x-2 text-[11px]">
                     <span class="w-3 h-3 rounded-full bg-blue-500 shrink-0"></span>
-                    <span class="text-slate-300">Vị trí các bạn (Cố định tọa độ thực)</span>
+                    <span class="text-slate-300">Vị trí thành viên trong nhóm</span>
                 </div>
                 <!-- Clean Map Style Switcher -->
                 <div class="pt-1.5 border-t border-slate-800 flex items-center space-x-1">
-                    <span class="text-[10px] text-slate-400 font-semibold mr-1">Style:</span>
-                    <button @click="switchMapStyle('osm')" :class="currentMapStyle === 'osm' ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded text-[10px] border border-slate-700 transition">OSM</button>
-                    <button @click="switchMapStyle('dark')" :class="currentMapStyle === 'dark' ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded text-[10px] border border-slate-700 transition">Dark</button>
-                    <button @click="switchMapStyle('street')" :class="currentMapStyle === 'street' ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded text-[10px] border border-slate-700 transition">Esri</button>
+                    <span class="text-[10px] text-slate-400 font-semibold mr-1">Nền:</span>
+                    <button @click="switchMapStyle('osm')" :class="currentMapStyle === 'osm' ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded text-[10px] border border-slate-700 transition">Sáng</button>
+                    <button @click="switchMapStyle('dark')" :class="currentMapStyle === 'dark' ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded text-[10px] border border-slate-700 transition">Tối</button>
+                    <button @click="switchMapStyle('street')" :class="currentMapStyle === 'street' ? 'bg-amber-500 text-dark-950 font-bold' : 'bg-dark-950 text-slate-400 hover:text-white'" class="px-2 py-0.5 rounded text-[10px] border border-slate-700 transition">Đường phố</button>
                 </div>
             </div>
         </div>
@@ -593,14 +578,14 @@
                         <p class="text-[10px] sm:text-[11px] text-slate-400">Điểm xuất phát để tính tâm Weiszfeld, mong muốn để Gemini AI tìm quán</p>
                     </div>
                 </div>
-                <button @click="closeGroupModal()" class="text-slate-400 hover:text-white p-1">
+                <button @click="closeGroupModal()" class="text-slate-400 hover:text-white p-1" title="Đóng">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
             <!-- Scrollable Body -->
             <div class="overflow-y-auto custom-scroll pr-1 space-y-3.5 flex-1">
-                <!-- SECTION 1: GROUP MEMBERS & MANUAL STARTING ADDRESS -->
+                <!-- SECTION 1: GROUP MEMBERS & STARTING ADDRESS -->
                 <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
                         <span class="font-bold text-slate-200 flex items-center space-x-1.5">
@@ -618,7 +603,7 @@
                             <div class="p-2.5 rounded-xl bg-dark-850 border border-slate-800 space-y-2">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-2 flex-1 min-w-0">
-                                        <span :class="f.color" class="w-6 h-6 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0" x-text="f.name.charAt(0)"></span>
+                                        <span :class="f.color" class="w-6 h-6 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0" x-text="(f.name || 'F').charAt(0)"></span>
                                         <input type="text" x-model="f.name" placeholder="Tên bạn" class="bg-transparent font-bold text-xs text-white border-b border-transparent focus:border-amber-400 focus:outline-none w-36 truncate" />
                                     </div>
                                     <button x-show="friends.length > 2" @click="removeFriend(idx)" class="text-slate-500 hover:text-rose-400 p-1 text-xs transition" title="Xóa bạn này">
@@ -635,7 +620,7 @@
                                             <i x-show="f.locating" class="fa-solid fa-spinner fa-spin"></i>
                                         </button>
                                     </div>
-                                    <span class="text-[9px] text-slate-500 block pt-1">💡 Nhập địa chỉ rồi ấn Enter hoặc bấm nút kính lúp để định vị</span>
+                                    <span class="text-[9px] text-slate-500 block pt-1">💡 Nhập địa chỉ rồi ấn Enter hoặc bấm kính lúp để định vị</span>
                                 </div>
                             </div>
                         </template>
@@ -688,7 +673,7 @@
                         </div>
                         
                         <div class="flex items-center space-x-1.5">
-                            <input type="text" x-model="customCenterAddress" :placeholder="isCustomCenter ? customCenterAddress : 'Nhập địa điểm tâm mới (vd: Chợ Bến Thành, Q.1, L81...)'" class="bg-dark-900 text-[11px] text-slate-200 rounded-lg px-2.5 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchCustomCenter(customCenterAddress)" />
+                            <input type="text" x-model="customCenterAddress" :placeholder="isCustomCenter ? customCenterAddress : 'Nhập địa điểm tâm mới (vd: Chợ Bến Thành, Landmark 81...)'" class="bg-dark-900 text-[11px] text-slate-200 rounded-lg px-2.5 py-1.5 border border-slate-700 w-full truncate focus:outline-none focus:border-amber-400" @keydown.enter="searchCustomCenter(customCenterAddress)" />
                             <button type="button" @click="searchCustomCenter(customCenterAddress)" :disabled="searchingCenter" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-dark-950 font-bold rounded-lg text-xs shrink-0 transition disabled:opacity-50" title="Đặt tâm điểm tại địa điểm này">
                                 <i x-show="!searchingCenter" class="fa-solid fa-magnifying-glass"></i>
                                 <i x-show="searchingCenter" class="fa-solid fa-spinner fa-spin"></i>
@@ -733,7 +718,6 @@
         </div>
     </div>
 
-    
     <!-- MODAL: CÁC REVIEWER TRƯỚC & HỒ SƠ TINH CHẾ -->
     <div x-show="showReviewersModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md" x-cloak>
         <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-2xl max-h-[90vh] flex flex-col" @click.away="closeReviewersModal()">
@@ -747,7 +731,7 @@
                     </div>
                     <p class="text-xs text-slate-400 truncate mt-0.5" x-text="activeReviewerVenue?.address"></p>
                 </div>
-                <button @click="closeReviewersModal()" class="text-slate-400 hover:text-white shrink-0 p-1">
+                <button @click="closeReviewersModal()" class="text-slate-400 hover:text-white shrink-0 p-1" title="Đóng">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
@@ -822,13 +806,13 @@
             </div>
 
             <!-- Feed Reviewer Trước -->
-            <div class="space-y-2.5 overflow-y-auto custom-scroll pr-1 flex-1 min-h-[200px]">
+            <div class="space-y-2.5 overflow-y-auto custom-scroll pr-1 flex-1 min-h-[160px]">
                 <span class="text-xs font-bold text-slate-300 block">Đánh giá tiêu biểu từ Google, TikTok & Facebook:</span>
                 <template x-for="rev in (activeReviewerVenue?.reviewers || [])" :key="rev.id">
                     <div class="p-3 rounded-xl bg-dark-850 border border-slate-800 space-y-1.5">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
-                                <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-[11px] flex items-center justify-center shrink-0" x-text="rev.authorName.charAt(0)"></span>
+                                <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-[11px] flex items-center justify-center shrink-0" x-text="(rev.authorName || 'R').charAt(0)"></span>
                                 <span class="font-bold text-xs text-slate-200" x-text="rev.authorName"></span>
                                 <span class="text-[10px] text-slate-500" x-text="rev.reviewDate"></span>
                             </div>
@@ -871,7 +855,7 @@
 
     <!-- MODAL: CHIA SẺ KÈO HẸN & RỦ BẠN BÈ -->
     <div x-show="showShareModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md" x-cloak>
-        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] flex flex-col" @click.away="showShareModal = false">
+        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] flex flex-col" @click.away="closeShareModal()">
             
             <!-- Header -->
             <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
@@ -884,7 +868,7 @@
                         <p class="text-xs text-slate-400" x-text="'Quán: ' + shareModalData.venueName"></p>
                     </div>
                 </div>
-                <button @click="showShareModal = false" class="text-slate-400 hover:text-white p-1">
+                <button @click="closeShareModal()" class="text-slate-400 hover:text-white p-1" title="Đóng">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
@@ -899,7 +883,7 @@
                     <div class="space-y-1 text-xs">
                         <span class="font-extrabold text-amber-400 text-sm block">📱 Quét mã vào kèo ngay</span>
                         <p class="text-slate-300 leading-relaxed">Bạn bè quét camera để xem bản đồ, kiểm tra khoảng cách và cùng bấm Vote trực tiếp!</p>
-                        <span class="text-[11px] text-slate-500 font-mono" x-text="'Mã kèo: #' + outingCode"></span>
+                        <span class="text-[11px] text-slate-500 font-mono" x-text="'Mã kèo: #' + (outingCode || 'GATHER')"></span>
                     </div>
                 </div>
 
@@ -918,7 +902,7 @@
 
             <!-- Footer Action Buttons -->
             <div class="pt-3 border-t border-slate-800 flex items-center space-x-2 shrink-0">
-                <button @click="showShareModal = false" class="py-2.5 px-4 rounded-xl bg-dark-800 hover:bg-slate-750 text-slate-300 font-bold text-xs transition">
+                <button @click="closeShareModal()" class="py-2.5 px-4 rounded-xl bg-dark-800 hover:bg-slate-750 text-slate-300 font-bold text-xs transition">
                     Đóng
                 </button>
                 <button @click="copyShareMessage()" class="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-dark-950 font-black text-xs flex-1 transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2 active:scale-95">
@@ -933,1085 +917,6 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT APPLICATION CORE -->
-    <script>
-        function gatherApp() {
-            return {
-                outingCode: 'EAT-2026',
-                searchRadiusMeters: 3000,
-                activeScenario: 'all',
-                activeQuickFilter: 'all',
-                mobileView: 'list',
-                copied: false,
-                ranking: false,
-                parsing: false,
-                locating: false,
-                votedVenueId: null,
-                showGroupModal: false,
-                showFriendsModal: false,
-                showWishModal: false,
-                showReviewersModal: false,
-                showShareModal: false,
-                showChatPaste: false,
-                isCustomCenter: false,
-                customCenterAddress: '',
-                searchingCenter: false,
-                shareModalData: {
-                    message: '',
-                    shareUrl: '',
-                    venueName: '',
-                    appUrl: ''
-                },
-                activeReviewerVenue: null,
-                drawerNewReview: {
-                    content: '',
-                    rating: 5
-                },
-                searchMessage: '',
-
-                get filteredShortlist() {
-                    if (this.activeQuickFilter === 'all') return this.shortlist;
-                    return this.shortlist.filter(venue => {
-                        if (this.activeQuickFilter === 'car') {
-                            const ease = venue.attributes?.parking?.ease;
-                            const note = (venue.attributes?.parking?.note || '').toLowerCase();
-                            const unknowns = (venue.unknowns || []).join(' ').toLowerCase();
-                            return ease === 'easy' || note.includes('ô tô') || note.includes('oto') || note.includes('car') || unknowns.includes('ô tô');
-                        }
-                        if (this.activeQuickFilter === 'late_night') {
-                            const badge = this.getOpeningBadge(venue);
-                            const oh = venue.openingHours;
-                            return badge.type === '24_7' || (oh && oh.close && (oh.close >= '23:00' || oh.close <= '04:00')) || (venue.tags || []).some(t => String(t).toLowerCase().includes('night') || String(t).toLowerCase().includes('24h') || String(t).toLowerCase().includes('24/7'));
-                        }
-                        if (this.activeQuickFilter === 'budget') {
-                            const price = venue.pricePerPersonVnd || 0;
-                            return price > 0 && price <= 100000;
-                        }
-                        if (this.activeQuickFilter === 'quiet') {
-                            const noise = venue.attributes?.noiseLevel?.value;
-                            return noise === 'quiet' || (venue.tags || []).some(t => String(t).toLowerCase().includes('quiet') || String(t).toLowerCase().includes('yên tĩnh'));
-                        }
-                        if (this.activeQuickFilter === 'view') {
-                            const name = (venue.name || '').toLowerCase();
-                            const cat = (venue.category || '').toLowerCase();
-                            const tags = (venue.tags || []).map(t => String(t).toLowerCase());
-                            return tags.some(t => t.includes('view') || t.includes('aesthetic') || t.includes('rooftop')) || name.includes('rooftop') || cat.includes('lounge');
-                        }
-                        return true;
-                    });
-                },
-
-                setQuickFilter(filterKey) {
-                    this.activeQuickFilter = filterKey;
-                    if (this.filteredShortlist.length > 0) {
-                        this.selectVenue(this.filteredShortlist[0]);
-                    }
-                },
-
-                pickLandmark(friend, landmarkName) {
-                    friend.customAddress = landmarkName;
-                    this.searchAddressForFriend(friend, landmarkName);
-                },
-
-                useCurrentLocationForFriend(friend) {
-                    if (!navigator.geolocation) {
-                        this.showToast('⚠️ Trình duyệt không hỗ trợ định vị GPS.');
-                        return;
-                    }
-                    friend.locating = true;
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            friend.lat = Number(pos.coords.latitude.toFixed(6));
-                            friend.lng = Number(pos.coords.longitude.toFixed(6));
-                            friend.customAddress = 'Vị trí GPS hiện tại';
-                            friend.locating = false;
-                            this.showToast(`📍 Đã lấy tọa độ GPS cho ${friend.name}!`);
-                            this.renderFriendMarkers();
-                            this.calculateCenter().then(() => this.executeSearchAndRank());
-                        },
-                        (err) => {
-                            friend.locating = false;
-                            this.showToast('⚠️ Không thể lấy GPS: ' + (err.message || 'Quyền truy cập bị từ chối'));
-                        },
-                        { enableHighAccuracy: true, timeout: 8000 }
-                    );
-                },
-
-                addWishTag(friend, tag) {
-                    if (!friend.wish || !friend.wish.trim()) {
-                        friend.wish = tag;
-                    } else if (!friend.wish.toLowerCase().includes(tag.toLowerCase())) {
-                        friend.wish = `${friend.wish.trim()}, ${tag}`;
-                    }
-                },
-
-                copyShareMessage() {
-                    if (this.shareModalData.message) {
-                        navigator.clipboard.writeText(this.shareModalData.message);
-                        this.showToast('📋 Đã sao chép tin nhắn vào clipboard!');
-                    }
-                },
-
-                switchMobileView(v) {
-                    this.mobileView = v;
-                    if (v === 'map') {
-                        this.$nextTick(() => {
-                            setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 60);
-                            setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 220);
-                        });
-                    }
-                },
-                openGroupModal() {
-                    this.showGroupModal = true;
-                },
-                closeGroupModal() {
-                    this.showGroupModal = false;
-                    this.$nextTick(() => {
-                        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 80);
-                    });
-                },
-                openFriendsModal() {
-                    this.showGroupModal = true;
-                },
-                closeFriendsModal() {
-                    this.closeGroupModal();
-                },
-                updateAndCloseFriendsModal() {
-                    this.saveAndParseGroup();
-                },
-                closeWishModal() {
-                    this.closeGroupModal();
-                },
-                closeReviewersModal() {
-                    this.showReviewersModal = false;
-                    this.$nextTick(() => {
-                        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 80);
-                    });
-                },
-
-                async openReviewersDrawer(venue) {
-                    this.activeReviewerVenue = venue;
-                    this.showReviewersModal = true;
-                    try {
-                        const res = await fetch('/api/venues/' + venue.id + '/reviewers');
-                        const data = await res.json();
-                        if (data && data.reviewers) {
-                            this.activeReviewerVenue = {
-                                ...venue,
-                                reviewers: data.reviewers,
-                                reviewerCount: data.reviewerCount ?? (data.reviewers ? data.reviewers.length : 0),
-                                socialHighlights: data.socialHighlights || venue.socialHighlights || {}
-                            };
-                        }
-                    } catch (e) {
-                        console.error('Error fetching reviewers:', e);
-                    }
-                },
-
-                async submitReviewFromDrawer() {
-                    if (!this.drawerNewReview.content || !this.drawerNewReview.content.trim() || !this.activeReviewerVenue) return;
-                    const venueId = this.activeReviewerVenue.id;
-                    const content = this.drawerNewReview.content.trim();
-                    try {
-                        const res = await fetch('/api/venues/' + venueId + '/reviews', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                source: 'user',
-                                authorName: 'Bạn (Người dùng)',
-                                rating: Number(this.drawerNewReview.rating || 5.0),
-                                content
-                            })
-                        });
-                        const data = await res.json();
-                        if (data && data.success) {
-                            this.showToast('🎉 Nhận xét của bạn đã được đăng thành công!');
-                            if (!this.activeReviewerVenue.reviewers) this.activeReviewerVenue.reviewers = [];
-                            this.activeReviewerVenue.reviewers.unshift({
-                                id: data.id || ('rev-' + Date.now()),
-                                authorName: 'Bạn (Người dùng)',
-                                source: 'user',
-                                rating: Number(this.drawerNewReview.rating || 5.0),
-                                content,
-                                reviewDate: 'Vừa xong'
-                            });
-                            this.drawerNewReview.content = '';
-                        }
-                    } catch (e) {
-                        console.error('Submit review error:', e);
-                        this.showToast('⚠️ Không thể gửi nhận xét. Vui lòng thử lại!');
-                    }
-                },
-
-                async saveAndParseGroup() {
-                    this.parsing = true;
-                    try {
-                        // 0. Auto-resolve custom addresses for friends if typed but not explicitly searched
-                        for (const f of this.friends) {
-                            const addr = (f.customAddress || '').trim();
-                            if (addr && addr !== f.lastResolvedAddress) {
-                                try {
-                                    const geoRes = await fetch('/api/geocode?q=' + encodeURIComponent(addr));
-                                    const geoData = await geoRes.json();
-                                    if (geoData && geoData.lat && geoData.lng) {
-                                        f.lat = Number(geoData.lat);
-                                        f.lng = Number(geoData.lng);
-                                        f.lastResolvedAddress = addr;
-                                        if (geoData.name && geoData.address && !geoData.address.startsWith(geoData.name)) {
-                                            f.customAddress = `${geoData.name} (${geoData.address})`;
-                                        } else {
-                                            f.customAddress = geoData.address || geoData.name || addr;
-                                        }
-                                    }
-                                } catch (geoErr) {
-                                    console.warn('Auto-geocoding error for friend', f.name, geoErr);
-                                }
-                            }
-                        }
-
-                        // Re-render friend markers at their updated positions
-                        this.renderFriendMarkers();
-
-                        // 1. Auto-resolve custom center address if typed in Section 3
-                        const customCenter = (this.customCenterAddress || '').trim();
-                        if (customCenter && (!this.isCustomCenter || customCenter !== this.lastResolvedCenterAddress)) {
-                            try {
-                                const centerRes = await fetch('/api/geocode?q=' + encodeURIComponent(customCenter));
-                                const centerData = await centerRes.json();
-                                if (centerData && centerData.lat && centerData.lng) {
-                                    this.centerCoords = { lat: Number(centerData.lat), lng: Number(centerData.lng) };
-                                    this.isCustomCenter = true;
-                                    this.lastResolvedCenterAddress = customCenter;
-                                    this.customCenterAddress = centerData.name || centerData.address || customCenter;
-                                }
-                            } catch (cErr) {
-                                console.warn('Auto-geocoding error for custom center:', cErr);
-                            }
-                        }
-
-                        // Recalculate Weiszfeld center (or maintain custom center if set)
-                        await this.calculateCenter();
-
-                        // Fit map bounds to encompass all friends and the center beacon
-                        if (this.map && this.friends.length > 0) {
-                            const allPoints = this.friends.map(f => [f.lat, f.lng]);
-                            if (this.centerCoords && this.centerCoords.lat) {
-                                allPoints.push([this.centerCoords.lat, this.centerCoords.lng]);
-                            }
-                            const bounds = L.latLngBounds(allPoints);
-                            this.map.fitBounds(bounds.pad(0.25));
-                        }
-
-                        // 2. Prepare text for Gemini
-                        let textToSend = this.discussionText ? this.discussionText.trim() : '';
-                        if (!textToSend) {
-                            textToSend = this.friends.map(f => `${f.name}: ${f.wish || 'ăn uống thoải mái'}`).join('. ');
-                        }
-
-                        // 3. Call Gemini preferences parser
-                        const res = await fetch('/api/preferences/parse', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                discussionText: textToSend,
-                                friends: this.friends
-                            })
-                        });
-                        const data = await res.json();
-                        this.parsedInterpretation = data;
-                        if (data.hardConstraints) {
-                            this.confirmedConstraints = {
-                                vegetarian: !!data.hardConstraints.vegetarian,
-                                no_alcohol: !!data.hardConstraints.no_alcohol,
-                                quiet_only: !!data.hardConstraints.quiet_only,
-                                max_price_vnd: data.hardConstraints.max_price_vnd || 500000
-                            };
-                        } else if (data.requiredConstraints) {
-                            if (Array.isArray(data.requiredConstraints)) {
-                                this.confirmedConstraints.vegetarian = data.requiredConstraints.some(r => r.criterion === 'vegetarian' && r.required);
-                                this.confirmedConstraints.no_alcohol = data.requiredConstraints.some(r => r.criterion === 'no_alcohol' && r.required);
-                                this.confirmedConstraints.quiet_only = data.requiredConstraints.some(r => r.criterion === 'quiet_only' && r.required);
-                            } else {
-                                this.confirmedConstraints = { ...this.confirmedConstraints, ...data.requiredConstraints };
-                            }
-                        }
-                        if (data.softPreferences && Array.isArray(data.softPreferences)) {
-                            this.confirmedSoftPreferences = data.softPreferences;
-                        } else {
-                            this.confirmedSoftPreferences = [];
-                        }
-
-                        // 4. Execute search and rank
-                        await this.executeSearchAndRank();
-                    } catch (e) {
-                        console.error('saveAndParseGroup error:', e);
-                        await this.executeSearchAndRank();
-                    } finally {
-                        this.parsing = false;
-                        this.closeGroupModal();
-                    }
-                },
-
-                backendConfig: {
-                    aiModel: 'Gemini Flash',
-                    databaseType: 'SQLite Persistent',
-                    isSupabaseConfigured: false
-                },
-
-                map: null,
-                centerMarker: null,
-                radiusCircle: null,
-                friendMarkers: [],
-                venueMarkers: [],
-                travelLines: [],
-
-                centerCoords: { lat: 10.7782, lng: 106.6912 },
-
-                friends: [
-                    { id: 1, name: 'You', lat: 10.7798, lng: 106.6990, color: 'bg-blue-500', wish: '' },
-                    { id: 2, name: 'Bob', lat: 10.7950, lng: 106.7218, color: 'bg-emerald-500', wish: '' },
-                    { id: 3, name: 'Charlie', lat: 10.7827, lng: 106.6958, color: 'bg-indigo-500', wish: '' }
-                ],
-
-                discussionText: '',
-
-                confirmedConstraints: {
-                    vegetarian: false,
-                    no_alcohol: false,
-                    quiet_only: false,
-                    max_price_vnd: 150000
-                },
-                confirmedSoftPreferences: [],
-                parsedInterpretation: {
-                    hardConstraints: {},
-                    cuisines: [],
-                    dishes: [],
-                    ambience: [],
-                    features: [],
-                    negativePreferences: [],
-                    rawIntent: ''
-                },
-                searchRequestId: 0,
-                searchAbortController: null,
-
-                shortlist: [],
-                nearbyAlternatives: [],
-                selectedVenue: null,
-
-                async searchAddressForFriend(friend, query) {
-                    if (!query || !query.trim()) return;
-                    friend.locating = true;
-                    try {
-                        const res = await fetch('/api/geocode?q=' + encodeURIComponent(query.trim()));
-                        const data = await res.json();
-                        if (data && data.lat && data.lng) {
-                            friend.lat = Number(data.lat);
-                            friend.lng = Number(data.lng);
-                            friend.customAddress = data.name && data.address && !data.address.startsWith(data.name)
-                                ? `${data.name} (${data.address})`
-                                : (data.address || data.name || query);
-                            friend.lastResolvedAddress = query.trim();
-                            const msg = data.source === 'gemini_nlp'
-                                ? `✨ AI đã giải mã: ${data.name}`
-                                : `📍 Đã định vị: ${data.name || data.address}`;
-                            this.showToast(msg);
-                            this.renderFriendMarkers();
-                            this.calculateCenter().then(() => this.executeSearchAndRank());
-                        } else {
-                            this.showToast('⚠️ Không tìm thấy tọa độ cho địa điểm này.');
-                        }
-                    } catch (e) {
-                        this.showToast('⚠️ Lỗi định vị: ' + e.message);
-                    } finally {
-                        friend.locating = false;
-                    }
-                },
-
-                
-                activePresetId: null,
-                presetsList: [],
-                toastMessage: '',
-                toastTimer: null,
-
-                showToast(msg) {
-                    this.toastMessage = msg;
-                    if (this.toastTimer) clearTimeout(this.toastTimer);
-                    this.toastTimer = setTimeout(() => {
-                        this.toastMessage = '';
-                    }, 3500);
-                },
-
-                async fetchPresets() {
-                    try {
-                        const res = await fetch('/api/presets');
-                        const data = await res.json();
-                        this.presetsList = data.presets || [];
-                    } catch(e) {
-                        console.warn('Fetch presets error:', e);
-                    }
-                },
-
-                async loadPreset(presetId) {
-                    this.activePresetId = presetId;
-                    let preset = this.presetsList.find(p => p.id === presetId);
-                    if (!preset) {
-                        await this.fetchPresets();
-                        preset = this.presetsList.find(p => p.id === presetId);
-                    }
-                    if (!preset) return;
-
-                    this.friends = JSON.parse(JSON.stringify(preset.friends));
-                    this.searchRadiusMeters = preset.radiusMeters || 3000;
-                    if (preset.constraints) {
-                        this.confirmedConstraints = { ...this.confirmedConstraints, ...preset.constraints };
-                    }
-                    if (preset.softPreferences) {
-                        this.confirmedSoftPreferences = preset.softPreferences;
-                    }
-
-                    this.renderFriendMarkers();
-                    await this.calculateCenter();
-                    if (this.map && this.friendMarkers.length > 0) {
-                        const group = new L.featureGroup(this.friendMarkers);
-                        this.map.fitBounds(group.getBounds().pad(0.2));
-                    }
-                    this.executeSearchAndRank();
-                    this.showToast('⚡ Đã nạp kịch bản: ' + preset.title);
-                },
-
-                async shareVenuePlan(venue) {
-                    try {
-                        const res = await fetch('/api/outings/generate-share-text', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                venue,
-                                friends: this.friends,
-                                groupScore: venue.groupScore || 90,
-                                outingCode: this.outingCode
-                            })
-                        });
-                        const data = await res.json();
-                        if (data && data.message) {
-                            this.shareModalData = {
-                                message: data.message,
-                                shareUrl: data.shareUrl || ('https://www.google.com/maps/dir/?api=1&destination=' + venue.lat + ',' + venue.lng),
-                                venueName: data.venueName || venue.name,
-                                appUrl: data.appUrl || window.location.origin
-                            };
-                            await navigator.clipboard.writeText(data.message).catch(() => {});
-                            this.showShareModal = true;
-                            this.showToast('🎉 Đã tạo & copy tin nhắn rủ bạn! Đã mở hộp thoại chia sẻ');
-                        }
-                    } catch(e) {
-                        console.error('Share plan error:', e);
-                        this.showToast('⚠️ Đã có lỗi khi tạo tin nhắn chia sẻ.');
-                    }
-                },
-
-                initApp() {
-                    // Fetch backend capabilities
-                    fetch('/api/config')
-                        .then(r => r.json())
-                        .then(cfg => { this.backendConfig = cfg; })
-                        .catch(err => console.warn('Config fetch error:', err));
-
-                    this.$nextTick(() => {
-                        this.initMap();
-                        this.fetchPresets();
-                        this.calculateCenter().then(() => {
-                            this.executeSearchAndRank();
-                        });
-                    });
-
-                    // Realtime Live Group Vote Polling (every 4 seconds)
-                    setInterval(() => {
-                        this.syncLiveVotes();
-                    }, 4000);
-
-                    window.addEventListener('resize', () => {
-                        if (this.map) this.map.invalidateSize();
-                    });
-                },
-
-                initMap() {
-                    const mapContainer = document.getElementById('map');
-                    if (!mapContainer) return;
-
-                    this.map = L.map('map', {
-                        center: [this.centerCoords.lat, this.centerCoords.lng],
-                        zoom: 14,
-                        zoomControl: false
-                    });
-
-                    L.control.zoom({ position: 'bottomleft' }).addTo(this.map);
-
-                    // Clean, high-performance CartoDB Dark Matter, Voyager & ESRI Street tiles
-                    this.tileLayers = {
-                        osm: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                            subdomains: 'abcd',
-                            maxZoom: 20,
-                            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-                        }),
-                        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                            subdomains: 'abcd',
-                            maxZoom: 20,
-                            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-                        }),
-                        street: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-                            maxZoom: 18,
-                            attribution: '&copy; Esri'
-                        })
-                    };
-
-                    this.currentMapStyle = 'dark';
-                    this.tileLayers.dark.addTo(this.map);
-
-                    setTimeout(() => {
-                        if (this.map) this.map.invalidateSize();
-                    }, 200);
-
-                    this.renderCenterMarker();
-                    this.renderFriendMarkers();
-                },
-
-                useCurrentLocation() {
-                    if (!navigator.geolocation) {
-                        alert('Geolocation is not supported by your browser.');
-                        return;
-                    }
-                    this.locating = true;
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            this.locating = false;
-                            const lat = Number(pos.coords.latitude.toFixed(6));
-                            const lng = Number(pos.coords.longitude.toFixed(6));
-                            if (this.friends.length > 0) {
-                                this.friends[0].name = 'You (GPS)';
-                                this.friends[0].lat = lat;
-                                this.friends[0].lng = lng;
-                            }
-                            this.calculateCenter().then(() => this.executeSearchAndRank());
-                        },
-                        (err) => {
-                            this.locating = false;
-                            console.warn('GPS location failed, using default HCMC location:', err.message);
-                            alert('Could not retrieve current GPS position. Using selected Saigon preset.');
-                        },
-                        { timeout: 7000 }
-                    );
-                },
-
-                switchMapStyle(style) {
-                    if (!this.map || !this.tileLayers || this.currentMapStyle === style) return;
-                    if (this.tileLayers[this.currentMapStyle]) {
-                        this.map.removeLayer(this.tileLayers[this.currentMapStyle]);
-                    }
-                    if (this.tileLayers[style]) {
-                        this.tileLayers[style].addTo(this.map);
-                        this.currentMapStyle = style;
-                    }
-                },
-
-                copyShareLink() {
-                    navigator.clipboard.writeText(window.location.href);
-                    this.copied = true;
-                    setTimeout(() => this.copied = false, 2500);
-                },
-
-                addFriendAtCenter() {
-                    const presets = [
-                        { name: 'David (D4)', lat: 10.7608, lng: 106.7050 },
-                        { name: 'Emma (Phu Nhuan)', lat: 10.7965, lng: 106.6890 },
-                        { name: 'Frank (D7)', lat: 10.7330, lng: 106.7055 }
-                    ];
-                    const p = presets[this.friends.length % presets.length];
-                    const colors = ['bg-purple-500', 'bg-cyan-500', 'bg-pink-500', 'bg-teal-500'];
-                    const color = colors[this.friends.length % colors.length];
-                    this.friends.push({
-                        id: Date.now(),
-                        name: p.name,
-                        lat: p.lat,
-                        lng: p.lng,
-                        color,
-                        wish: ''
-                    });
-                    this.calculateCenter().then(() => this.executeSearchAndRank());
-                },
-
-                removeFriend(idx) {
-                    this.friends.splice(idx, 1);
-                    this.calculateCenter().then(() => this.executeSearchAndRank());
-                },
-
-                toggleConstraint(k) {
-                    this.confirmedConstraints[k] = !this.confirmedConstraints[k];
-                    this.executeSearchAndRank();
-                },
-
-                toggleBudget() {
-                    if (this.confirmedConstraints.max_price_vnd <= 65000) {
-                        this.confirmedConstraints.max_price_vnd = 250000;
-                    } else {
-                        this.confirmedConstraints.max_price_vnd = 65000;
-                    }
-                    this.executeSearchAndRank();
-                },
-
-                async calculateCenter() {
-                    if (this.isCustomCenter) {
-                        this.renderCenterMarker();
-                        this.renderFriendMarkers();
-                        return;
-                    }
-                    const points = this.friends.map(f => ({ name: f.name, lat: f.lat, lng: f.lng }));
-                    try {
-                        const res = await fetch('/api/center/geometric-median', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ points })
-                        });
-                        const data = await res.json();
-                        if (data.median) {
-                            this.centerCoords = data.median;
-                            this.renderCenterMarker();
-                            this.renderFriendMarkers();
-                        }
-                    } catch (e) {
-                        console.error('Calculate center error:', e);
-                    }
-                },
-
-                renderCenterMarker() {
-                    if (!this.map) return;
-                    if (this.centerMarker) this.map.removeLayer(this.centerMarker);
-
-                    const icon = L.divIcon({
-                        className: 'center-beacon-outer',
-                        html: '<div style="background:#f59e0b; width:26px; height:26px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 0 18px rgba(245,158,11,1); display:flex; align-items:center; justify-content:center; cursor:default;"><div style="width:7px; height:7px; background:#ffffff; border-radius:50%;"></div></div>',
-                        iconSize: [26, 26],
-                        iconAnchor: [13, 13],
-                        popupAnchor: [0, -13]
-                    });
-
-                    this.centerMarker = L.marker([this.centerCoords.lat, this.centerCoords.lng], {
-                        icon,
-                        draggable: false,
-                        zIndexOffset: 1000
-                    }).addTo(this.map);
-
-                    this.centerMarker.bindTooltip('<strong>📍 Tâm điểm gặp mặt</strong>', { permanent: false, direction: 'top', offset: [0, -14] });
-
-                    this.updateRadiusCircle();
-                },
-
-                async searchCustomCenter(query) {
-                    if (!query || !query.trim()) return;
-                    this.searchingCenter = true;
-                    try {
-                        const res = await fetch('/api/geocode?q=' + encodeURIComponent(query.trim()));
-                        const data = await res.json();
-                        if (data && data.lat && data.lng) {
-                            this.centerCoords = { lat: Number(data.lat), lng: Number(data.lng) };
-                            this.isCustomCenter = true;
-                            this.customCenterAddress = data.name || data.address || query.trim();
-                            this.showToast(`📍 Đã đặt tâm điểm tại: ${this.customCenterAddress}`);
-                            this.renderCenterMarker();
-                            if (this.map) this.map.panTo([this.centerCoords.lat, this.centerCoords.lng]);
-                            this.executeSearchAndRank();
-                        } else {
-                            this.showToast('⚠️ Không tìm thấy tọa độ cho địa điểm này.');
-                        }
-                    } catch (e) {
-                        this.showToast('⚠️ Lỗi tìm tâm điểm: ' + e.message);
-                    } finally {
-                        this.searchingCenter = false;
-                    }
-                },
-
-                resetToGeometricCenter() {
-                    this.isCustomCenter = false;
-                    this.customCenterAddress = '';
-                    this.calculateCenter().then(() => {
-                        this.showToast('🔄 Đã tính lại tâm Weiszfeld tự động!');
-                        this.executeSearchAndRank();
-                    });
-                },
-
-                updateRadiusCircle() {
-                    if (!this.map) return;
-                    if (this.radiusCircle) this.map.removeLayer(this.radiusCircle);
-                    this.radiusCircle = L.circle([this.centerCoords.lat, this.centerCoords.lng], {
-                        radius: this.searchRadiusMeters,
-                        color: '#f59e0b',
-                        weight: 2,
-                        dashArray: '5, 6',
-                        fillColor: '#f59e0b',
-                        fillOpacity: 0.08
-                    }).addTo(this.map);
-                },
-
-                setRadius(m) {
-                    this.searchRadiusMeters = m;
-                    this.updateRadiusCircle();
-                    this.executeSearchAndRank();
-                },
-
-                renderFriendMarkers() {
-                    if (!this.map) return;
-                    this.friendMarkers.forEach(m => this.map.removeLayer(m));
-                    this.friendMarkers = [];
-
-                    this.friends.forEach((f) => {
-                        const isMe = f.name.includes('You');
-                        const fillColor = isMe ? '#2563eb' : (f.color === 'bg-emerald-500' ? '#10b981' : '#6366f1');
-                        const icon = L.divIcon({
-                            className: 'friend-pin',
-                            html: `<svg width="30" height="38" viewBox="0 0 30 38" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M15 37C15 37 2 24 2 14C2 6.82 7.82 1 15 1C22.18 1 28 6.82 28 14C28 24 15 37 15 37Z" fill="${fillColor}" stroke="#ffffff" stroke-width="2"/>
-                                <circle cx="15" cy="14" r="9.5" fill="#ffffff"/>
-                                <text x="15" y="18" text-anchor="middle" fill="#0b0f19" font-size="11" font-weight="900" font-family="sans-serif">${f.name.charAt(0)}</text>
-                            </svg>`,
-                            iconSize: [30, 38],
-                            iconAnchor: [15, 37],
-                            popupAnchor: [0, -37]
-                        });
-                        const m = L.marker([f.lat, f.lng], { icon, draggable: false }).addTo(this.map);
-                        m.bindTooltip('<strong>' + f.name + '</strong>' + (f.wish ? '<br><span style="font-size:10px; opacity:0.8">' + f.wish + '</span>' : ''), { direction: 'top', offset: [0, -35] });
-
-                        this.friendMarkers.push(m);
-                    });
-                },
-
-                applyFastScenario(sc) {
-                    this.activeScenario = sc;
-                    if (sc === 'all') {
-                        this.confirmedConstraints = { vegetarian: false, no_alcohol: false, quiet_only: false, max_price_vnd: 250000 };
-                        this.confirmedSoftPreferences = [{ preference: 'Diverse delicious food', weight: 4 }];
-                    } else if (sc === 'chay') {
-                        this.confirmedConstraints = { vegetarian: true, no_alcohol: false, quiet_only: false, max_price_vnd: 200000 };
-                        this.confirmedSoftPreferences = [{ preference: 'Vegetarian dining', weight: 5 }, { preference: 'Quiet atmosphere', weight: 4 }];
-                    } else if (sc === 'matcha') {
-                        this.confirmedConstraints = { vegetarian: false, no_alcohol: false, quiet_only: false, max_price_vnd: 100000 };
-                        this.confirmedSoftPreferences = [{ preference: 'Matcha & Aesthetic', weight: 5 }, { preference: 'Photogenic spaces', weight: 5 }];
-                    } else if (sc === 'hem') {
-                        this.confirmedConstraints = { vegetarian: false, no_alcohol: false, quiet_only: false, max_price_vnd: 65000 };
-                        this.confirmedSoftPreferences = [{ preference: 'Alley eatery hearty meal', weight: 5 }, { preference: 'Budget <50k', weight: 5 }];
-                    } else if (sc === 'chill') {
-                        this.confirmedConstraints = { vegetarian: false, no_alcohol: false, quiet_only: false, max_price_vnd: 180000 };
-                        this.confirmedSoftPreferences = [{ preference: 'Live acoustic music', weight: 5 }, { preference: 'Craft beer & late night', weight: 5 }];
-                    }
-                    this.executeSearchAndRank();
-                },
-
-                async parseWithGeminiAndExecute() {
-                    this.parsing = true;
-                    try {
-                        const res = await fetch('/api/preferences/parse', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                discussionText: this.discussionText,
-                                friends: this.friends
-                            })
-                        });
-                        const data = await res.json();
-                        this.parsedInterpretation = data;
-                        if (data.hardConstraints) {
-                            this.confirmedConstraints = {
-                                vegetarian: !!data.hardConstraints.vegetarian,
-                                no_alcohol: !!data.hardConstraints.no_alcohol,
-                                quiet_only: !!data.hardConstraints.quiet_only,
-                                max_price_vnd: data.hardConstraints.max_price_vnd || 500000
-                            };
-                        } else if (data.requiredConstraints) {
-                            if (Array.isArray(data.requiredConstraints)) {
-                                this.confirmedConstraints.vegetarian = data.requiredConstraints.some(r => r.criterion === 'vegetarian' && r.required);
-                                this.confirmedConstraints.no_alcohol = data.requiredConstraints.some(r => r.criterion === 'no_alcohol' && r.required);
-                                this.confirmedConstraints.quiet_only = data.requiredConstraints.some(r => r.criterion === 'quiet_only' && r.required);
-                            } else {
-                                this.confirmedConstraints = { ...this.confirmedConstraints, ...data.requiredConstraints };
-                            }
-                        }
-                        if (data.softPreferences && Array.isArray(data.softPreferences)) {
-                            this.confirmedSoftPreferences = data.softPreferences;
-                        } else {
-                            this.confirmedSoftPreferences = [];
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    } finally {
-                        this.parsing = false;
-                        this.showWishModal = false;
-                        this.executeSearchAndRank();
-                    }
-                },
-
-                async executeSearchAndRank() {
-                    this.ranking = true;
-                    this.searchRequestId = (this.searchRequestId || 0) + 1;
-                    const currentReqId = this.searchRequestId;
-                    if (this.searchAbortController) {
-                        try { this.searchAbortController.abort(); } catch (_) {}
-                    }
-                    this.searchAbortController = new AbortController();
-                    try {
-                        const res = await fetch('/api/venues/search-and-rank', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            signal: this.searchAbortController.signal,
-                            body: JSON.stringify({
-                                center: this.centerCoords,
-                                radiusMeters: this.searchRadiusMeters,
-                                requiredConstraints: this.confirmedConstraints,
-                                softPreferences: this.confirmedSoftPreferences,
-                                interpretation: this.parsedInterpretation,
-                                friends: this.friends
-                            })
-                        });
-                        const data = await res.json();
-                        if (currentReqId !== this.searchRequestId) return; // Discard outdated response
-                        this._hasRetriedSearch = false;
-                        this.shortlist = data.shortlist || [];
-                        this.nearbyAlternatives = data.nearbyAlternatives || [];
-                        this.searchMessage = data.message || '';
-
-                        this.renderVenueMarkers();
-                        if (this.shortlist.length > 0) {
-                            this.selectVenue(this.shortlist[0]);
-                        } else {
-                            this.clearTravelLines();
-                        }
-                    } catch (e) {
-                        if (e.name === 'AbortError') return;
-                        console.warn('Execute ranking initial attempt error:', e.message);
-                        if (!this._hasRetriedSearch) {
-                            this._hasRetriedSearch = true;
-                            setTimeout(() => this.executeSearchAndRank(), 2200);
-                        }
-                    } finally {
-                        if (currentReqId === this.searchRequestId) {
-                            this.ranking = false;
-                        }
-                    }
-                },
-
-                renderVenueMarkers() {
-                    if (!this.map) return;
-                    this.venueMarkers.forEach(m => this.map.removeLayer(m));
-                    this.venueMarkers = [];
-
-                    this.shortlist.forEach((venue, idx) => {
-                        const isTop = idx === 0;
-                        const pinColor = isTop ? '#10b981' : '#f59e0b';
-                        const icon = L.divIcon({
-                            className: 'venue-pin',
-                            html: `<svg width="34" height="44" viewBox="0 0 34 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M17 43C17 43 3 28.5 3 17C3 9.27 9.27 3 17 3C24.73 3 31 9.27 31 17C31 28.5 17 43 17 43Z" fill="${pinColor}" stroke="#ffffff" stroke-width="2.2"/>
-                                <circle cx="17" cy="17" r="9.5" fill="#ffffff"/>
-                                <text x="17" y="21" text-anchor="middle" fill="#0b0f19" font-size="11" font-weight="900" font-family="sans-serif">${idx + 1}</text>
-                            </svg>`,
-                            iconSize: [34, 44],
-                            iconAnchor: [17, 43],
-                            popupAnchor: [0, -43]
-                        });
-                        const m = L.marker([venue.lat, venue.lng], { icon }).addTo(this.map);
-                        m.bindTooltip('<strong>#' + (idx + 1) + ' ' + venue.name + '</strong><br>' + venue.category + ' (' + venue.groupScore + '/100)', { direction: 'top', offset: [0, -40] });
-                        m.on('click', () => {
-                            this.selectVenue(venue);
-                        });
-                        this.venueMarkers.push(m);
-                    });
-                },
-
-                selectVenue(venue) {
-                    if (!venue) return;
-                    this.selectedVenue = venue;
-                    this.drawTravelLines(venue);
-                    // Smooth, gentle pan only if venue is outside current map view
-                    if (this.map && this.map.getBounds && !this.map.getBounds().contains([venue.lat, venue.lng])) {
-                        this.map.panTo([venue.lat, venue.lng], { animate: true, duration: 0.5 });
-                    }
-                    // Auto-scroll the sidebar list to the selected venue card
-                    this.$nextTick(() => {
-                        const el = document.getElementById('venue-card-' + venue.id);
-                        if (el) {
-                            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        }
-                    });
-                },
-
-                drawTravelLines(venue) {
-                    this.clearTravelLines();
-                    if (!this.map || !venue) return;
-
-                    this.friends.forEach((f) => {
-                        // Clean, elegant dashed line without cluttered midpoint badges
-                        const line = L.polyline([[f.lat, f.lng], [venue.lat, venue.lng]], {
-                            color: '#38bdf8',
-                            weight: 2.5,
-                            dashArray: '6, 8',
-                            opacity: 0.8
-                        }).addTo(this.map);
-
-                        this.travelLines.push(line);
-                    });
-                },
-
-                clearTravelLines() {
-                    if (!this.map) return;
-                    this.travelLines.forEach(l => this.map.removeLayer(l));
-                    this.travelLines = [];
-                },
-
-                async voteForVenue(venue) {
-                    venue.votes = (venue.votes || 0) + 1;
-                    this.votedVenueId = venue.id;
-                    setTimeout(() => { this.votedVenueId = null; }, 500);
-                    this.showToast(`🗳️ +1 phiếu cho "${venue.name}"! (Tổng: ${venue.votes})`);
-
-                    try {
-                        await fetch('/api/outings/' + this.outingCode + '/vote', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ venueId: venue.id, voterName: 'You' })
-                        });
-                    } catch (e) {
-                        console.error('Vote error:', e);
-                    }
-                },
-
-                async syncLiveVotes() {
-                    if (!this.outingCode || !this.shortlist || this.shortlist.length === 0) return;
-                    try {
-                        const res = await fetch('/api/outings/' + this.outingCode);
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (data && Array.isArray(data.votes)) {
-                                this.shortlist.forEach(v => {
-                                    const count = data.votes.filter(vote => (vote.venue_id === v.id || vote.venueId === v.id)).length;
-                                    if (count > (v.votes || 0)) {
-                                        v.votes = count;
-                                        this.votedVenueId = v.id;
-                                        setTimeout(() => { this.votedVenueId = null; }, 500);
-                                    }
-                                });
-                            }
-                        }
-                    } catch (e) {
-                        // silent polling fail
-                    }
-                },
-
-                getOpeningBadge(venue) {
-                    if (!venue) return { label: 'Đang mở cửa', colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', boxClass: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200/90', icon: 'fa-circle', type: 'open' };
-                    
-                    const oh = venue.openingHours;
-                    const tags = Array.isArray(venue.tags) ? venue.tags : [];
-                    const is24_7 = (oh && (oh.is24_7 || oh.is24h)) || tags.some(t => String(t).toLowerCase().includes('24/7') || String(t).toLowerCase().includes('24h') || String(t).toLowerCase().includes('xuyên đêm'));
-                    
-                    if (is24_7) {
-                        return {
-                            type: '24_7',
-                            label: '⚡ Mở 24/7',
-                            colorClass: 'bg-purple-500/25 text-purple-300 border-purple-500/40',
-                            boxClass: 'bg-purple-500/10 border-purple-500/25 text-purple-200',
-                            icon: 'fa-bolt'
-                        };
-                    }
-
-                    // Vietnam timezone GMT+7
-                    const now = new Date();
-                    const vnTimeStr = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false, hour: '2-digit', minute: '2-digit' });
-                    const [currentHour, currentMin] = vnTimeStr.split(':').map(Number);
-                    const currentTotalMin = (currentHour || 0) * 60 + (currentMin || 0);
-
-                    let openMin = 9 * 60;
-                    let closeMin = 22 * 60;
-                    let openStr = '09:00';
-                    let closeStr = '22:00';
-
-                    if (oh && typeof oh === 'object') {
-                        if (oh.open) {
-                            openStr = oh.open;
-                            const [ohH, ohM] = oh.open.split(':').map(Number);
-                            openMin = (ohH || 0) * 60 + (ohM || 0);
-                        }
-                        if (oh.close) {
-                            closeStr = oh.close;
-                            const [chH, chM] = oh.close.split(':').map(Number);
-                            closeMin = (chH || 0) * 60 + (chM || 0);
-                        }
-                    }
-
-                    let isOpen = true;
-                    if (closeMin > openMin) {
-                        isOpen = currentTotalMin >= openMin && currentTotalMin < closeMin;
-                    } else {
-                        isOpen = currentTotalMin >= openMin || currentTotalMin < closeMin;
-                    }
-
-                    if (isOpen) {
-                        return {
-                            type: 'open',
-                            label: '🟢 Đang mở · Đến ' + closeStr,
-                            colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-                            boxClass: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200/90',
-                            icon: 'fa-circle'
-                        };
-                    } else {
-                        return {
-                            type: 'closed',
-                            label: '🔴 Đã đóng · Mở ' + openStr,
-                            colorClass: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
-                            boxClass: 'bg-rose-500/10 border-rose-500/20 text-rose-200/90',
-                            icon: 'fa-circle-xmark'
-                        };
-                    }
-                },
-
-                getOpeningHoursDetail(venue) {
-                    const badge = this.getOpeningBadge(venue);
-                    if (badge.type === '24_7') {
-                        return 'Quán mở cửa liên tục 24/7 (Phục vụ xuyên đêm)';
-                    }
-                    const oh = venue.openingHours;
-                    const text = (oh && oh.displayText) ? oh.displayText : '09:00 - 22:00';
-                    return (badge.type === 'open' ? 'Đang mở cửa: ' : 'Đã đóng cửa: ') + text + (oh && oh.openDays ? ' (' + oh.openDays + ')' : '');
-                },
-
-                getVenueImage(venue) {
-                    if (venue && venue.heroImage && typeof venue.heroImage === 'string' && venue.heroImage.startsWith('http')) {
-                        return venue.heroImage;
-                    }
-                    if (venue && venue.photos && Array.isArray(venue.photos) && venue.photos.length > 0 && typeof venue.photos[0] === 'string' && venue.photos[0].startsWith('http')) {
-                        return venue.photos[0];
-                    }
-
-                    const name = (venue?.name || '').toLowerCase();
-                    const cat = (venue?.category || '').toLowerCase();
-
-                    if (cat.includes('vegetarian') || cat.includes('chay')) {
-                        return 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80';
-                    }
-                    if (name.includes('matcha') || cat.includes('matcha')) {
-                        return 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80';
-                    }
-                    if (venue?.isAlley || cat.includes('alley') || cat.includes('hẻm') || cat.includes('street food')) {
-                        return 'https://images.unsplash.com/photo-1503764654157-72d979d9af2f?w=600&auto=format&fit=crop&q=80';
-                    }
-                    if (cat.includes('music') || cat.includes('pub') || cat.includes('bar')) {
-                        return 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&auto=format&fit=crop&q=80';
-                    }
-                    if (cat.includes('coffee') || cat.includes('workspace') || cat.includes('cà phê')) {
-                        return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80';
-                    }
-                    return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80';
-                }
-            }
-        }
-    </script>
-
     <!-- GLOBAL TOAST NOTIFICATION -->
     <div x-show="toastMessage" 
          x-transition:enter="transition ease-out duration-300"
@@ -2020,9 +925,9 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 translate-y-4"
-         class="fixed bottom-6 right-6 z-[9999] bg-gradient-to-r from-amber-500 to-amber-400 text-dark-950 font-extrabold px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-2.5 border-2 border-white text-xs max-w-md" 
-         style="display: none;">
-        <i class="fa-solid fa-circle-check text-base text-dark-950"></i>
+         class="fixed bottom-6 right-6 z-[9999] bg-dark-900 text-white font-bold px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-2.5 border border-slate-700 text-xs max-w-md"
+         x-cloak>
+        <i class="fa-solid" :class="getToastIcon()"></i>
         <span x-text="toastMessage"></span>
     </div>
 

@@ -7,6 +7,10 @@ const assert = require('assert');
 const http = require('http');
 
 process.env.PORT = '0'; // Use ephemeral free port for testing
+process.env.SUPABASE_URL = '';
+process.env.SUPABASE_KEY = '';
+process.env.SUPABASE_ANON_KEY = '';
+process.env.SUPABASE_SERVICE_ROLE_KEY = '';
 const app = require('../server.js');
 
 let server;
@@ -209,6 +213,8 @@ async function runTests() {
 
     if (failed > 0) {
         process.exit(1);
+    } else {
+        process.exit(0);
     }
 }
 

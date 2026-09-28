@@ -1,0 +1,6251 @@
+[
+  {
+    "id": "hcm-q10-dallas-cakes",
+    "name": "Dallas Cakes & Coffee (233 Ba Tháng Hai — Đệ Nhất Bánh Kem Bắp)",
+    "category": "Artisan Cake Boutique & Signature Fresh Corn Cake",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "233 Ba Tháng Hai, Phường 10, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-dallas-cakes",
+    "lat": 10.7712,
+    "lng": 106.6748,
+    "rating": 4.8,
+    "reviewsCount": 3950,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "55k - 120k VND",
+    "tags": [
+      "Bánh Kem Bắp",
+      "Dallas Cakes",
+      "Quận 10",
+      "Ba Tháng Hai",
+      "Ít Ngọt",
+      "Bánh Sinh Nhật",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "fresh_cream_cake",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "warm_cozy_cafe_tables"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ dắt xe trước cửa tiệm trên vỉa hè đường 3/2"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "08:00",
+        "close": "22:00",
+        "is24_7": false,
+        "displayText": "08:00 - 22:00",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Bánh kem bắp Dallas thơm bùi sốt phô mai kem tươi ít ngọt",
+          "Bánh Espresso Mousse đậm vị cà phê hạt",
+          "Bánh Matcha trà xanh kem sữa tươi"
+        ],
+        "socialPros": "Thương hiệu bánh kem bắp lừng danh nhất Sài Gòn, lớp kem phô mai bắp béo thanh dịu không ngấy đường, cốt bánh bông lan tơi xốp ngập hạt bắp tươi giòn ngọt",
+        "socialCons": "Vào các dịp lễ kỷ niệm và cuối tuần khách đặt bánh nguyên ổ rất đông, bánh bắp bán theo miếng thường hết sớm sau 19h"
+      },
+      "price_per_person_vnd": 75000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-dallas-cakes",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-uncle-lus-cheesecake",
+    "name": "Uncle Lu's Cheesecake (652 Sư Vạn Hạnh — Bánh Phô Mai Nhật Bản Núng Nính)",
+    "category": "Japanese Cotton Cheesecake & Matcha Lava",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "652 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-uncle-lus-cheesecake",
+    "lat": 10.7765,
+    "lng": 106.6685,
+    "rating": 4.7,
+    "reviewsCount": 2850,
+    "pricePerPersonVnd": 65000,
+    "avgPrice": "50k - 140k VND",
+    "tags": [
+      "Uncle Lu",
+      "Cheesecake Nhật",
+      "Sư Vạn Hạnh",
+      "Quận 10",
+      "Bánh Phô Mai Núng Nính",
+      "Matcha",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "japanese_cheesecake",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "takeaway_and_small_dine_in"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Dựng xe máy trước tiệm trên đường Sư Vạn Hạnh"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "08:30",
+        "close": "22:00",
+        "is24_7": false,
+        "displayText": "08:30 - 22:00",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Original Japanese Cotton Cheesecake phô mai núng nính mềm như bông",
+          "Matcha Cheesecake thơm đậm trà xanh Uji",
+          "Cheese Tart nướng vỏ giòn nhân tan chảy"
+        ],
+        "socialPros": "Bánh phô mai nướng theo công thức truyền thống Nhật Bản, vừa ra lò rung rinh núng nính, cho vào miệng mềm tan ngay đầu lưỡi, độ ngọt rất thanh",
+        "socialCons": "Mỗi mẻ bánh ra lò cần thời gian nướng nhất định, nếu canh trúng lúc vừa hết mẻ có thể phải đợi 10 phút"
+      },
+      "price_per_person_vnd": 65000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-uncle-lus-cheesecake",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-bbang-house",
+    "name": "BBang House — Fresh Bakery & Cafe (551 Sư Vạn Hạnh — Tiệm Bánh Tươi Hàn Quốc)",
+    "category": "Korean Artisan Bakery, Pastry & Dessert Lounge",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "551 Sư Vạn Hạnh, Phường 13, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-bbang-house",
+    "lat": 10.7748,
+    "lng": 106.6682,
+    "rating": 4.6,
+    "reviewsCount": 2400,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "35k - 85k VND",
+    "tags": [
+      "BBang House",
+      "Bánh Tươi Hàn Quốc",
+      "Sư Vạn Hạnh",
+      "Quận 10",
+      "Bánh Mì Bơ Tỏi",
+      "Croissant Kem",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "balanced",
+      "pastryType": "korean_fresh_bakes",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "spacious_scandinavian_tables"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ xe máy có bảo vệ trông coi"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "07:30",
+        "close": "22:30",
+        "is24_7": false,
+        "displayText": "07:30 - 22:30",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Bánh mì bơ tỏi phô mai 6 cánh kem cheese béo ngậy",
+          "Croissant cuộn kem sữa tươi dâu tây",
+          "Bánh nướng Choco Palmier giòn rụm"
+        ],
+        "socialPros": "Mô hình tiệm bánh nướng tươi liên tục trong ngày theo phong cách Seoul, không gian máy lạnh 2 tầng rộng rãi tone gỗ sáng rất hợp ngồi đọc sách và trò chuyện",
+        "socialCons": "Khung giờ trưa và tối tan học của sinh viên các trường lân cận khá đông"
+      },
+      "price_per_person_vnd": 55000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-bbang-house",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-gami-craft-bakery",
+    "name": "GAMI Craft Bakery (Hẻm 7 Thành Thái — Tiệm Bánh Nhỏ Xinh & Soft Cookies)",
+    "category": "Handcrafted Dessert Studio & Soft Cookies Parlor",
+    "type": "cafe",
+    "isAlley": true,
+    "alleyNote": "Hẻm xe hơi 7 Thành Thái yên tĩnh, ngập tràn ánh nắng",
+    "address": "7/34 Thành Thái, Phường 14, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-gami-craft-bakery",
+    "lat": 10.7725,
+    "lng": 106.662,
+    "rating": 4.7,
+    "reviewsCount": 1650,
+    "pricePerPersonVnd": 50000,
+    "avgPrice": "35k - 75k VND",
+    "tags": [
+      "GAMI Bakery",
+      "Soft Cookies",
+      "Thành Thái",
+      "Quận 10",
+      "Bánh Phô Mai Tan Chảy",
+      "Crepe Kem",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "cookies_and_crepes",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "warm_aesthetic_wooden_nook"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Sân giữ xe máy rộng rãi ngay trước cửa tiệm trong hẻm"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "09:00",
+        "close": "21:30",
+        "is24_7": false,
+        "displayText": "09:00 - 21:30",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Soft Cookies sô-cô-la nhân marshmallow dẻo kéo sợi",
+          "Bánh phô mai nướng dung nham Lava Cheese tan chảy",
+          "Crepe sầu riêng ngập kem béo"
+        ],
+        "socialPros": "Không gian ấm cúng phong cách tiệm bánh Nhật Bản, ánh sáng tự nhiên chụp hình rất thơ mộng, bánh handmade làm tỉ mỉ theo mẻ nhỏ ngọt nhẹ",
+        "socialCons": "Quán trong hẻm nên cần nhìn kỹ số nhà, bàn ghế nhỏ nhắn phù hợp nhóm 2-4 bạn"
+      },
+      "price_per_person_vnd": 50000,
+      "type": "sweet_food",
+      "is_alley": true,
+      "alley_note": "Hẻm xe hơi 7 Thành Thái yên tĩnh, ngập tràn ánh nắng",
+      "place_id": "place_hcm-q10-gami-craft-bakery",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-robin-mouquet",
+    "name": "Robin Mouquet (Cư Xá Bắc Hải — Tiệm Bánh Ngọt Chuẩn Pháp & Mille-Feuille)",
+    "category": "Authentic French Haute Pâtisserie & Viennoiserie",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "Nằm trong khu Cư Xá Bắc Hải rợp bóng cây",
+    "address": "Khu Cư Xá Bắc Hải, Đường Đồng Nai, Phường 15, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-robin-mouquet",
+    "lat": 10.7788,
+    "lng": 106.6612,
+    "rating": 4.8,
+    "reviewsCount": 1800,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "60k - 150k VND",
+    "tags": [
+      "Robin Mouquet",
+      "Bánh Pháp Chuẩn",
+      "Bắc Hải",
+      "Quận 10",
+      "Croissant Bơ Pháp",
+      "Mille Feuille",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "balanced",
+      "pastryType": "french_patisserie",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": false
+      },
+      "seatingComfort": {
+        "value": "french_bistro_patio"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Chỗ đỗ xe máy và ô tô thoáng mát trong khu cư xá"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "08:00",
+        "close": "21:00",
+        "is24_7": false,
+        "displayText": "08:00 - 21:00",
+        "openDays": "Thứ 3 - Chủ Nhật (Nghỉ Thứ 2)"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Mille-feuille ngàn lớp giòn tan kẹp kem kem bơ vani Madagascar",
+          "Croissant bơ Isigny Pháp giòn xốp thơm lừng",
+          "Tart trái cây mọng dâu tây & việt quất"
+        ],
+        "socialPros": "Đầu bếp chuẩn Pháp làm bánh theo kỹ thuật cổ điển Paris, lớp bột ngàn lớp tách giòn rụm không hề chai bột, bơ nhập khẩu thơm nồng quyến rũ",
+        "socialCons": "Số lượng bánh mỗi ngày làm thủ công có hạn, các dòng tart cao cấp thường hết trước 17h"
+      },
+      "price_per_person_vnd": 85000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "Nằm trong khu Cư Xá Bắc Hải rợp bóng cây",
+      "place_id": "place_hcm-q10-robin-mouquet",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-morico-vanhanhmall",
+    "name": "Morico — Contemporary Japanese Dessert (Tầng 6 Vạn Hạnh Mall — Thánh Địa Matcha & Mochi)",
+    "category": "Contemporary Japanese Matcha, Parfait & Dessert Cafe",
+    "type": "dessert",
+    "isAlley": false,
+    "alleyNote": "Tầng 6 Vạn Hạnh Mall",
+    "address": "Tầng 6, Vạn Hạnh Mall, 11 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-morico-vanhanhmall",
+    "lat": 10.7768,
+    "lng": 106.669,
+    "rating": 4.8,
+    "reviewsCount": 3600,
+    "pricePerPersonVnd": 110000,
+    "avgPrice": "75k - 180k VND",
+    "tags": [
+      "Morico",
+      "Matcha Uji",
+      "Vạn Hạnh Mall",
+      "Quận 10",
+      "Parfait",
+      "Warabi Mochi",
+      "Tráng Miệng Nhật",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "japanese_dessert",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "zen_japanese_spacious_booths"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Hầm gửi xe Vạn Hạnh Mall rộng rãi cho ô tô và xe máy"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "10:00",
+        "close": "22:00",
+        "is24_7": false,
+        "displayText": "10:00 - 22:00",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Matcha Parfait 7 tầng thạch trà, kem tuyết & đậu đỏ Azuki",
+          "Warabi Mochi dẻo mịn phủ bột đậu nành Kinako",
+          "Houjicha Crepe Mille ngàn lớp thơm mùi trà rang"
+        ],
+        "socialPros": "Chuỗi tráng miệng Nhật Bản cao cấp uy tín số 1 Sài Gòn, 100% bột matcha nhập trực tiếp từ Kyoto thơm đậm đà có hậu vị đắng thanh dịu dàng",
+        "socialCons": "Giá ở phân khúc trung và cao cấp, cuối tuần các bạn trẻ đi ăn tráng miệng thường kín bàn"
+      },
+      "price_per_person_vnd": 110000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "Tầng 6 Vạn Hạnh Mall",
+      "place_id": "place_hcm-q10-morico-vanhanhmall",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-chewy-junior",
+    "name": "Chewy Junior (595 Sư Vạn Hạnh — Bánh Su Kem Dẻo Phô Mai Singapore)",
+    "category": "Singapore Chewy Cream Puffs & Sweet Toppings",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "595 Sư Vạn Hạnh, Phường 13, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-chewy-junior",
+    "lat": 10.7756,
+    "lng": 106.6683,
+    "rating": 4.6,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 45000,
+    "avgPrice": "30k - 65k VND",
+    "tags": [
+      "Chewy Junior",
+      "Su Kem Dẻo",
+      "Sư Vạn Hạnh",
+      "Quận 10",
+      "Phô Mai Béo",
+      "Học Sinh Sinh Viên",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "balanced",
+      "pastryType": "cream_puffs",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "diner_tables_cozy"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ dắt xe trước tiệm"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "08:30",
+        "close": "22:00",
+        "is24_7": false,
+        "displayText": "08:30 - 22:00",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Bánh su phô mai dẻo Chewy Cheese truyền thống",
+          "Su kem phủ sốt việt quất chua ngọt mát lạnh",
+          "Su kem socola hạnh nhân giòn rụm"
+        ],
+        "socialPros": "Vỏ bánh su dai dẻo độc quyền không giống su kem thông thường, nhân kem sữa béo ngậy được bơm đầy ắp mát lạnh khi cắn ngập miệng",
+        "socialCons": "Nên ăn ngay khi kem còn lạnh, để ngoài trời lâu kem sẽ bị chảy mềm"
+      },
+      "price_per_person_vnd": 45000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-chewy-junior",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-beard-papas",
+    "name": "Beard Papa's (Tầng B1 Vạn Hạnh Mall — Su Kem Nhật Vỏ Giòn Rụm)",
+    "category": "Fresh Japanese Choux Pastry & Vanilla Cream Puffs",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "Tầng B1 Vạn Hạnh Mall",
+    "address": "Tầng B1, Vạn Hạnh Mall, 11 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-beard-papas",
+    "lat": 10.7766,
+    "lng": 106.6691,
+    "rating": 4.7,
+    "reviewsCount": 2200,
+    "pricePerPersonVnd": 50000,
+    "avgPrice": "38k - 68k VND",
+    "tags": [
+      "Beard Papas",
+      "Su Kem Nhật",
+      "Vạn Hạnh Mall",
+      "Quận 10",
+      "Vỏ Giòn Pie Choux",
+      "Vani Tươi",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "cream_puffs",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "mall_food_court_seating"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Hầm gửi xe TTTM Vạn Hạnh Mall"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "09:30",
+        "close": "22:00",
+        "is24_7": false,
+        "displayText": "09:30 - 22:00",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Pie Choux vani vỏ giòn rụm phủ đường bột",
+          "Cookie Choux giòn tan nhân kem socola Bỉ",
+          "Kaze Kaze su kem que hạnh nhân giòn rụm"
+        ],
+        "socialPros": "Chỉ khi khách gọi mới bắt đầu bơm kem lạnh từ máy vào bên trong giúp vỏ bánh luôn giữ độ giòn tan tuyệt đối, hạt vani đen tự nhiên thơm nức",
+        "socialCons": "Quầy bán kiểu mang đi trong TTTM, chỗ ngồi ăn tại chỗ chung khu ẩm thực"
+      },
+      "price_per_person_vnd": 50000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "Tầng B1 Vạn Hạnh Mall",
+      "place_id": "place_hcm-q10-beard-papas",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-tous-les-jours",
+    "name": "Tous Les Jours (302 Sư Vạn Hạnh — Chuỗi Bánh Ngọt Pháp - Hàn Cao Cấp)",
+    "category": "French-Asian Bakery Cafe & Fresh Fruit Cakes",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "302 Sư Vạn Hạnh, Phường 9, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-tous-les-jours",
+    "lat": 10.7698,
+    "lng": 106.6675,
+    "rating": 4.6,
+    "reviewsCount": 3200,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "35k - 90k VND",
+    "tags": [
+      "Tous Les Jours",
+      "Bánh Ngọt Hàn",
+      "Sư Vạn Hạnh",
+      "Quận 10",
+      "Bánh Kem Tươi",
+      "Croissant",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "balanced",
+      "pastryType": "french_asian_bakery",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "cozy_french_cafe_corner"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có nhân viên bảo vệ dắt xe máy xếp thẳng hàng"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "07:00",
+        "close": "22:00",
+        "is24_7": false,
+        "displayText": "07:00 - 22:00",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Bánh kem tươi trái cây Cloud Cake xốp nhẹ",
+          "Croissant phô mai hạnh nhân nướng vàng ươm",
+          "Bánh ngọt chà bông gà cay phô mai"
+        ],
+        "socialPros": "Thương hiệu bánh danh tiếng chất lượng đồng đều, bánh mì và bánh ngọt tươi mới được nướng mỗi sáng, phòng lạnh thơm ngát mùi bơ nướng",
+        "socialCons": "Khung giờ tan tầm 17h-18h lượng khách ghé mua bánh mang về ăn tối rất đông"
+      },
+      "price_per_person_vnd": 55000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-tous-les-jours",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-givral-nguyentriphuong",
+    "name": "Givral Bakery (306 Nguyễn Tri Phương — Bánh Ngọt Di Sản Pháp 70 Năm)",
+    "category": "70-Year Heritage French Bakery & Fresh Corn Pastries",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "306 Nguyễn Tri Phương, Phường 4, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-givral-nguyentriphuong",
+    "lat": 10.7638,
+    "lng": 106.6672,
+    "rating": 4.7,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 60000,
+    "avgPrice": "40k - 110k VND",
+    "tags": [
+      "Givral",
+      "Bánh Pháp 70 Năm",
+      "Nguyễn Tri Phương",
+      "Quận 10",
+      "Bánh Bắp",
+      "Choux Kem",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "heritage_french_bakery",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": false
+      },
+      "seatingComfort": {
+        "value": "takeaway_counter"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Dừng xe trước cửa tiệm có nhân viên hỗ trợ"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "06:30",
+        "close": "21:30",
+        "is24_7": false,
+        "displayText": "06:30 - 21:30",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Bánh kem bắp Givral sốt sữa béo ngậy truyền thống",
+          "Bánh Choux a la crème nhân kem lạnh béo mịn",
+          "Bánh Mousse chanh dây chua thanh tươi mát"
+        ],
+        "socialPros": "Thương hiệu bánh ngọt Pháp lâu đời bậc nhất Sài Gòn từ năm 1950, công thức kem bắp tươi giữ vững phong độ qua nhiều thập kỷ",
+        "socialCons": "Cửa hàng chủ yếu phục vụ mua mang về (take-away)"
+      },
+      "price_per_person_vnd": 60000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-givral-nguyentriphuong",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-brodard-nguyentriphuong",
+    "name": "Brodard Bakery (219 Nguyễn Tri Phương — Bánh Ngọt Pháp Từ 1948)",
+    "category": "Artisanal French Heritage Bakery, Tiramisu & Pastries",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "219 Nguyễn Tri Phương, Phường 9, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-brodard-nguyentriphuong",
+    "lat": 10.7655,
+    "lng": 106.667,
+    "rating": 4.6,
+    "reviewsCount": 2300,
+    "pricePerPersonVnd": 65000,
+    "avgPrice": "45k - 120k VND",
+    "tags": [
+      "Brodard",
+      "Bánh Pháp 1948",
+      "Nguyễn Tri Phương",
+      "Quận 10",
+      "Tiramisu",
+      "Tart Dâu",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "heritage_french_bakery",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": false
+      },
+      "seatingComfort": {
+        "value": "takeaway_counter"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ dắt xe trước tiệm"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "07:00",
+        "close": "21:30",
+        "is24_7": false,
+        "displayText": "07:00 - 21:30",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Tiramisu phô mai Mascarpone rắc bột cacao đắng thơm",
+          "Tart dâu tây tươi mứt dâu rừng chua ngọt",
+          "Bánh cookies bơ nướng hạt dẻ giòn tan"
+        ],
+        "socialPros": "Biểu tượng bánh ngọt Pháp sang trọng từ 1948, các dòng bánh mousse và tiramisu có độ béo ngậy đằm thắm theo phong cách quý tộc Pháp",
+        "socialCons": "Chủ yếu bán mang về, không có không gian ngồi ăn tại chỗ lâu"
+      },
+      "price_per_person_vnd": 65000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-brodard-nguyentriphuong",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-seor-bingsu",
+    "name": "Seor Bingsu (283 Cách Mạng Tháng 8 / Thành Thái — Kem Tuyết Bingsu Hàn Quốc)",
+    "category": "Korean Shaved Snow Bingsu & Gelato Waffle Lounge",
+    "type": "dessert",
+    "isAlley": true,
+    "alleyNote": "Hẻm xe hơi 283 Cách Mạng Tháng 8 thông ra Thành Thái",
+    "address": "283/22 Cách Mạng Tháng 8, Phường 12, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-seor-bingsu",
+    "lat": 10.778,
+    "lng": 106.6715,
+    "rating": 4.6,
+    "reviewsCount": 2600,
+    "pricePerPersonVnd": 65000,
+    "avgPrice": "45k - 95k VND",
+    "tags": [
+      "Bingsu Hàn Quốc",
+      "Seor Bingsu",
+      "Thành Thái",
+      "Quận 10",
+      "Bingsu Xoài Phô Mai",
+      "Đá Bào Tuyết",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "balanced",
+      "pastryType": "korean_bingsu",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "spacious_youth_lounge"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ xe máy trong hẻm có bảo vệ phát thẻ"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "11:00",
+        "close": "22:30",
+        "is24_7": false,
+        "displayText": "11:00 - 22:30",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Bingsu xoài cát chín cây sốt phô mai viên béo ngậy",
+          "Bingsu dâu tây tuyết sữa ngọt ngào mát lịm",
+          "Bánh Waffle nướng giòn rưới mật ong kem vani"
+        ],
+        "socialPros": "Tô bingsu khổng lồ ngập ngụa trái cây tươi và phô mai khối, đá bào từ sữa tươi siêu mịn tan ngay đầu lưỡi không hề dăm đá, giá cực kỳ sinh viên",
+        "socialCons": "Khách học sinh sinh viên đến ăn tụ tập buổi tối rất đông đúc nhộn nhịp"
+      },
+      "price_per_person_vnd": 65000,
+      "type": "sweet_food",
+      "is_alley": true,
+      "alley_note": "Hẻm xe hơi 283 Cách Mạng Tháng 8 thông ra Thành Thái",
+      "place_id": "place_hcm-q10-seor-bingsu",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-yijia-dessert",
+    "name": "Yi Jia Dessert (363 Vĩnh Viễn — Chè Tráng Miệng Hong Kong & Tuyết Yến)",
+    "category": "Artisan Hong Kong & Taiwanese Dessert House",
+    "type": "dessert",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "363 Vĩnh Viễn, Phường 5, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-yijia-dessert",
+    "lat": 10.7618,
+    "lng": 106.6645,
+    "rating": 4.7,
+    "reviewsCount": 2400,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "38k - 75k VND",
+    "tags": [
+      "Yi Jia Dessert",
+      "Chè Hong Kong",
+      "Vĩnh Viễn",
+      "Quận 10",
+      "Dừa Hấp Tuyết Yến",
+      "Tráng Miệng Hoa",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "hong_kong_dessert",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": false
+      },
+      "seatingComfort": {
+        "value": "cozy_asian_dessert_diner"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Gửi xe máy trước cửa tiệm trên vỉa hè"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "12:00",
+        "close": "22:30",
+        "is24_7": false,
+        "displayText": "12:00 - 22:30",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Dừa xiêm hấp tuyết yến sữa tươi thanh mát dưỡng nhan",
+          "Chè trôi nước mè đen thơm nồng ấm nóng",
+          "Chè xoài bưởi sago trân châu nổ"
+        ],
+        "socialPros": "Menu món tráng miệng kiểu Hoa & Hong Kong được trình bày đẹp mắt như tác phẩm nghệ thuật, vị ngọt thanh từ đường phèn tự nhiên rất thanh lọc cơ thể",
+        "socialCons": "Quán diện tích nhỏ nhắn, vào tối cuối tuần thường phải đợi bàn một chút"
+      },
+      "price_per_person_vnd": 55000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-yijia-dessert",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-che-thai-y-phuong",
+    "name": "Chè Thái Ý Phương (382 Nguyễn Tri Phương — Đệ Nhất Chè Thái Sài Gòn)",
+    "category": "Legendary Thai Sweet Soup & Durian Coconut Treats",
+    "type": "dessert",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "382 Nguyễn Tri Phương, Phường 4, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-che-thai-y-phuong",
+    "lat": 10.7628,
+    "lng": 106.6668,
+    "rating": 4.6,
+    "reviewsCount": 5200,
+    "pricePerPersonVnd": 45000,
+    "avgPrice": "35k - 65k VND",
+    "tags": [
+      "Chè Thái Ý Phương",
+      "Chè Thái Sầu Riêng",
+      "Nguyễn Tri Phương",
+      "Quận 10",
+      "Nước Cốt Dừa",
+      "Ăn Đêm",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "rich_creamy",
+      "pastryType": "thai_sweet_soup",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": false
+      },
+      "seatingComfort": {
+        "value": "bustling_multi_floor_hall"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi gửi xe riêng có nhân viên dắt xe nhiệt tình"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "10:00",
+        "close": "01:00",
+        "is24_7": false,
+        "displayText": "10:00 - 01:00 (Sáng hôm sau)",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Chè Thái sầu riêng cơm vàng béo ngậy thơm nức mũi",
+          "Rau câu trái dừa tươi mát lịm",
+          "Chè khúc bạch phô mai hạnh nhân"
+        ],
+        "socialPros": "Biểu tượng món ngọt số 1 Sài Gòn hơn 20 năm, bát chè Thái đầy ắp thạch hạt lựu, mít xé sợi, nhãn nhục ngập trong nước cốt sữa dừa sầu riêng béo ngậy",
+        "socialCons": "Quán cực kỳ đông khách ra vào nườm nượp, không gian nhộn nhịp hối hả"
+      },
+      "price_per_person_vnd": 45000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-che-thai-y-phuong",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-bo-bong-benh",
+    "name": "Tiệm Bánh Bơ Bồng Bềnh (42 Cửu Long — Bento Cake & Soft Cookies)",
+    "category": "Korean Bento Cake Studio & American Soft Cookies",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "Khu Cư Xá Bắc Hải",
+    "address": "42 Cửu Long, Phường 15, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-bo-bong-benh",
+    "lat": 10.7795,
+    "lng": 106.6625,
+    "rating": 4.8,
+    "reviewsCount": 1950,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "38k - 95k VND",
+    "tags": [
+      "Bơ Bồng Bềnh",
+      "Bento Cake",
+      "Cửu Long",
+      "Bắc Hải",
+      "Quận 10",
+      "Soft Cookies",
+      "Bánh Sinh Nhật Nhỏ",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "cookies_and_bento",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "pastel_korean_studio"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Chỗ để xe máy rộng rãi ngay trước tiệm"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "09:00",
+        "close": "21:00",
+        "is24_7": false,
+        "displayText": "09:00 - 21:00",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Bento Cake Hàn Quốc vẽ hình theo yêu cầu kem cheese thanh nhẹ",
+          "Red Velvet Soft Cookies nhân kem phô mai chảy",
+          "Bánh bông lan trứng muối sốt hoàng kim"
+        ],
+        "socialPros": "Tiệm bánh được giới trẻ và gen Z cực kỳ ưa chuộng vì các mẫu bánh bento nhỏ xinh vẽ hình đáng yêu, cốt bánh ẩm xốp không hề khô, vị kem cheese chua nhẹ béo mịn",
+        "socialCons": "Nếu cần đặt bánh vẽ hình thiết kế riêng nên nhắn trước tiệm 1 ngày"
+      },
+      "price_per_person_vnd": 55000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "Khu Cư Xá Bắc Hải",
+      "place_id": "place_hcm-q10-bo-bong-benh",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-meet-fresh",
+    "name": "Meet Fresh (391 Nguyễn Tri Phương — Chè Thảo Mộc & Khoai Dẻo Đài Loan)",
+    "category": "Authentic Taiwanese Herbal Dessert & Taro Balls",
+    "type": "dessert",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "391 Nguyễn Tri Phương, Phường 5, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-meet-fresh",
+    "lat": 10.7622,
+    "lng": 106.6669,
+    "rating": 4.6,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "55k - 95k VND",
+    "tags": [
+      "Meet Fresh",
+      "Chè Đài Loan",
+      "Nguyễn Tri Phương",
+      "Quận 10",
+      "Khoai Dẻo",
+      "Thạch Thảo Mộc",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "taiwanese_dessert",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "spacious_taiwanese_cafe_tables"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ dắt xe máy ngay trước cửa"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "10:00",
+        "close": "22:30",
+        "is24_7": false,
+        "displayText": "10:00 - 22:30",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Tô chè thảo mộc số 4 khoai dẻo, đậu đỏ bùi & đá tuyết thảo mộc",
+          "Kem tuyết Taro taro tảng béo ngậy",
+          "Pudding đậu nành mịn màng"
+        ],
+        "socialPros": "Viên khoai dẻo làm từ khoai môn và khoai lang tự nhiên dẻo thơm sần sật, nước cốt thảo mộc thơm thanh mát bổ dưỡng",
+        "socialCons": "Mức giá cao hơn chè truyền thống một chút nhưng chất lượng nguyên liệu chuẩn Đài Loan"
+      },
+      "price_per_person_vnd": 75000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-meet-fresh",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-tiem-banh-kim-loan",
+    "name": "Tiệm Bánh Kim Loan (90 Thành Thái — Bánh Ngọt & Bông Lan Trứng Muối Lâu Năm)",
+    "category": "Traditional Family Bakery & Salted Egg Sponge Cakes",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "90 Thành Thái, Phường 12, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-tiem-banh-kim-loan",
+    "lat": 10.7735,
+    "lng": 106.6635,
+    "rating": 4.6,
+    "reviewsCount": 2200,
+    "pricePerPersonVnd": 45000,
+    "avgPrice": "30k - 70k VND",
+    "tags": [
+      "Kim Loan Bakery",
+      "Bông Lan Trứng Muối",
+      "Thành Thái",
+      "Quận 10",
+      "Bánh Bắp",
+      "Bánh Gia Đình",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "balanced",
+      "pastryType": "traditional_vietnamese_bakery",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": false
+      },
+      "seatingComfort": {
+        "value": "takeaway_bakery"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Dừng xe máy mua nhanh trên vỉa hè Thành Thái"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "06:00",
+        "close": "21:30",
+        "is24_7": false,
+        "displayText": "06:00 - 21:30",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Bánh bông lan trứng muối sốt bơ dầu trứng đậm đà chà bông gà cay",
+          "Bánh su kem dài Éclair sốt socola",
+          "Bánh bắp nướng thơm lừng"
+        ],
+        "socialPros": "Tiệm bánh gia đình quen thuộc của người dân Quận 10 nhiều năm, sốt dầu trứng nhà làm béo ngậy mặn ngọt hài hòa, giá cả rất bình dân",
+        "socialCons": "Chủ yếu bán mang về"
+      },
+      "price_per_person_vnd": 45000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-tiem-banh-kim-loan",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-the-dome-kissa",
+    "name": "The Dome Kissa Cafe (Cư Xá Bắc Hải — Trà Chiều & Bánh Ngọt Kissaten Nhật Bản)",
+    "category": "Japanese Kissaten Cafe, High Tea & Charcoal Crepe",
+    "type": "cafe",
+    "isAlley": true,
+    "alleyNote": "Khu biệt thự Cư Xá Bắc Hải tĩnh lặng",
+    "address": "10/16 Đoàn Thị Điểm (Khu Bắc Hải), Phường 15, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-the-dome-kissa",
+    "lat": 10.7798,
+    "lng": 106.6632,
+    "rating": 4.7,
+    "reviewsCount": 1850,
+    "pricePerPersonVnd": 70000,
+    "avgPrice": "50k - 110k VND",
+    "tags": [
+      "The Dome Kissa",
+      "Trà Chiều Nhật",
+      "Bắc Hải",
+      "Quận 10",
+      "Bánh Crepe Than Tre",
+      "Yên Tĩnh",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "low_sugar",
+      "pastryType": "japanese_kissaten_desserts",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "vintage_japanese_plush_armchairs"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có chỗ để xe máy trước quán trong ngõ rộng"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "09:00",
+        "close": "22:00",
+        "is24_7": false,
+        "displayText": "09:00 - 22:00",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Bánh crepe than tre kem tươi tuyết mát lạnh",
+          "Set trà hoa cúc quả mọng kèm cookies bơ hạt",
+          "Matcha Latte nguyên bản đánh bọt chổi chasen"
+        ],
+        "socialPros": "Không gian tĩnh lặng mang đậm chất hoài niệm của các quán cà phê Kissaten cổ kính Tokyo, ánh đèn vàng ấm cúng cực kỳ hợp cho hẹn hò đàm đạo và đọc sách",
+        "socialCons": "Quán giữ không gian yên tĩnh nên không phù hợp nhóm bạn nói chuyện quá lớn tiếng"
+      },
+      "price_per_person_vnd": 70000,
+      "type": "sweet_food",
+      "is_alley": true,
+      "alley_note": "Khu biệt thự Cư Xá Bắc Hải tĩnh lặng",
+      "place_id": "place_hcm-q10-the-dome-kissa",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-che-mam-khanh-vy",
+    "name": "Chè Mâm Khánh Vy (242B Sư Vạn Hạnh — Mâm 16 Món Chè Truyền Thống Sài Gòn)",
+    "category": "Iconic 16-Bowl Traditional Sweet Soup Tray & Sticky Rice",
+    "type": "dessert",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "242B Sư Vạn Hạnh, Phường 2, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-che-mam-khanh-vy",
+    "lat": 10.7625,
+    "lng": 106.6665,
+    "rating": 4.6,
+    "reviewsCount": 4800,
+    "pricePerPersonVnd": 40000,
+    "avgPrice": "30k - 65k VND",
+    "tags": [
+      "Chè Mâm",
+      "Khánh Vy",
+      "Sư Vạn Hạnh",
+      "Quận 10",
+      "16 Món Chè",
+      "Nước Cốt Dừa Béo",
+      "Sinh Viên",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "rich_creamy",
+      "pastryType": "traditional_vietnamese_sweet_soup",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": false
+      },
+      "seatingComfort": {
+        "value": "open_air_sidewalk_stools"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Gửi xe máy trước quán có người trông coi"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "14:30",
+        "close": "23:00",
+        "is24_7": false,
+        "displayText": "14:30 - 23:00",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Mâm 16 chén chè truyền thống đủ loại (chè bà ba, chè đậu trắng, chè bắp, chè thưng)",
+          "Xôi nước cốt dừa dẻo thơm",
+          "Bánh flan rau câu béo mịn"
+        ],
+        "socialPros": "Trải nghiệm ăn chè mâm huyền thoại của giới trẻ Sài Gòn, gọi nguyên một mâm 16 chén cho nhóm 3-4 bạn ăn thỏa thích với giá cực kỳ hạt dẻ",
+        "socialCons": "Ngồi bàn ghế nhựa vỉa hè mát mẻ, giờ cao điểm 19h-21h rất đông"
+      },
+      "price_per_person_vnd": 40000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-che-mam-khanh-vy",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cheese-coffee-suvanhanh",
+    "name": "Cheese Coffee (782 Sư Vạn Hạnh — Basque Cheesecake & Trà Cam Quế)",
+    "category": "Contemporary Lifestyle Cafe & European Baked Pastries",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "782 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "place_hcm-q10-cheese-coffee-suvanhanh",
+    "lat": 10.7772,
+    "lng": 106.6688,
+    "rating": 4.6,
+    "reviewsCount": 3800,
+    "pricePerPersonVnd": 65000,
+    "avgPrice": "45k - 85k VND",
+    "tags": [
+      "Cheese Coffee",
+      "Basque Cheesecake",
+      "Sư Vạn Hạnh",
+      "Quận 10",
+      "Trà Cam Quế",
+      "Red Velvet",
+      "sweet_food"
+    ],
+    "attributes": {
+      "sweetnessLevel": "balanced",
+      "pastryType": "cheesecake_and_pastry",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "industrial_chic_cushioned"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi xe máy rộng rãi có bảo vệ trông coi"
+      },
+      "heroImage": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=800&q=80",
+      "photos": [
+        "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80"
+      ],
+      "openingHours": {
+        "open": "07:00",
+        "close": "22:30",
+        "is24_7": false,
+        "displayText": "07:00 - 22:30",
+        "openDays": "Thứ 2 - Chủ Nhật"
+      },
+      "social_highlights": {
+        "signatureDishes": [
+          "Burnt Basque Cheesecake nướng cháy cạnh béo mịn ngậy phô mai",
+          "Bánh Red Velvet nhung đỏ sốt kem cheese",
+          "Trà cam quế thơm nồng ấm áp"
+        ],
+        "socialPros": "Thiết kế phong cách công nghiệp châu Âu hiện đại bắt mắt, bánh phô mai nướng Basque chuẩn vị với phần lõi chảy sánh mịn, trà pha đậm đà",
+        "socialCons": "Buổi chiều tối rất đông bạn trẻ ghé học tập và trò chuyện"
+      },
+      "price_per_person_vnd": 65000,
+      "type": "sweet_food",
+      "is_alley": false,
+      "alley_note": "",
+      "place_id": "place_hcm-q10-cheese-coffee-suvanhanh",
+      "venueTypeGroup": "sweet_food_eateries"
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-phela-truongson",
+    "name": "Phê La — Cư Xá Bắc Hải (CC26 Trường Sơn)",
+    "category": "Specialty Oolong Tea & Camp-Style Cafe",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "CC26 - CC27 Trường Sơn, Cư Xá Bắc Hải, Phường 15, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7816,
+    "lng": 106.6635,
+    "rating": 4.8,
+    "reviewsCount": 3120,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "45k - 65k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "tra-sua",
+      "o-long-sua-chao",
+      "phe-la",
+      "cu-xa-bac-hai",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "camp_chairs_and_low_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi giữ xe rộng rãi trước quán, có bảo vệ dắt xe",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Ô Long Sữa Chảo",
+          "Ô Long Nhài Sữa",
+          "Trà Bơ Dừa Non"
+        ],
+        "vibe": "Camping chill ngoài trời & trong nhà phong cách mộc",
+        "bestFor": "Tụ tập bạn bè, uống trà sữa đậm vị ô long"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-phela-lythuongkiet",
+    "name": "Phê La — Lý Thường Kiệt (140 Lý Thường Kiệt)",
+    "category": "Artisan Oolong Tea & Modern Coffee Lounge",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "140 Lý Thường Kiệt, Phường 14, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7688,
+    "lng": 106.6575,
+    "rating": 4.7,
+    "reviewsCount": 1850,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "45k - 65k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "tra-sua",
+      "phe-la",
+      "ly-thuong-kiet",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "spacious_modern_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Mặt tiền rộng, nhân viên hỗ trợ dắt xe",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Ô Long Nhiệt Đới",
+          "Gấm (Trà Nhài Kem Sữa)",
+          "Trà Sữa Phê La"
+        ],
+        "vibe": "Không gian 2 mặt tiền hiện đại, sáng sủa",
+        "bestFor": "Gặp gỡ bạn bè nhóm 4-6 người"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-phuclong-suvanhanh",
+    "name": "Phúc Long Coffee & Tea — Sư Vạn Hạnh",
+    "category": "Traditional Vietnamese Tea & Milk Tea Legend",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "766 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7748,
+    "lng": 106.6685,
+    "rating": 4.6,
+    "reviewsCount": 4200,
+    "pricePerPersonVnd": 60000,
+    "avgPrice": "45k - 75k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "tra-sua",
+      "tra-dao",
+      "phuc-long",
+      "su-van-hanh",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "wooden_chairs_and_sofa",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Gửi xe trước quán hoặc hầm tòa nhà lân cận",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Đào Cam Sả",
+          "Trà Sữa Phúc Long",
+          "Trà Ô Long Sữa Kem"
+        ],
+        "vibe": "Sôi động, tấp nập giới trẻ Sài Thành",
+        "bestFor": "Tín đồ trà đậm đà, vị trà trứ danh"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-koithe-suvanhanh",
+    "name": "KOI Thé — Sư Vạn Hạnh (790 Sư Vạn Hạnh)",
+    "category": "Taiwanese Artisan Boba & Golden Bubble Milk Tea",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "790 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7753,
+    "lng": 106.6682,
+    "rating": 4.7,
+    "reviewsCount": 3890,
+    "pricePerPersonVnd": 65000,
+    "avgPrice": "50k - 80k VND",
+    "tags": [
+      "milk_tea",
+      "cafe",
+      "tra-sua",
+      "tran-chau-hoang-kim",
+      "koi-the",
+      "su-van-hanh",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "modern_cafe_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có nhân viên giữ xe miễn phí phía trước",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Lục Trà Macchiato",
+          "Trà Sữa Trân Châu Hoàng Kim",
+          "Ovaltine Macchiato"
+        ],
+        "vibe": "Hiện đại chuẩn Đài Loan, phục vụ siêu chuẩn mực",
+        "bestFor": "Hội ghiền trân châu dẻo và lớp kem cheese béo mịn"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-katinat-nguyentriphuong",
+    "name": "Katinat Saigon Kafe — Nguyễn Tri Phương",
+    "category": "Trendy Urban Coffee & Specialty Teas",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "533 Nguyễn Tri Phương, Phường 8, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7672,
+    "lng": 106.6669,
+    "rating": 4.7,
+    "reviewsCount": 2950,
+    "pricePerPersonVnd": 60000,
+    "avgPrice": "45k - 75k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "tra-sua-chom-chom",
+      "katinat",
+      "nguyen-tri-phuong",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "designer_wood_chairs",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Bảo vệ trông xe vỉa hè",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Sữa Chôm Chôm",
+          "Bơ Già Dừa Non",
+          "Cà Phê Latte Hạnh Nhân"
+        ],
+        "vibe": "Kiến trúc vòm kính retro Paris sang trọng, góc check-in sống ảo cực đẹp",
+        "bestFor": "Hẹn hò, trò chuyện rôm rả cuối tuần"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-katinat-caothang",
+    "name": "Katinat Saigon Kafe — Cao Thắng Nối Dài",
+    "category": "Designer Cafe & High-Ceiling Meeting Space",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "442 Cao Thắng Nối Dài, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7761,
+    "lng": 106.6749,
+    "rating": 4.8,
+    "reviewsCount": 3400,
+    "pricePerPersonVnd": 60000,
+    "avgPrice": "45k - 75k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "katinat",
+      "cao-thang",
+      "tra-o-long",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "curved_sofas_spacious_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi giữ xe rộng ngay góc đường",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Ô Long Dâu Tây Sữa",
+          "Trà Sữa Katinat",
+          "Bánh Croissant Bơ Pháp"
+        ],
+        "vibe": "Trần cao lộng gió, tone xám xi măng thời thượng",
+        "bestFor": "Gặp gỡ đối tác, làm việc ban ngày, sống ảo ban đêm"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-chidori-suvanhanh",
+    "name": "Chidori — Coffee in Bed (Sư Vạn Hạnh)",
+    "category": "Japanese Coffee in Bed & Quiet Rest Sanctuary",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "796/2A Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7758,
+    "lng": 106.6678,
+    "rating": 4.8,
+    "reviewsCount": 1650,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "70k - 120k VND (bao gồm giờ giường nệm)",
+    "tags": [
+      "cafe",
+      "coffee-in-bed",
+      "chidori",
+      "nghi-ngoi",
+      "su-van-hanh",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "private_wooden_bunks_with_mattress",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Gửi xe đầu hẻm có vé",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Matcha Float Kem Nhật",
+          "Trà Hoa Cúc Mật Ong",
+          "Bánh Toast Bơ Tỏi Phô Mai"
+        ],
+        "vibe": "Ấm cúng, mộc mạc phong cách Nhật, giường nằm riêng tư",
+        "bestFor": "Nghỉ trưa, đọc sách, hẹn hò lãng mạn yên tĩnh"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-threeoclock-cmt8",
+    "name": "Three O'Clock — 24/7 (551 Cách Mạng Tháng 8)",
+    "category": "24/7 Specialty Coffee & Night Owl Work Hub",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "551 Cách Mạng Tháng 8, Phường 15, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7838,
+    "lng": 106.6648,
+    "rating": 4.6,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "40k - 70k VND",
+    "tags": [
+      "cafe",
+      "24-7",
+      "chay-deadline",
+      "three-oclock",
+      "cmt8",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "ergonomic_chairs_power_outlets_everywhere",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi xe 24/24 có bảo vệ túc trực",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Cam Quế Nóng",
+          "Cà Phê Cold Brew Macchiato",
+          "Bánh Mousse Chanh Leo"
+        ],
+        "vibe": "Không gian làm việc tập trung cao độ, ổ cắm điện mọi ngóc ngách",
+        "bestFor": "Chạy deadline xuyên đêm, học nhóm thâu đêm"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-winnies-suvanhanh",
+    "name": "Winnie's Vietnam — Pastel Bubble Tea (764 Sư Vạn Hạnh)",
+    "category": "Aesthetic Giant Egg Boba & Sweet Milk Tea",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "764 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7746,
+    "lng": 106.6686,
+    "rating": 4.7,
+    "reviewsCount": 1980,
+    "pricePerPersonVnd": 58000,
+    "avgPrice": "45k - 70k VND",
+    "tags": [
+      "milk_tea",
+      "cafe",
+      "tra-sua-qua-trung",
+      "winnies",
+      "song-ao",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "cushioned_pastel_chairs",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có bảo vệ sắp xe tận tình",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Sữa Trân Châu Quả Trứng",
+          "Trà Xoài Nhiệt Đới Macchiato",
+          "Bánh Pancake Mềm Xốp"
+        ],
+        "vibe": "Tone pastel ngọt ngào, nhiều background chụp hình cực xinh",
+        "bestFor": "Check-in sống ảo, hội bạn nữ yêu phong cách dễ thương"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-thealley-3thang2",
+    "name": "The Alley — Ba Tháng Hai (510 Ba Tháng Hai)",
+    "category": "Original Brown Sugar Deerioca & Bubble Tea",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "510 Ba Tháng Hai, Phường 14, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7675,
+    "lng": 106.6622,
+    "rating": 4.6,
+    "reviewsCount": 2200,
+    "pricePerPersonVnd": 68000,
+    "avgPrice": "55k - 85k VND",
+    "tags": [
+      "milk_tea",
+      "cafe",
+      "sua-tuoi-tran-chau-duong-den",
+      "the-alley",
+      "3-thang-2",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "cozy_wooden_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Để xe trước cửa quán",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Sữa Tươi Trân Châu Đường Đen",
+          "Lục Trà Sữa Thơm Mát",
+          "Sữa Chua Nếp Cẩm"
+        ],
+        "vibe": "Ấm cúng, biểu tượng chú hươu sừng quen thuộc",
+        "bestFor": "Tín đồ sủng ái hạt trân châu đường đen ấm nóng nấu kỳ công"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-bobapop-suvanhanh",
+    "name": "Bobapop — Taiwan Tea Bar (485 Sư Vạn Hạnh)",
+    "category": "Taiwanese Boba & Fluffy Milk Foam Teas",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "485 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7712,
+    "lng": 106.6695,
+    "rating": 4.5,
+    "reviewsCount": 1750,
+    "pricePerPersonVnd": 42000,
+    "avgPrice": "35k - 55k VND",
+    "tags": [
+      "milk_tea",
+      "cafe",
+      "tra-sui-bot",
+      "bobapop",
+      "gia-hoc-sinh",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "youthful_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ trông xe miễn phí",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Sủi Bọt Căn Bản",
+          "Trà Gạo Lức Nhật Bản",
+          "Trà Xanh Kem Phô Mai"
+        ],
+        "vibe": "Trẻ trung, chú chó Bull ngộ nghĩnh, giá hạt dẻ học sinh sinh viên",
+        "bestFor": "Trà sữa vừa túi tiền, vị đậm thanh"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-ticos-suvanhanh",
+    "name": "Ticos Coffee 24/7 (527 Sư Vạn Hạnh)",
+    "category": "Modern Industrial 24/7 Cafe & Co-Working",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "527 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.772,
+    "lng": 106.6692,
+    "rating": 4.7,
+    "reviewsCount": 2450,
+    "pricePerPersonVnd": 58000,
+    "avgPrice": "45k - 70k VND",
+    "tags": [
+      "cafe",
+      "24-7",
+      "industrial",
+      "ticos",
+      "su-van-hanh",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "leather_sofas_and_long_study_desks",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi giữ xe rộng rãi mặt tiền",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bạc Xỉu Kem Trứng",
+          "Trà Đào Cam Sả Ticos",
+          "Croissant Trứng Muối"
+        ],
+        "vibe": "Không gian phong cách công nghiệp tone đen xám cực chất",
+        "bestFor": "Cú đêm chạy bài, hội họp nhóm, làm việc năng suất"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-cuxa-trabanh",
+    "name": "Cư Xá — Trà Bánh Cà Phê (M8D Hương Giang)",
+    "category": "Retro Vintage Tea, Pastry & Chill Oasis",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "M8D Hương Giang, Cư Xá Bắc Hải, Phường 15, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7828,
+    "lng": 106.6629,
+    "rating": 4.8,
+    "reviewsCount": 1420,
+    "pricePerPersonVnd": 50000,
+    "avgPrice": "38k - 65k VND",
+    "tags": [
+      "cafe",
+      "retro",
+      "tra-hoa-cuc",
+      "cu-xa-bac-hai",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "vintage_wooden_chairs_and_plants",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Để xe trước quán đường nội bộ Cư Xá thoáng đãng",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Cúc Nhãn Nhục",
+          "Cà Phê Muối Cư Xá",
+          "Bánh Quy Bơ Tự Làm"
+        ],
+        "vibe": "Không gian hoài niệm bao cấp, rợp bóng cây xanh mát lành",
+        "bestFor": "Trò chuyện tâm tình nhẹ nhàng, thư giãn cuối tuần"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-hebe-tea",
+    "name": "Hebe Tea & Coffee (345 Sư Vạn Hạnh)",
+    "category": "Artisan Alisan Oolong & Modern Milk Tea",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "345 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7698,
+    "lng": 106.6702,
+    "rating": 4.6,
+    "reviewsCount": 1380,
+    "pricePerPersonVnd": 48000,
+    "avgPrice": "38k - 60k VND",
+    "tags": [
+      "milk_tea",
+      "cafe",
+      "alisan-oolong",
+      "hebe-tea",
+      "su-van-hanh",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "spacious_study_desks",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có nhân viên trông xe tận nơi",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Sữa Alisan Phô Mai Tươi",
+          "Trà Vải Nhiệt Đới",
+          "Trà Đào Hồng Đài"
+        ],
+        "vibe": "Thoáng đãng, sạch sẽ, máy lạnh mát rượi",
+        "bestFor": "Học bài một mình hoặc trò chuyện bạn bè"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-lavida-suvanhanh",
+    "name": "Lavida Coffee and Tea (509 Sư Vạn Hạnh)",
+    "category": "Cheese Foam Tea & Youthful Coffee Spot",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "509 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7716,
+    "lng": 106.6693,
+    "rating": 4.5,
+    "reviewsCount": 1520,
+    "pricePerPersonVnd": 45000,
+    "avgPrice": "35k - 55k VND",
+    "tags": [
+      "milk_tea",
+      "cafe",
+      "kem-cheese",
+      "lavida",
+      "su-van-hanh",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "wooden_chairs",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Gửi xe vỉa hè trước quán",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Đen Macchiato Phô Mai",
+          "Trà Sữa Khoai Môn Dẻo",
+          "Cà Phê Đen Sài Gòn"
+        ],
+        "vibe": "Năng động, nhộn nhịp, thân thiện",
+        "bestFor": "Mua mang đi hoặc ngồi tán gẫu cùng bạn bè"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-mall-van-hanh",
+    "name": "Vạn Hạnh Mall (11 Sư Vạn Hạnh — Đại Siêu TTTM Lớn Nhất Q10)",
+    "category": "Mega Shopping Mall, Cinema, Dining & Entertainment Complex",
+    "type": "mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "11 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7725,
+    "lng": 106.6698,
+    "rating": 4.8,
+    "reviewsCount": 15400,
+    "pricePerPersonVnd": 150000,
+    "avgPrice": "Vào cửa tự do — Mua sắm & Ăn uống đa dạng",
+    "tags": [
+      "shopping_mall",
+      "mall",
+      "van-hanh-mall",
+      "cgv-cinema",
+      "coopxtra",
+      "uniqlo",
+      "mua-sam",
+      "giai-tri",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "mall_lounges_and_food_court_seating",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Hầm giữ xe hiện đại nhiều tầng cho cả ô tô và xe máy",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Thiên Đường Ẩm Thực 50+ Thương Hiệu",
+          "Rạp CGV Cinema Hiện Đại",
+          "Đại Siêu Thị Co.opXtra",
+          "Uniqlo & H&M Thời Trang"
+        ],
+        "vibe": "Hoành tráng 7 tầng nổi, máy lạnh toàn khu, biểu tượng mua sắm giải trí số 1 Q10",
+        "bestFor": "Đi chơi nhóm bạn, hẹn hò cuối tuần, xem phim, ăn uống all-in-one"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-mall-vincom-3thang2",
+    "name": "Vincom Plaza Ba Tháng Hai (3C Đường 3 Tháng 2)",
+    "category": "Modern Commercial Shopping Center & BHD Cinema",
+    "type": "mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "3C Đường 3 Tháng 2, Phường 11, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7745,
+    "lng": 106.6778,
+    "rating": 4.6,
+    "reviewsCount": 8200,
+    "pricePerPersonVnd": 120000,
+    "avgPrice": "Vào cửa tự do — Mua sắm & Giải trí",
+    "tags": [
+      "shopping_mall",
+      "mall",
+      "vincom-plaza",
+      "3-thang-2",
+      "bhd-cinema",
+      "mua-sam",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "rest_benches_and_restaurant_lounges",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi giữ xe tầng hầm và mặt tiền đường 3/2",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Rạp Chiếu Phim BHD Star Cinema",
+          "Khu Mua Sắm Thời Trang & Trang Sức",
+          "Khu Ẩm Thực Nhà Hàng"
+        ],
+        "vibe": "Hiện đại, vị trí cửa ngõ đắc địa ngay vòng xoay Dân Chủ",
+        "bestFor": "Mua sắm thời trang cao cấp, xem phim rạp, gặp gỡ gia đình"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-mall-satramart-saigon",
+    "name": "Satramart — Siêu Thị Sài Gòn (460 Ba Tháng Hai)",
+    "category": "Comprehensive Department Store & Commercial Hub",
+    "type": "mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "460 Ba Tháng Hai, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7683,
+    "lng": 106.6664,
+    "rating": 4.5,
+    "reviewsCount": 5600,
+    "pricePerPersonVnd": 80000,
+    "avgPrice": "Vào cửa tự do — Mua sắm & Ăn uống bình dân",
+    "tags": [
+      "shopping_mall",
+      "mall",
+      "sieu-thi-sai-gon",
+      "satramart",
+      "thanh-thai",
+      "3-thang-2",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "food_court_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ xe ngoài trời rộng lớn, giữ xe an toàn",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Khu Ẩm Thực Food Court Tiện Lợi",
+          "Bách Hóa & Đồ Gia Dụng Phong Phú",
+          "Bánh Nóng Siêu Thị"
+        ],
+        "vibe": "Thân thiện, quen thuộc với bao thế hệ cư dân Sài Gòn",
+        "bestFor": "Mua sắm tiêu dùng, ăn nhanh tiện lợi, đi chợ gia đình"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-mall-coopmart-phutho",
+    "name": "Co.opmart Phú Thọ (Chung Cư Phú Thọ — Lữ Gia)",
+    "category": "Community Shopping Mall & Family Retail Center",
+    "type": "mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "Khu Chung Cư Phú Thọ, Nguyễn Thị Nhỏ (giao Lữ Gia), Phường 15, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7695,
+    "lng": 106.6542,
+    "rating": 4.5,
+    "reviewsCount": 4800,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "Vào cửa tự do — Bách hóa & Giải trí gia đình",
+    "tags": [
+      "shopping_mall",
+      "mall",
+      "coopmart",
+      "phu-tho",
+      "lu-gia",
+      "mua-sam",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "rest_seats_and_bakery_area",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ xe máy và ô tô khuôn viên Phú Thọ",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Quầy Bánh Tươi Co.op Bakery",
+          "Khu Vui Chơi Trẻ Em",
+          "Thời Trang Tiêu Dùng Hàng Ngày"
+        ],
+        "vibe": "Ấm cúng, phục vụ cư dân khu Bắc Hải - Lữ Gia",
+        "bestFor": "Gia đình mua sắm, tiện lợi mua đồ ăn nhanh và giải trí nhẹ nhàng"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-mall-viettel-complex",
+    "name": "Viettel Complex Mall & Food Center (285 CMT8)",
+    "category": "Modern Corporate Shopping, Dining & Retail Tower",
+    "type": "mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "285 Cách Mạng Tháng 8, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7788,
+    "lng": 106.6781,
+    "rating": 4.7,
+    "reviewsCount": 3900,
+    "pricePerPersonVnd": 100000,
+    "avgPrice": "Vào cửa tự do — Cà phê & Nhà hàng văn phòng",
+    "tags": [
+      "shopping_mall",
+      "mall",
+      "viettel-complex",
+      "cmt8",
+      "am-thuc",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "premium_sofa_lounges",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Hầm giữ xe tòa nhà hiện đại thông minh",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Chuỗi Cà Phê Cao Cấp (Highlands, Starbucks)",
+          "Khu Bán Lẻ Công Nghệ & Dịch Vụ",
+          "Nhà Hàng Ẩm Thực Tầng Trệt"
+        ],
+        "vibe": "Sang trọng, hiện đại phong cách văn phòng cao cấp",
+        "bestFor": "Gặp gỡ đối tác, nghỉ trưa, cà phê không gian yên tĩnh lịch thiệp"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-trung-nguyen-3thang2",
+    "name": "Trung Nguyên Legend Cafe (219 Ba Tháng Hai — Cà Phê Năng Lượng & Không Gian Sách)",
+    "category": "Specialty Energy Coffee, Books & Peaceful Balcony Lounge",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "219 Ba Tháng Hai, Phường 10, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7712,
+    "lng": 106.6715,
+    "rating": 4.8,
+    "reviewsCount": 3600,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "55k - 95k VND",
+    "tags": [
+      "cafe",
+      "trung-nguyen",
+      "trung-nguyen-legend",
+      "ca-phe-nang-luong",
+      "view-dep",
+      "yen-tinh",
+      "peaceful",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "brand": "Trung Nguyên Legend",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "spacious_wooden_tables_reading_chairs",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ xe máy và ô tô trước cửa, có bảo vệ hỗ trợ",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Cà Phê Năng Lượng Đổi Đời",
+          "Cà Phê Thiền",
+          "Bạc Xỉu Sữa Hạnh Nhân",
+          "Full Menu Cà Phê & Đồ Ăn Nhẹ"
+        ],
+        "vibe": "Không gian sách tĩnh lặng, ban công view đường 3/2 rợp bóng cây, cực kỳ yên tĩnh và thư thái",
+        "bestFor": "Thưởng thức cà phê đậm đà, đọc sách, làm việc, bàn công việc trong không gian yên tĩnh view đẹp"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-trung-nguyen-suvanhanh",
+    "name": "Trung Nguyên Legend Cafe (824 Sư Vạn Hạnh — Cà Phê Thiền & View Phố)",
+    "category": "Artisan Vietnamese Coffee & Multi-Story Reading Space",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "824 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7762,
+    "lng": 106.6675,
+    "rating": 4.7,
+    "reviewsCount": 2900,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "55k - 95k VND",
+    "tags": [
+      "cafe",
+      "trung-nguyen",
+      "trung-nguyen-legend",
+      "su-van-hanh",
+      "view-pho",
+      "yen-tinh",
+      "peaceful",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "brand": "Trung Nguyên Legend",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "comfortable_leather_wood_sofa",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe tận tình",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Cà Phê Phin Truyền Thống Số 8",
+          "Cà Phê Sữa Đá Năng Lượng",
+          "Trà Thảo Mộc Thiền",
+          "Full Menu Thức Uống"
+        ],
+        "vibe": "Tầng 2 & 3 view cửa kính nhìn xuống phố Sư Vạn Hạnh, nhạc êm dịu, không gian tĩnh tâm",
+        "bestFor": "Hẹn bạn bè tâm sự nhẹ nhàng, không ồn ào, view đẹp"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q10-cafe-trung-nguyen-cmt8",
+    "name": "Trung Nguyên Legend Cafe (601 Cách Mạng Tháng 8 — Không Gian Yên Tĩnh & Làm Việc)",
+    "category": "Tranquil Coffee Haven & Executive Meeting Space",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "601 Cách Mạng Tháng 8, Phường 15, Quận 10, TP.HCM",
+    "placeId": "",
+    "lat": 10.7845,
+    "lng": 106.6625,
+    "rating": 4.7,
+    "reviewsCount": 2400,
+    "pricePerPersonVnd": 70000,
+    "avgPrice": "50k - 90k VND",
+    "tags": [
+      "cafe",
+      "trung-nguyen",
+      "trung-nguyen-legend",
+      "cmt8",
+      "bac-hai",
+      "yen-tinh",
+      "peaceful",
+      "quan-10"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "brand": "Trung Nguyên Legend",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "executive_wood_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Chỗ đỗ xe rộng rãi",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Cà Phê Espresso Legend",
+          "Trà Trái Cây Thanh Nhiệt",
+          "Set Ăn Sáng Cà Phê Năng Lượng",
+          "Full Menu"
+        ],
+        "vibe": "Thoáng đãng, bàn ghế gỗ cao cấp, khu vực máy lạnh yên tĩnh",
+        "bestFor": "Gặp gỡ bạn bè, thưởng thức trọn vẹn menu cà phê cao cấp"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-cafe-trung-nguyen-nam-ky-khoi-nghia",
+    "name": "Trung Nguyên Legend Cafe (264 Nam Kỳ Khởi Nghĩa — Biệt Thự Cà Phê Sân Vườn View Đẹp)",
+    "category": "Flagship Garden Coffee Sanctuary & Peaceful Heritage Villa",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "264 Nam Kỳ Khởi Nghĩa, Phường Võ Thị Sáu, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7905,
+    "lng": 106.6852,
+    "rating": 4.9,
+    "reviewsCount": 5200,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "65k - 120k VND",
+    "tags": [
+      "cafe",
+      "trung-nguyen",
+      "trung-nguyen-legend",
+      "nam-ky-khoi-nghia",
+      "san-vuon",
+      "view-dep",
+      "peaceful",
+      "quan-3",
+      "tan-dinh"
+    ],
+    "attributes": {
+      "type": "cafe_milktea",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "brand": "Trung Nguyên Legend",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "premium_garden_and_indoor_lounges",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi xe rộng có bảo vệ dắt xe miễn phí",
+        "confidence": "high"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Cà Phê Chồn Legend",
+          "Cà Phê Năng Lượng Sáng Tạo",
+          "Full Menu Ẩm Thực & Tráng Miệng"
+        ],
+        "vibe": "Biệt thự sân vườn xanh mát, thác nước phong thủy, view đẹp tuyệt đối, thanh bình giữa lòng thành phố",
+        "bestFor": "Top 1 điểm hẹn cà phê Trung Nguyên view đẹp, yên tĩnh, menu phong phú bậc nhất"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-mall-saigon-centre-takashimaya",
+    "name": "Saigon Centre & Takashimaya Department Store",
+    "category": "Premier Luxury Shopping, Gourmet Dining & Japanese Bakery",
+    "type": "shopping_mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "65 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7735,
+    "lng": 106.7011,
+    "rating": 4.8,
+    "reviewsCount": 12500,
+    "pricePerPersonVnd": 120000,
+    "avgPrice": "70k - 350k VND (Khu ẩm thực B2)",
+    "tags": [
+      "shopping_mall",
+      "takashimaya",
+      "saigon-centre",
+      "le-loi",
+      "dessert",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Hầm xe rộng rãi nhiều tầng tại trung tâm Q1"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh ngọt Nhật Bản tầng B2",
+          "Matcha Hokkaido",
+          "Royce Chocolate"
+        ],
+        "vibe": "Sang trọng, máy lạnh mát rượi, quy tụ hàng chục tiệm bánh và cafe cao cấp",
+        "bestFor": "Đi dạo, mua sắm, thưởng thức đồ ngọt cao cấp"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-mall-vincom-dong-khoi",
+    "name": "Vincom Center Đồng Khởi",
+    "category": "Iconic Downtown Mega Mall & Basement Food Court",
+    "type": "shopping_mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "72 Lê Thánh Tôn & 45A Lý Tự Trọng, Bến Nghé, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7781,
+    "lng": 106.7019,
+    "rating": 4.7,
+    "reviewsCount": 15400,
+    "pricePerPersonVnd": 95000,
+    "avgPrice": "60k - 250k VND",
+    "tags": [
+      "shopping_mall",
+      "vincom",
+      "dong-khoi",
+      "le-thanh-ton",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi xe thông minh hiện đại dưới tầng hầm"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà sữa Gong Cha",
+          "Bánh ngọt Paris Baguette",
+          "Kem Ý"
+        ],
+        "vibe": "Hiện đại, sầm uất, nằm ngay trái tim Sài Gòn",
+        "bestFor": "Hẹn hò nhóm bạn, ăn trưa và trà sữa chiều"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-sweet-maison-marou-calmette",
+    "name": "Maison Marou Saigon — The Chocolate Factory (Calmette)",
+    "category": "Artisan Chocolate, Gourmet Pastries & Signature Mocha",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "167-169 Calmette, Phường Nguyễn Thái Bình, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7686,
+    "lng": 106.6995,
+    "rating": 4.8,
+    "reviewsCount": 3800,
+    "pricePerPersonVnd": 110000,
+    "avgPrice": "75k - 150k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "chocolate",
+      "pastry",
+      "marou",
+      "calmette",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Bảo vệ hướng dẫn để xe máy trước cửa tiệm"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Tart Chocolate Marou",
+          "Chocolate Mousse",
+          "Kem Gelato Chocolate"
+        ],
+        "vibe": "Xưởng socola thủ công thơm nức mũi, không gian kính nhìn thợ làm bánh trực tiếp",
+        "bestFor": "Thực khách mê socola nguyên chất, bánh ngọt nghệ thuật"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-sweet-bakes-saigon",
+    "name": "Bakes Saigon — French Viennoiserie & Pâtisserie",
+    "category": "Contemporary French Bakery & Creative Pastries",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "47B Trần Cao Vân, Phường Đa Kao, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7838,
+    "lng": 106.6975,
+    "rating": 4.7,
+    "reviewsCount": 1650,
+    "pricePerPersonVnd": 95000,
+    "avgPrice": "65k - 140k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "pastry",
+      "croissant",
+      "canelle",
+      "bakes",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có bảo vệ hỗ trợ dắt xe và trông xe miễn phí"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Canelé Pháp",
+          "Croissant Bơ Pháp",
+          "Tart Chanh Vàng"
+        ],
+        "vibe": "Kiến trúc Pháp hiện đại tối giản, không gian thơm ngát mùi bơ nướng",
+        "bestFor": "Thưởng thức bánh ngọt chuẩn Pháp, chụp hình check-in thanh lịch"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-sweet-morico-le-loi",
+    "name": "Morico — Contemporary Japanese Dessert & Matcha Cafe",
+    "category": "Premium Uji Matcha Desserts & Parfait",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "30 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7742,
+    "lng": 106.7018,
+    "rating": 4.8,
+    "reviewsCount": 2200,
+    "pricePerPersonVnd": 90000,
+    "avgPrice": "60k - 120k VND",
+    "tags": [
+      "sweet_food",
+      "matcha",
+      "parfait",
+      "japanese-dessert",
+      "morico",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Giữ xe máy ngay vỉa hè trước quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Matcha Parfait 7 tầng",
+          "Kem Gelato Matcha Uji",
+          "Bánh Warabi Mochi"
+        ],
+        "vibe": "Không gian thiền Nhật Bản ấm cúng, tinh tế",
+        "bestFor": "Tín đồ nghiện Matcha đậm vị Nhật Bản"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-sweet-tous-les-jours-hai-ba-trung",
+    "name": "TOUS les JOURS — Hai Bà Trưng Bakery Cafe",
+    "category": "Artisan Korean-French Bakery & Fresh Cream Cakes",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "180 Hai Bà Trưng, Phường Đa Kao, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7871,
+    "lng": 106.6968,
+    "rating": 4.6,
+    "reviewsCount": 2900,
+    "pricePerPersonVnd": 60000,
+    "avgPrice": "35k - 90k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "tous-les-jours",
+      "cake",
+      "bread",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe trước mặt tiền rộng rãi"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Kem Bắp Fresh Corn Cake",
+          "Bánh Mì Phô Mai Tan Chảy",
+          "Croissant Trứng Muối"
+        ],
+        "vibe": "Ấm cúng, tủ bánh tươi đầy ắp ra lò liên tục trong ngày",
+        "bestFor": "Mua bánh sinh nhật, ngồi cafe bánh ngọt ngắm phố"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-cafe-the-workshop-coffee",
+    "name": "The Workshop Coffee — Specialty Roastery",
+    "category": "Third-Wave Specialty Coffee & Artisan Brunch",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "27 Ngô Đức Kế, Phường Bến Nghé, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7745,
+    "lng": 106.7052,
+    "rating": 4.7,
+    "reviewsCount": 3400,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "65k - 120k VND",
+    "tags": [
+      "cafe",
+      "specialty_coffee",
+      "pour_over",
+      "workshop",
+      "ngo-duc-ke",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "sofa_and_work_desks",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Gửi xe máy dưới tầng trệt tòa nhà"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Cold Brew Cam Vàng",
+          "V60 Pour Over Hạt Arabica Cầu Đất",
+          "Affogato Kem Vani"
+        ],
+        "vibe": "Phong cách Industrial loft tầng lầu ngập ánh sáng tự nhiên",
+        "bestFor": "Làm việc tập trung, đàm đạo cà phê specialty"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-cafe-cheese-coffee-cong-quynh",
+    "name": "Cheese Coffee — Cống Quỳnh (French Industrial)",
+    "category": "Trendy European-Style Cafe & Marble Pastries",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "41 Cống Quỳnh, Phường Nguyễn Cư Trinh, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7645,
+    "lng": 106.6898,
+    "rating": 4.6,
+    "reviewsCount": 2800,
+    "pricePerPersonVnd": 60000,
+    "avgPrice": "45k - 75k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "cheese-coffee",
+      "tra-cam-dao",
+      "cong-quynh",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy nhiệt tình miễn phí trước quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Cam Quế",
+          "Arabica Bạc Xỉu",
+          "Bánh Mì Bơ Tỏi"
+        ],
+        "vibe": "Phong cách châu Âu gạch thô cực ngầu, nhạc hay",
+        "bestFor": "Gặp gỡ bạn bè, check-in sống ảo"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-cafe-phe-la-le-thi-rieng",
+    "name": "Phê La — Lê Thị Riêng (Specialty Oolong Tea)",
+    "category": "Camp-Style Cafe & Handcrafted Oolong Milk Tea",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "125 Lê Thị Riêng, Phường Bến Thành, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7719,
+    "lng": 106.6908,
+    "rating": 4.8,
+    "reviewsCount": 4200,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "45k - 65k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "o-long",
+      "phe-la",
+      "le-thi-rieng",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi xe máy có thẻ xe, bảo vệ dắt tận tay"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Ô Long Sữa Chảo",
+          "Khói B’Lao",
+          "Trà Ô Long Nhiệt Đới"
+        ],
+        "vibe": "Camping mộc mạc thư giãn giữa lòng Quận 1",
+        "bestFor": "Uống trà sữa chất lượng, trò chuyện cùng nhóm bạn"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-cafe-phuc-long-ngo-duc-ke",
+    "name": "Phúc Long Coffee & Tea — Ngô Đức Kế Flagship",
+    "category": "Traditional Vietnamese Rich Tea & Coffee",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "29-31 Ngô Đức Kế, Phường Bến Nghé, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7746,
+    "lng": 106.7055,
+    "rating": 4.6,
+    "reviewsCount": 5100,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "40k - 70k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "phuc-long",
+      "tra-dao",
+      "tra-vai",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Bảo vệ hướng dẫn để xe máy trên vỉa hè"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Đào Cam Sả",
+          "Trà Vải Sen",
+          "Trà Sữa Phúc Long Đậm Vị"
+        ],
+        "vibe": "Năng động, ngắm phố đi bộ Nguyễn Huệ sát bên",
+        "bestFor": "Uống trà đào trứ danh Sài Gòn, dạo phố đi bộ"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-cafe-the-running-bean",
+    "name": "The Running Bean — Hồ Tùng Mậu",
+    "category": "All-Day Dining Cafe, Gelato & Fresh Pastries",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "115 Hồ Tùng Mậu, Phường Bến Nghé, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7728,
+    "lng": 106.7041,
+    "rating": 4.7,
+    "reviewsCount": 2600,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "60k - 130k VND",
+    "tags": [
+      "cafe",
+      "bakery",
+      "sweet_food",
+      "brunch",
+      "gelato",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy tận tâm"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Mì Sourdough Nướng Bơ Tỏi",
+          "Waffle Dâu Tây Gelato",
+          "Cold Brew Mơ Rừng"
+        ],
+        "vibe": "Không gian tone trắng sang trọng, ánh sáng tự nhiên tuyệt đẹp",
+        "bestFor": "Ăn sáng nhẹ, bánh ngọt tráng miệng và làm việc nhóm"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-cafe-highlands-ham-nghi",
+    "name": "Highlands Coffee — Hàm Nghi Flagship",
+    "category": "Spacious Garden Cafe & Traditional Phin Coffee",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "135 Hàm Nghi, Phường Bến Thành, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7712,
+    "lng": 106.7015,
+    "rating": 4.6,
+    "reviewsCount": 3900,
+    "pricePerPersonVnd": 50000,
+    "avgPrice": "39k - 69k VND",
+    "tags": [
+      "cafe",
+      "highlands",
+      "phin-sua-da",
+      "freeze-tra-xanh",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi giữ xe rộng ngay trước quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Freeze Trà Xanh Thạch",
+          "Phin Sữa Đá Đậm Đà",
+          "Bánh Mousse Đào"
+        ],
+        "vibe": "Rộng rãi 2 tầng, view đại lộ Hàm Nghi rợp bóng cây",
+        "bestFor": "Gặp gỡ bạn bè đông người, bàn công việc nhanh gọn"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q1-sweet-lusine-le-thanh-ton",
+    "name": "L'Usine — Lê Thánh Tôn Concept Cafe & Bakery",
+    "category": "Boutique Concept Cafe, Artisan Cupcakes & Pastries",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "19 Lê Thánh Tôn, Phường Bến Nghé, Quận 1, TP.HCM",
+    "placeId": "",
+    "lat": 10.7761,
+    "lng": 106.7032,
+    "rating": 4.7,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 90000,
+    "avgPrice": "65k - 150k VND",
+    "tags": [
+      "cafe",
+      "bakery",
+      "sweet_food",
+      "cupcake",
+      "lusine",
+      "quan-1"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Bảo vệ chỉ chỗ đậu xe máy thuận tiện"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Red Velvet Cupcake",
+          "Carrot Cake Kem Phô Mai",
+          "Trà Trái Cây Bá Tước"
+        ],
+        "vibe": "Không gian boutique hoài cổ pha lẫn đương đại",
+        "bestFor": "Thưởng thức bánh cupcake cao cấp và trò chuyện thân mật"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-mall-romea-shopping-center",
+    "name": "RomeA Shopping Center (Nguyễn Đình Chiểu)",
+    "category": "Boutique Shopping Mall, Food Court & Premium Supermarket",
+    "type": "shopping_mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "117 Nguyễn Đình Chiểu, Phường 6, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7792,
+    "lng": 106.6922,
+    "rating": 4.6,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "50k - 180k VND",
+    "tags": [
+      "shopping_mall",
+      "romea",
+      "nguyen-dinh-chieu",
+      "food-court",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Hầm xe rộng rãi trung tâm Quận 3"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà sữa Highlands",
+          "Kem tươi Bonchon",
+          "Bánh ngọt Bon Pas"
+        ],
+        "vibe": "Sạch sẽ, văn minh, không quá đông đúc xô bồ",
+        "bestFor": "Gặp gỡ bạn bè nhẹ nhàng, mua sắm đồ ngọt và cafe"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-cafe-oromia-coffee-lounge",
+    "name": "Oromia Coffee & Lounge — Nam Kỳ Khởi Nghĩa",
+    "category": "Enchanted Garden Cafe, Fine Dessert & Specialty Tea",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "193A/D3 Nam Kỳ Khởi Nghĩa, Phường Võ Thị Sáu, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7885,
+    "lng": 106.6892,
+    "rating": 4.8,
+    "reviewsCount": 4100,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "55k - 95k VND",
+    "tags": [
+      "cafe",
+      "sweet_food",
+      "san-vuon",
+      "koi-fish",
+      "oromia",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "garden_lounges",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe miễn phí chu đáo"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Mousse Chanh Dây",
+          "Trà Đào Cam Quế Oromia",
+          "Waffle Kem Trứng Chảy"
+        ],
+        "vibe": "Hồ cá Koi, cây xanh rợp bóng mát, tiếng nước chảy róc rách cực kỳ thư thái",
+        "bestFor": "Hẹn hò lãng mạn, ngồi thư giãn cùng bạn bè"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-cafe-la-viet-coffee-ba-huyen",
+    "name": "Là Việt Coffee — Bà Huyện Thanh Quan",
+    "category": "Da Lat Specialty Coffee Roaster & Clean Space",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "193 Bà Huyện Thanh Quan, Phường 9, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7842,
+    "lng": 106.6805,
+    "rating": 4.7,
+    "reviewsCount": 3200,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "40k - 70k VND",
+    "tags": [
+      "cafe",
+      "specialty_coffee",
+      "la-viet",
+      "da-lat",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "wooden_workbenches",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có bảo vệ dắt xe trước cửa tiệm"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Drip Bag Arabica Đà Lạt",
+          "Cold Brew Margarita",
+          "Bánh Chuối Nướng Bơ"
+        ],
+        "vibe": "Xưởng cà phê mộc mạc Đà Lạt, bàn ghế gỗ rộng rãi tràn ngập ánh sáng",
+        "bestFor": "Làm việc, học tập, thưởng thức cà phê Việt chuẩn vị"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-sweet-chewy-junior-cao-thang",
+    "name": "Chewy Junior — Bánh Su Kem Singapore (Cao Thắng)",
+    "category": "Singapore Fresh Cream Choux Pastries",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "34 Cao Thắng, Phường 5, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7725,
+    "lng": 106.6848,
+    "rating": 4.7,
+    "reviewsCount": 2400,
+    "pricePerPersonVnd": 45000,
+    "avgPrice": "30k - 65k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "su-kem",
+      "chewy-junior",
+      "cao-thang",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy nhiệt tình trước cửa"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Su Kem Phô Mai Dẻo",
+          "Su Kem Chocolate Almond",
+          "Bánh Su Sữa Tươi"
+        ],
+        "vibe": "Vỏ bánh dai dẻo đặc trưng, nhân kem lạnh ngập tràn cắn ngập miệng",
+        "bestFor": "Ăn vặt bánh ngọt, mua tiệc ngọt liên hoan"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-sweet-sul-bingsu-tu-xuong",
+    "name": "Sul Bingsu — Tiệm Tráng Miệng Tuyết Hàn Quốc",
+    "category": "Authentic Korean Shaved Ice & Injeolmi Toast",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "29 Tú Xương, Phường Võ Thị Sáu, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7812,
+    "lng": 106.6855,
+    "rating": 4.8,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "60k - 120k VND",
+    "tags": [
+      "sweet_food",
+      "bingsu",
+      "han-quoc",
+      "kem-tuyet",
+      "tu-xuong",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Sân trước nhà biệt thự Tú Xương đỗ xe thoải mái"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bingsu Xoài Phô Mai",
+          "Bingsu Injeolmi Đậu Nành",
+          "Bánh Mì Nướng Mật Ong Phô Mai"
+        ],
+        "vibe": "Không gian biệt thự cổ Tú Xương mát lạnh, tuyết bingsu mịn như nhung",
+        "bestFor": "Giải nhiệt ngày hè, tụ tập nhóm bạn thích đồ ngọt Hàn Quốc"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-sweet-givral-bakery-tran-quoc-toan",
+    "name": "Givral Bakery — Trần Quốc Toản (Since 1950)",
+    "category": "Heritage French-Vietnamese Bakery & Choux Cream",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "40 Trần Quốc Toản, Phường 8, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7912,
+    "lng": 106.6885,
+    "rating": 4.7,
+    "reviewsCount": 2150,
+    "pricePerPersonVnd": 50000,
+    "avgPrice": "25k - 80k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "givral",
+      "choux",
+      "banh-phap",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy nhanh nhẹn trước cửa hàng"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Bắp Givral Trứ Danh",
+          "Choux Kem Truyền Thống",
+          "Bánh Tiramisu"
+        ],
+        "vibe": "Thương hiệu bánh ngọt lâu đời hơn 70 năm của Sài Gòn",
+        "bestFor": "Mua bánh ngọt gia đình, quà biếu và tráng miệng thanh tao"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-cafe-chidori-coffee-in-bed",
+    "name": "Chidori — Coffee in Bed (Sư Thiện Chiếu)",
+    "category": "Japanese Pod Cafe & Sleep Box Workstation",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "25/41 Sơn Cang / Sư Thiện Chiếu, Phường 7, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7798,
+    "lng": 106.6872,
+    "rating": 4.8,
+    "reviewsCount": 3800,
+    "pricePerPersonVnd": 70000,
+    "avgPrice": "50k - 90k VND",
+    "tags": [
+      "cafe",
+      "coffee_in_bed",
+      "chidori",
+      "japan",
+      "yen-tinh",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "tatami_mattress_pods",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi giữ xe trong nhà có mái che và bảo vệ"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Hojicha Latte",
+          "Kem Trà Xanh Dango",
+          "Trà Hoa Cúc Mật Ong"
+        ],
+        "vibe": "Từng ô giường nệm gỗ riêng tư kiểu Nhật, yên tĩnh tối đa để nghỉ ngơi",
+        "bestFor": "Nghỉ trưa, đọc sách, học bài trong không gian riêng tư"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-cafe-koi-the-cao-thang",
+    "name": "KOI Thé — Cao Thắng (Golden Bubble Tea)",
+    "category": "Taiwanese Signature Golden Boba & Macchiato",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "62 Cao Thắng, Phường 5, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7718,
+    "lng": 106.6841,
+    "rating": 4.7,
+    "reviewsCount": 3900,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "40k - 75k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "koi-the",
+      "tran-chau-hoang-kim",
+      "macchiato",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy nhanh gọn mặt tiền Cao Thắng"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Lục Trà Macchiato",
+          "Hồng Trà Sữa Trân Châu Hoàng Kim",
+          "Milo Macchiato"
+        ],
+        "vibe": "Thương hiệu trà sữa chuẩn Đài Loan với lớp kem béo mặn gây nghiện",
+        "bestFor": "Tín đồ boba và macchiato"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-sweet-brodard-bakery-nguyen-dinh-chieu",
+    "name": "Brodard Bakery — Nguyễn Đình Chiểu (Since 1948)",
+    "category": "French Pastry, Mousse & Gourmet Choux Cakes",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "11 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7875,
+    "lng": 106.6998,
+    "rating": 4.7,
+    "reviewsCount": 1800,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "35k - 90k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "brodard",
+      "pastry",
+      "mousse",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ trông xe máy cẩn thận trước cửa hàng"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Mousse Socola Brodard",
+          "Bánh Su Sữa Tươi",
+          "Bánh Kem Trái Cây Tươi"
+        ],
+        "vibe": "Không gian trang nhã cổ điển, bánh tươi ra lò mỗi buổi sáng",
+        "bestFor": "Mua bánh tráng miệng cao cấp chuẩn phong vị Pháp"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-cafe-the-coffee-house-cao-thang",
+    "name": "The Coffee House — Cao Thắng (Spacious Glasshouse)",
+    "category": "Modern Coffee Chain, Teas & Signature Cakes",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "86 Cao Thắng, Phường 4, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7708,
+    "lng": 106.6835,
+    "rating": 4.6,
+    "reviewsCount": 3500,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "40k - 70k VND",
+    "tags": [
+      "cafe",
+      "the-coffee-house",
+      "tra-dao-cam-sa",
+      "banh-ngot",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "group_sofas_and_desks",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ xe máy riêng biệt có nhân viên trông coi"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Đào Cam Sả",
+          "Cà Phê Sữa Đá Đậm Vị",
+          "Bánh Mousse Bắp Phô Mai"
+        ],
+        "vibe": "Không gian 2 tầng kính rộng thênh thang, tràn ngập ánh sáng",
+        "bestFor": "Họp nhóm, học tập, làm việc với wifi tốc độ cao"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-sweet-tiem-banh-co-hai-ky-dong",
+    "name": "Tiệm Bánh Cô Hai — Kỳ Đồng (Bánh Bông Lan Trứng Muối)",
+    "category": "Handcrafted Salted Egg Sponge Cakes & Custard",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "16/2 Kỳ Đồng, Phường 9, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7835,
+    "lng": 106.6798,
+    "rating": 4.8,
+    "reviewsCount": 1900,
+    "pricePerPersonVnd": 50000,
+    "avgPrice": "35k - 85k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "bong-lan-trung-muoi",
+      "sot-bo-kim-sa",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Đậu xe máy trước cửa tiệm trong hẻm xe hơi rộng"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bông Lan Trứng Muối Sốt Bơ Phô Mai",
+          "Bánh Su Kem Hoàng Kim",
+          "Bánh Mì Hoa Cúc"
+        ],
+        "vibe": "Tiệm bánh thơm phức mùi bơ trứng, sốt phô mai ngập tràn đẫm đà",
+        "bestFor": "Thực khách nghiện sốt phô mai kim sa trứng muối"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-cafe-caztus-ice-blended-vo-thi-sau",
+    "name": "Caztus Ice Blended — Võ Thị Sáu",
+    "category": "Creative Ice Blended Beverages & Cookies",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "153/11A Võ Thị Sáu, Phường 6, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7848,
+    "lng": 106.6912,
+    "rating": 4.7,
+    "reviewsCount": 2200,
+    "pricePerPersonVnd": 50000,
+    "avgPrice": "35k - 65k VND",
+    "tags": [
+      "cafe",
+      "ice_blended",
+      "caztus",
+      "cookie",
+      "vo-thi-sau",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ trông xe chu đáo trong ngõ yên tĩnh"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Oreo Đá Xay Kem Tươi",
+          "Matcha Đá Xay Đậu Đỏ",
+          "Bánh Cookie Socola Nóng"
+        ],
+        "vibe": "Ấm cúng, trẻ trung, không gian tông gỗ mộc mạc và thân thiện",
+        "bestFor": "Uống đá xay giải nhiệt, học tập và trò chuyện nhóm"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q3-cafe-the-open-share-cafe",
+    "name": "The Open Share Cafe — Trần Huy Liệu",
+    "category": "Cozy Acoustic Cafe & Homemade Tarts",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "158/12 Trần Huy Liệu, Phường 8, Quận 3, TP.HCM",
+    "placeId": "",
+    "lat": 10.7915,
+    "lng": 106.6812,
+    "rating": 4.7,
+    "reviewsCount": 1600,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "40k - 70k VND",
+    "tags": [
+      "cafe",
+      "acoustic",
+      "sweet_food",
+      "tart",
+      "tran-huy-lieu",
+      "quan-3"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có sân riêng để xe máy an ninh"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Tart Phô Mai Nướng",
+          "Trà Hoa Cúc Mật Ong",
+          "Matcha Latte"
+        ],
+        "vibe": "Không gian cổ điển nhiều cây xanh, nhạc acoustic du dương nhẹ nhàng",
+        "bestFor": "Trò chuyện thân mật, đọc sách và tận hưởng đồ ngọt"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-mall-hung-vuong-plaza",
+    "name": "Hùng Vương Plaza (Trung Tâm Mua Sắm & Ẩm Thực Chợ Lớn)",
+    "category": "Modern Mega Shopping Complex, Food Paradise & Cinema",
+    "type": "shopping_mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "126 Hồng Bàng, Phường 12, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7562,
+    "lng": 106.6615,
+    "rating": 4.7,
+    "reviewsCount": 8900,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "50k - 200k VND",
+    "tags": [
+      "shopping_mall",
+      "hung-vuong-plaza",
+      "hong-bang",
+      "cho-lon",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi giữ xe nhiều tầng rộng rãi đỗ ô tô và xe máy thuận tiện"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Sữa KOI Thé",
+          "Bánh Ngọt BreadTalk",
+          "Kem Hokkaido"
+        ],
+        "vibe": "Trung tâm thương mại lớn và hiện đại bậc nhất khu Chợ Lớn",
+        "bestFor": "Đi chơi, xem phim, ăn uống và tụ tập mua sắm"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-mall-the-garden-mall",
+    "name": "The Garden Mall (Thuận Kiều Plaza)",
+    "category": "Themed Shopping Mall, Hong Kong Food Court & Book City",
+    "type": "shopping_mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "190 Hồng Bàng, Phường 12, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7548,
+    "lng": 106.6585,
+    "rating": 4.5,
+    "reviewsCount": 4800,
+    "pricePerPersonVnd": 65000,
+    "avgPrice": "40k - 150k VND",
+    "tags": [
+      "shopping_mall",
+      "the-garden-mall",
+      "thuan-kieu",
+      "hong-bang",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi gửi xe rộng rãi thoải mái dưới tầng trệt"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Sữa Hong Kong",
+          "Bánh Trứng Nướng Bồ Đào Nha",
+          "Bánh Bao Kim Sa"
+        ],
+        "vibe": "Kiến trúc xanh độc đáo, khu nhà sách thành phố và ẩm thực phong vị Hoa",
+        "bestFor": "Dạo chơi thư thả, check-in không gian văn hóa Chợ Lớn"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-sweet-che-ha-ky",
+    "name": "Quán Chè Hà Ký — Châu Văn Liêm (Since 1985)",
+    "category": "Iconic Traditional Cantonese Sweet Soup & Desserts",
+    "type": "sweet_food",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "138 Châu Văn Liêm, Phường 11, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7528,
+    "lng": 106.6575,
+    "rating": 4.8,
+    "reviewsCount": 5200,
+    "pricePerPersonVnd": 40000,
+    "avgPrice": "25k - 55k VND",
+    "tags": [
+      "sweet_food",
+      "che_hoa",
+      "ha-ky",
+      "chau-van-liem",
+      "quy-linh-cao",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có nhân viên hướng dẫn giữ xe máy trước tiệm"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Quy Linh Cao Mật Ong",
+          "Chè Hột Gà Trà",
+          "Chè Mè Đen Hạnh Nhân"
+        ],
+        "vibe": "Quán chè người Hoa nổi tiếng bậc nhất Sài Gòn, thơm nức mùi thảo mộc",
+        "bestFor": "Thực khách sành ăn muốn thưởng thức chè Hoa chính gốc bổ dưỡng"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-sweet-che-cot-dien-nha-den",
+    "name": "Chè Cột Điện (Chè Nhà Đèn) — Trần Hưng Đạo B",
+    "category": "Century-Old Heritage Cantonese Sweet Soups",
+    "type": "sweet_food",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "476 Trần Hưng Đạo B, Phường 14, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7515,
+    "lng": 106.6582,
+    "rating": 4.7,
+    "reviewsCount": 4600,
+    "pricePerPersonVnd": 35000,
+    "avgPrice": "20k - 45k VND",
+    "tags": [
+      "sweet_food",
+      "che_cot_dien",
+      "che-nha-den",
+      "tran-hung-dao",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Giữ xe máy ngay bên cạnh quán có người trông"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Chè Hột Gà Trà Đậm Đà",
+          "Chè Đậu Hũ Hạnh Nhân",
+          "Chè Bo Bo Củ Năng"
+        ],
+        "vibe": "Quán chè trăm năm tuổi với những nồi đồng sôi sùng sục huyền thoại",
+        "bestFor": "Ăn chè đêm Sài Gòn, trải nghiệm ẩm thực di sản Chợ Lớn"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-sweet-che-tuong-phong",
+    "name": "Quán Chè Tường Phong — An Điềm",
+    "category": "Authentic Chaozhou Desserts & Sesame Paste",
+    "type": "sweet_food",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "83 An Điềm, Phường 10, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7535,
+    "lng": 106.6612,
+    "rating": 4.8,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 35000,
+    "avgPrice": "20k - 50k VND",
+    "tags": [
+      "sweet_food",
+      "che_hoa",
+      "tuong-phong",
+      "an-diem",
+      "dau-hu-hanh-nhan",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Đậu xe máy trước quán có bảo vệ dắt"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Đậu Hũ Hạnh Nhân Nước Đường Phèn",
+          "Chè Đu Đủ Tiềm Nấm Tuyết",
+          "Chè Bạch Quả"
+        ],
+        "vibe": "Gia truyền ấm cúng, chè nấu kỹ thanh tao không ngọt gắt",
+        "bestFor": "Dân sành chè Hoa tìm kiếm hương vị truyền thống thanh đạm"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-sweet-dong-hung-vien",
+    "name": "Tiệm Bánh Đông Hưng Viên — An Dương Vương",
+    "category": "Traditional Chaozhou & Chinese Pastries (Since 1968)",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "176 An Dương Vương, Phường 8, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7572,
+    "lng": 106.6685,
+    "rating": 4.7,
+    "reviewsCount": 1950,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "35k - 120k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "dong-hung-vien",
+      "banh-pia",
+      "banh-trieu-chau",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Để xe máy thuận tiện trước tiệm"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Pía Triều Châu Nhân Đậu Xanh Trứng Muối",
+          "Bánh Vợ Chồng Phỉ Thúy",
+          "Bánh Nướng Khoai Môn"
+        ],
+        "vibe": "Hiệu bánh cổ kính của người Triều Châu, hương vị gia truyền thơm phức",
+        "bestFor": "Mua quà biếu bánh truyền thống hảo hạng"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-cafe-ba-lu-vot-phung-hung",
+    "name": "Cà Phê Vợt Ba Lù — Chợ Phùng Hưng (Since 1950)",
+    "category": "Heritage Wood-Fired Claypot Filter Coffee",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "Chợ Phùng Hưng, Phường 14, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7538,
+    "lng": 106.6558,
+    "rating": 4.8,
+    "reviewsCount": 3700,
+    "pricePerPersonVnd": 25000,
+    "avgPrice": "18k - 35k VND",
+    "tags": [
+      "cafe",
+      "ca-phe-vot",
+      "ba-lu",
+      "cho-phung-hung",
+      "cho-lon",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Gửi xe máy tại bãi xe chợ Phùng Hưng sát bên"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Cà Phê Bạc Xỉu Rang Bơ",
+          "Cà Phê Đen Kho Bếp Củi",
+          "Bánh Tiêu Chấm Cà Phê"
+        ],
+        "vibe": "Quán cà phê vợt bằng bếp củi cổ truyền hiếm hoi còn sót lại của Sài Gòn",
+        "bestFor": "Trải nghiệm văn hóa cà phê Chợ Lớn xưa"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-cafe-cheewawa-nguyen-tri-phuong",
+    "name": "Cheewawa Tea & Milk Tea — Nguyễn Tri Phương",
+    "category": "Creative Fruit Teas, Macchiato & Milk Teas",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "228 Nguyễn Tri Phương, Phường 4, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7602,
+    "lng": 106.6695,
+    "rating": 4.6,
+    "reviewsCount": 1800,
+    "pricePerPersonVnd": 45000,
+    "avgPrice": "30k - 60k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "cheewawa",
+      "tra-trai-cay",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy miễn phí trước quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Ô Long Dưa Lưới",
+          "Trà Sữa Khoai Môn Dẻo",
+          "Trà Xoài Macchiato"
+        ],
+        "vibe": "Trẻ trung, hiện đại, nước pha đậm đà trái cây tươi",
+        "bestFor": "Giải khát, tụ tập học sinh sinh viên khu vực Quận 5"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-cafe-the-alley-hai-thuong-lan-ong",
+    "name": "The Alley — Hải Thượng Lãn Ông (Sữa Tươi Trân Châu Đường Đen)",
+    "category": "Taiwanese Brown Sugar Deerioca & Milk Tea",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "135 Hải Thượng Lãn Ông, Phường 10, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7512,
+    "lng": 106.6598,
+    "rating": 4.7,
+    "reviewsCount": 2600,
+    "pricePerPersonVnd": 65000,
+    "avgPrice": "45k - 85k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "the-alley",
+      "tran-chau-duong-den",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Chỗ đậu xe máy rộng rãi ngay trước quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Sữa Tươi Trân Châu Đường Đen",
+          "Lục Trà Sữa Thơm Mát",
+          "Sữa Chua Trân Châu"
+        ],
+        "vibe": "Không gian tone xám hiện đại, trân châu nấu đường đen nóng hổi",
+        "bestFor": "Thưởng thức sữa tươi trân châu đường đen trứ danh"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-sweet-tai-yang-king-tart",
+    "name": "Tai Yang King — Tiệm Bánh Tart Trứng Hoàng Gia",
+    "category": "Hong Kong Lava Egg Tarts & Pastries",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "211 Nguyễn Trãi, Phường 2, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7588,
+    "lng": 106.6782,
+    "rating": 4.8,
+    "reviewsCount": 2800,
+    "pricePerPersonVnd": 45000,
+    "avgPrice": "25k - 65k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "tart-trung",
+      "tai-yang-king",
+      "nguyen-trai",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy miễn phí trước tiệm"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Tart Trứng Truyền Thống Nóng Hổi",
+          "Tart Phô Mai Chảy",
+          "Tart Trứng Trân Châu Đường Đen"
+        ],
+        "vibe": "Vỏ tart ngàn lớp giòn rụm xốp nhẹ, nhân trứng sữa núng nính béo ngậy",
+        "bestFor": "Ăn vặt bánh ngọt nóng giòn vừa ra lò"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-sweet-nhu-lan-hai-thuong",
+    "name": "Bánh Mì & Bánh Ngọt Như Lan — Hải Thượng Lãn Ông",
+    "category": "Traditional Saigon Bakery, Mooncakes & Sweet Breads",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "45 Hải Thượng Lãn Ông, Phường 10, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7518,
+    "lng": 106.6632,
+    "rating": 4.6,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 40000,
+    "avgPrice": "20k - 70k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "nhu-lan",
+      "banh-ngot",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Đậu xe máy nhanh chóng trên vỉa hè rộng"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Mì Nướng Bơ Đường",
+          "Bánh Su Sữa Tươi Như Lan",
+          "Bánh Bông Lan Cuộn"
+        ],
+        "vibe": "Thương hiệu bánh ngọt truyền thống lâu năm thân thuộc của người Sài Gòn",
+        "bestFor": "Mua bánh ngọt ăn sáng, tráng miệng tiện lợi"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q5-cafe-cheese-coffee-su-van-hanh",
+    "name": "Cheese Coffee — Sư Vạn Hạnh (Quận 5)",
+    "category": "Industrial European Cafe, Cheese Pastries & Specialty Tea",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "307 Hồng Bàng / Sư Vạn Hạnh, Phường 9, Quận 5, TP.HCM",
+    "placeId": "",
+    "lat": 10.7585,
+    "lng": 106.6652,
+    "rating": 4.7,
+    "reviewsCount": 2900,
+    "pricePerPersonVnd": 60000,
+    "avgPrice": "45k - 75k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "cheese-coffee",
+      "tra-cam-dao",
+      "quan-5"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có bảo vệ dắt và trông xe máy miễn phí"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Cam Quế Nổi Tiếng",
+          "Bạc Xỉu Kem Phô Mai",
+          "Bánh Marble Mousse"
+        ],
+        "vibe": "Không gian chất lừ phong cách châu Âu, ánh sáng vàng ấm áp",
+        "bestFor": "Tụ tập bạn bè, check-in sống ảo cuối tuần"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-mall-crescent-mall",
+    "name": "Crescent Mall (Trung Tâm Thương Mại Hồ Bán Nguyệt)",
+    "category": "International Standard Shopping Mall & Lakeview Dining",
+    "type": "shopping_mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "101 Tôn Dật Tiên, Phường Tân Phú, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7188,
+    "lng": 106.7198,
+    "rating": 4.8,
+    "reviewsCount": 16800,
+    "pricePerPersonVnd": 95000,
+    "avgPrice": "60k - 300k VND",
+    "tags": [
+      "shopping_mall",
+      "crescent-mall",
+      "ho-ban-nguyet",
+      "phu-my-hung",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ xe ô tô và xe máy ngầm khổng lồ hiện đại bậc nhất"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Morico Matcha Parfait",
+          "Trà Phúc Long Crescent Mall",
+          "Kem Baskin Robbins"
+        ],
+        "vibe": "Rộng lớn chuẩn quốc tế, view nhìn thẳng ra Hồ Bán Nguyệt và Cầu Ánh Sao thơ mộng",
+        "bestFor": "Đi dạo cuối tuần, thưởng thức bánh ngọt và cà phê ngắm cảnh hồ"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-mall-sc-vivocity",
+    "name": "SC VivoCity (Nguyễn Văn Linh)",
+    "category": "Family Mega Mall, Sky Park & Food Paradise",
+    "type": "shopping_mall",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "1058 Nguyễn Văn Linh, Phường Tân Phong, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7322,
+    "lng": 106.7042,
+    "rating": 4.7,
+    "reviewsCount": 14200,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "50k - 250k VND",
+    "tags": [
+      "shopping_mall",
+      "sc-vivocity",
+      "nguyen-van-linh",
+      "food-court",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "shopping_mall",
+      "venueTypeGroup": "shopping_malls",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": false
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Hầm giữ xe thông minh nhiều tầng rộng rãi"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Mì BreadTalk",
+          "Kem Dairy Queen Úp Ngược",
+          "Trà Sữa KOI Thé"
+        ],
+        "vibe": "Không gian mở năng động, sân chơi nước trên sân thượng Sky Park",
+        "bestFor": "Gia đình và nhóm bạn đi chơi cuối tuần"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-sweet-paris-baguette-grand-view",
+    "name": "Paris Baguette — Grand View Phú Mỹ Hưng",
+    "category": "Premium Korean-French Bakery & Fresh Pastries",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "SB-01 Grand View, Nguyễn Đức Cảnh, Phường Tân Phong, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7255,
+    "lng": 106.7085,
+    "rating": 4.8,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 70000,
+    "avgPrice": "45k - 120k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "paris-baguette",
+      "phu-my-hung",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy và đỗ ô tô thoải mái trước tòa nhà Grand View"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Mì Bơ Tỏi Phô Mai Hàn Quốc",
+          "Bánh Kem Dâu Tươi Thượng Hạng",
+          "Croissant Bơ Pháp"
+        ],
+        "vibe": "Khu phố Tây Phú Mỹ Hưng yên bình, không khí trong lành",
+        "bestFor": "Ăn sáng bánh tươi, hẹn hò cafe bánh ngọt thanh lịch"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-sweet-artisan-bakery-ha-huy-tap",
+    "name": "Artisan Bakery & Cafe — Hà Huy Tập (Phú Mỹ Hưng)",
+    "category": "Artisan Korean Bakery, Bingsu & Fresh Bread",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "108 Hà Huy Tập, Phường Tân Phong, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7272,
+    "lng": 106.7095,
+    "rating": 4.8,
+    "reviewsCount": 2900,
+    "pricePerPersonVnd": 60000,
+    "avgPrice": "35k - 95k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "artisan",
+      "banh-han-quoc",
+      "ha-huy-tap",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Đậu xe máy và ô tô thuận tiện trước quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Mì Mè Đen Hàn Quốc",
+          "Bánh Su Kem Khổng Lồ",
+          "Bingsu Đậu Đỏ Dẻo"
+        ],
+        "vibe": "Tiệm bánh gia đình chuẩn vị Hàn Quốc được cộng đồng người Hàn tại PMH yêu thích",
+        "bestFor": "Thưởng thức bánh nướng thủ công và bingsu mát lạnh"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-sweet-morico-crescent-mall",
+    "name": "Morico — Tầng 2 Crescent Mall (Matcha & Sweets)",
+    "category": "Japanese Matcha Sweets, Parfaits & Cakes",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "Tầng 2 Crescent Mall, 101 Tôn Dật Tiên, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.719,
+    "lng": 106.7202,
+    "rating": 4.8,
+    "reviewsCount": 2100,
+    "pricePerPersonVnd": 90000,
+    "avgPrice": "65k - 130k VND",
+    "tags": [
+      "sweet_food",
+      "matcha",
+      "parfait",
+      "morico",
+      "crescent-mall",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Đậu xe trong hầm Crescent Mall hiện đại"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Matcha Parfait Crescent",
+          "Hojicha Ice Cream",
+          "Bánh Mochi Tươi"
+        ],
+        "vibe": "Thiết kế gỗ phong cách Nhật Bản ngắm cảnh hành lang Crescent Mall",
+        "bestFor": "Dừng chân nghỉ ngơi ăn đồ ngọt sau khi đi dạo mua sắm"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-sweet-sulbing-nguyen-thi-thap",
+    "name": "Sulbing Korean Dessert Cafe — Nguyễn Thị Thập",
+    "category": "Authentic Korean Shaved Ice & Sweet Toast",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "219 Nguyễn Thị Thập, Phường Tân Phú, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7385,
+    "lng": 106.7125,
+    "rating": 4.7,
+    "reviewsCount": 3300,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "60k - 120k VND",
+    "tags": [
+      "sweet_food",
+      "bingsu",
+      "sulbing",
+      "nguyen-thi-thap",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy miễn phí trước quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bingsu Dưa Lưới Khổng Lồ",
+          "Bingsu Socola Brownie",
+          "Bánh Toast Phô Mai Dẻo"
+        ],
+        "vibe": "Quán rộng 2 tầng máy lạnh phà phà, tô bingsu to đùng cho 2-3 người ăn",
+        "bestFor": "Hội bạn hảo ngọt tụ tập ăn bingsu xả stress"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-cafe-ollin-cafe-nguyen-thi-thap",
+    "name": "Ollin Cafe — Nguyễn Thị Thập (Industrial Glasshouse)",
+    "category": "Massive Glasshouse Cafe, Specialty Coffee & Pastry",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "300 Nguyễn Thị Thập, Phường Tân Quy, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7425,
+    "lng": 106.7065,
+    "rating": 4.8,
+    "reviewsCount": 4500,
+    "pricePerPersonVnd": 65000,
+    "avgPrice": "50k - 85k VND",
+    "tags": [
+      "cafe",
+      "ollin",
+      "glasshouse",
+      "specialty_coffee",
+      "nguyen-thi-thap",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "large_sofas_and_communal_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ ô tô và xe máy cực rộng ngay khuôn viên quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Ollin Signature Cold Brew",
+          "Trà Đào Cam Sả Tươi",
+          "Bánh Croissant Trứng Muối"
+        ],
+        "vibe": "Không gian nhà kính khổng lồ phong cách châu Âu, trần cao lộng gió",
+        "bestFor": "Tụ tập nhóm đông người, chụp ảnh kỷ niệm, làm việc sáng tạo"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-cafe-gong-cha-nguyen-thi-thap",
+    "name": "Gong Cha — Nguyễn Thị Thập (Milk Foam Tea)",
+    "category": "Taiwanese Handcrafted Teas & Signature Milk Foam",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "498 Nguyễn Thị Thập, Phường Tân Quy, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7442,
+    "lng": 106.7028,
+    "rating": 4.6,
+    "reviewsCount": 2900,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "38k - 70k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "gong-cha",
+      "milk-foam",
+      "alisan",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ trông xe máy miễn phí trước quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Alisan Milk Foam",
+          "Trà Đen Gong Cha Kem Sữa",
+          "Trà Xanh Đào Thạch Ai-yu"
+        ],
+        "vibe": "Lớp milk foam béo mặn sánh mịn trứ danh, không gian sáng sủa",
+        "bestFor": "Trà sữa kem béo chuẩn vị Đài Loan"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-cafe-starbucks-panorama-pmh",
+    "name": "Starbucks — The Panorama Phú Mỹ Hưng",
+    "category": "World-Class Coffee, Frappuccino & Pastries",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "216 Trần Văn Trà, Phường Tân Phong, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7212,
+    "lng": 106.7115,
+    "rating": 4.7,
+    "reviewsCount": 3600,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "65k - 120k VND",
+    "tags": [
+      "cafe",
+      "starbucks",
+      "frappuccino",
+      "panorama",
+      "phu-my-hung",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "cushioned_armchairs",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy và đỗ ô tô rộng rãi trước khu Panorama"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Green Tea Cream Frappuccino",
+          "Caramel Macchiato",
+          "Bánh New York Cheesecake"
+        ],
+        "vibe": "Khu chung cư cao cấp Panorama yên bình rợp bóng cây xanh mát mắt",
+        "bestFor": "Gặp gỡ đối tác, đọc sách thư giãn, uống cà phê sáng"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-cafe-phe-la-nguyen-thi-thap",
+    "name": "Phê La — Nguyễn Thị Thập (Trà Ô Long Mộc Châu)",
+    "category": "Camp-Style Specialty Oolong Tea Cafe",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "450 Nguyễn Thị Thập, Phường Tân Quy, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7438,
+    "lng": 106.7035,
+    "rating": 4.8,
+    "reviewsCount": 3900,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "45k - 65k VND",
+    "tags": [
+      "cafe",
+      "milk_tea",
+      "o-long",
+      "phe-la",
+      "nguyen-thi-thap",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy tận tình miễn phí"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Ô Long Sữa Chảo",
+          "Ô Long Nhài Sữa",
+          "Trà Bơ Dừa Non"
+        ],
+        "vibe": "Không gian camping mộc mạc rộng rãi giữa lòng Quận 7",
+        "bestFor": "Tụ tập bạn bè, uống trà sữa đậm vị ô long"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-sweet-tous-les-jours-sky-garden",
+    "name": "TOUS les JOURS — Sky Garden Phú Mỹ Hưng",
+    "category": "Artisan Korean-French Bakery & Fresh Cream Pastries",
+    "type": "bakery",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "S38-1 Sky Garden 1, Phạm Văn Nghị, Phường Tân Phong, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7305,
+    "lng": 106.7072,
+    "rating": 4.7,
+    "reviewsCount": 2800,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "35k - 90k VND",
+    "tags": [
+      "bakery",
+      "sweet_food",
+      "tous-les-jours",
+      "sky-garden",
+      "phu-my-hung",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "sweet_food",
+      "venueTypeGroup": "sweet_food_eateries",
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "high"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi xe máy rộng rãi ngay trước chung cư Sky Garden"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Bánh Kem Bắp Nổi Tiếng",
+          "Bánh Mì Mềm Nhân Đậu Đỏ",
+          "Bánh Su Kem Vanilla"
+        ],
+        "vibe": "Khu phố đi bộ Sky Garden nhộn nhịp cộng đồng Hàn Quốc",
+        "bestFor": "Mua bánh ngọt ăn sáng, thưởng thức cafe và bánh tráng miệng"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-q7-cafe-the-coffee-house-nguyen-thi-thap",
+    "name": "The Coffee House — Nguyễn Thị Thập (Quận 7)",
+    "category": "Modern Coffee Chain, Teas & Signature Cakes",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "400 Nguyễn Thị Thập, Phường Tân Quy, Quận 7, TP.HCM",
+    "placeId": "",
+    "lat": 10.7435,
+    "lng": 106.7048,
+    "rating": 4.6,
+    "reviewsCount": 3100,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "40k - 70k VND",
+    "tags": [
+      "cafe",
+      "the-coffee-house",
+      "tra-dao",
+      "banh-ngot",
+      "quan-7"
+    ],
+    "attributes": {
+      "type": "cafe",
+      "venueTypeGroup": "cafes_and_milk_tea",
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "desks_and_sofas",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bảo vệ giữ xe máy nhanh nhẹn trước quán"
+      },
+      "socialHighlights": {
+        "signatureDishes": [
+          "Trà Đào Cam Sả Thơm Mát",
+          "Hi-Tea Phúc Bồn Tử",
+          "Bánh Mousse Bắp Phô Mai"
+        ],
+        "vibe": "Không gian 2 tầng hiện đại, nhiều bàn làm việc và ổ cắm điện tiện lợi",
+        "bestFor": "Học nhóm, làm việc online, gặp gỡ bạn bè"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-01",
+    "name": "The Workshop Coffee",
+    "category": "Specialty Coffee & Workspace",
+    "type": "cafe",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "27 Ngô Đức Kế, Bến Nghé, District 1, HCMC",
+    "placeId": "ChIJP3Sa8zi1NTERV2zZ_v4GkAI",
+    "lat": 10.7735,
+    "lng": 106.7042,
+    "rating": 4.8,
+    "reviewsCount": 1450,
+    "pricePerPersonVnd": 75000,
+    "avgPrice": "60k - 100k VND",
+    "tags": [
+      "Quiet",
+      "Workspace",
+      "Specialty Coffee",
+      "Aesthetic",
+      "Power Outlets"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "spacious_tables_power_outlets",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "vegan": false,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Tầng trệt gửi xe 10k",
+        "confidence": "high"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-08",
+    "name": "Dabao Concept — Heritage Garden Café",
+    "category": "Imperial Heritage Café & Tropical Courtyard",
+    "type": "cafe",
+    "isAlley": true,
+    "alleyNote": "Hẻm 18 Tú Xương rợp bóng cây cổ thụ yên bình",
+    "address": "18 Tú Xương, Phường Võ Thị Sáu, Quận 3, TP.HCM",
+    "placeId": "ChIJd24_f_W0NTER19aW7fWd3YX",
+    "lat": 10.7825,
+    "lng": 106.6865,
+    "rating": 4.8,
+    "reviewsCount": 1320,
+    "pricePerPersonVnd": 68000,
+    "avgPrice": "55k - 85k VND",
+    "tags": [
+      "Quiet",
+      "Photogenic Garden",
+      "Courtyard",
+      "Matcha & Lotus Tea",
+      "Relax"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "vintage_wood_garden_chairs",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "vegan": true,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "verified"
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi để xe có mái che rộng",
+        "confidence": "verified"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-19",
+    "name": "The Dome Kaffe (Hẻm 10 Đoàn Thị Điểm)",
+    "category": "Minimalist Japanese White-Tone Café & Matcha Latte",
+    "type": "cafe",
+    "isAlley": true,
+    "alleyNote": "Vào hẻm 10 Đoàn Thị Điểm 20m, quán tone trắng đen tối giản",
+    "address": "10/16 Đoàn Thị Điểm, Phường 1, Phú Nhuận, TP.HCM",
+    "placeId": "ChIJ_the_dome_kaffe",
+    "lat": 10.7962,
+    "lng": 106.685,
+    "rating": 4.7,
+    "reviewsCount": 1050,
+    "pricePerPersonVnd": 60000,
+    "avgPrice": "50k - 75k VND",
+    "tags": [
+      "Artisan Matcha",
+      "Quiet",
+      "Workspace",
+      "Photogenic Minimalist",
+      "Pastry"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "minimalist_sofa_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "vegan": true,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "verified"
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Để xe trong sân hẻm trước cửa quán",
+        "confidence": "verified"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-14",
+    "name": "Nhà Hàng Chay Bếp Xanh An Duyên",
+    "category": "Artisan Zen Vegetarian & Botanical Teahouse",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "10 Nguyễn Tri Phương, Phường 6, Quận 5, TP.HCM",
+    "placeId": "ChIJ_chay_bep_xanh_an_duyen",
+    "lat": 10.7552,
+    "lng": 106.6685,
+    "rating": 4.8,
+    "reviewsCount": 1100,
+    "pricePerPersonVnd": 95000,
+    "avgPrice": "75k - 150k VND",
+    "tags": [
+      "Vegetarian",
+      "Vegan",
+      "Quiet",
+      "Lẩu Nấm Dưỡng Sinh",
+      "No Alcohol"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "zen_bamboo_sofa",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "vegan": true,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ xe máy an toàn",
+        "confidence": "verified"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-veg-02",
+    "name": "Mani Vegan Restaurant (Nhà Hàng Chay Mani)",
+    "category": "Authentic Vietnamese Vegetarian Dining",
+    "type": "restaurant",
+    "isAlley": true,
+    "alleyNote": "Hẻm 291 rộng 6m, xe hơi vào tận cửa",
+    "address": "291/2 Võ Văn Tần, Phường 5, Quận 3, TP.HCM",
+    "placeId": "ChIJ_mani_vegan_q3",
+    "lat": 10.7738,
+    "lng": 106.6854,
+    "rating": 4.7,
+    "reviewsCount": 890,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "60k - 120k VND",
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "chay",
+      "cơm chay",
+      "lẩu nấm chay"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "vegan": true,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Giữ xe máy miễn phí trước quán"
+      },
+      "matcha": {
+        "value": false
+      }
+    },
+    "unknowns": [
+      "quiet"
+    ]
+  },
+  {
+    "id": "hcm-vnu-bbq-01",
+    "name": "Meat & Meet BBQ — Korean Charcoal Grill",
+    "category": "Korean BBQ & Samgyeopsal Buffet",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "8 Lê Thị Riêng, Phường Bến Thành, Quận 1, TP.HCM",
+    "placeId": "ChIJ_meat_and_meet_q1",
+    "lat": 10.7712,
+    "lng": 106.6918,
+    "rating": 4.6,
+    "reviewsCount": 1820,
+    "pricePerPersonVnd": 220000,
+    "avgPrice": "180k - 280k VND",
+    "tags": [
+      "korean",
+      "bbq",
+      "thịt nướng",
+      "samgyeopsal",
+      "hàn quốc",
+      "grill",
+      "lively"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": false,
+        "vegan": false,
+        "halal": false,
+        "noAlcohol": false
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Bãi gửi xe gần vòng xoay Phù Đổng"
+      },
+      "matcha": {
+        "value": false
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-bbq-02",
+    "name": "GoGi House — Quán Thịt Nướng Hàn Quốc",
+    "category": "Authentic Korean BBQ & Hotpot",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "189 Nguyễn Thái Học, Phạm Ngũ Lão, Quận 1, TP.HCM",
+    "placeId": "ChIJ_gogi_house_q1",
+    "lat": 10.7668,
+    "lng": 106.6935,
+    "rating": 4.7,
+    "reviewsCount": 2100,
+    "pricePerPersonVnd": 290000,
+    "avgPrice": "250k - 350k VND",
+    "tags": [
+      "korean",
+      "bbq",
+      "thịt nướng",
+      "ba chỉ bò",
+      "hàn quốc",
+      "grill"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": false,
+        "vegan": false,
+        "halal": false,
+        "noAlcohol": false
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi đỗ ô tô và xe máy rộng rãi"
+      },
+      "matcha": {
+        "value": false
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-10",
+    "name": "Bún Thịt Nướng Chị Tuyền (Hẻm 175 Cô Giang)",
+    "category": "Legendary Saigon Char-Grilled Pork Noodle",
+    "type": "alley_eatery",
+    "isAlley": true,
+    "alleyNote": "Vào hẻm 175 Cô Giang 10m, quán 30 năm nức tiếng",
+    "address": "175c Cô Giang, Phường Cô Giang, Quận 1, TP.HCM",
+    "placeId": "ChIJz2xP_fG0NTER9F9hU79999Z",
+    "lat": 10.7612,
+    "lng": 106.6925,
+    "rating": 4.6,
+    "reviewsCount": 1420,
+    "pricePerPersonVnd": 55000,
+    "avgPrice": "45k - 70k VND",
+    "tags": [
+      "Alley Eatery",
+      "Char-Grilled Pork",
+      "Hearty Meal",
+      "Flavorful",
+      "Budget"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "standard_steel_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": false,
+        "vegan": false,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": false,
+        "confidence": "verified"
+      },
+      "wifiSpeed": {
+        "value": "normal",
+        "confidence": "medium"
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Có người hướng dẫn để xe trước hẻm",
+        "confidence": "high"
+      }
+    },
+    "unknowns": [
+      "korean",
+      "bbq"
+    ]
+  },
+  {
+    "id": "hcm-vnu-veg-01",
+    "name": "Hum Vegetarian, Lounge & Restaurant",
+    "category": "Gourmet Vegetarian & Plant-Based Dining",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "32 Võ Văn Tần, Phường 6, Quận 3, TP.HCM",
+    "placeId": "ChIJ_hum_veg_q3",
+    "lat": 10.7779,
+    "lng": 106.6908,
+    "rating": 4.9,
+    "reviewsCount": 2340,
+    "pricePerPersonVnd": 180000,
+    "avgPrice": "150k - 250k VND",
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "plant-based",
+      "chay",
+      "fine-dining",
+      "quiet"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "spacious_cushioned",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "vegan": true,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có bảo vệ giữ xe máy và hỗ trợ ô tô"
+      },
+      "matcha": {
+        "value": false
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-04",
+    "name": "Hum Vegetarian, Lounge & Restaurant",
+    "category": "Fine Vegetarian Dining & Botanical Lounge",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "32 Võ Văn Tần, Phường Võ Thị Sáu, Quận 3, TP.HCM",
+    "placeId": "ChIJV4rXp_W0NTERd6d4aO4Q2aM",
+    "lat": 10.7782,
+    "lng": 106.6912,
+    "rating": 4.9,
+    "reviewsCount": 2600,
+    "pricePerPersonVnd": 150000,
+    "avgPrice": "120k - 250k VND",
+    "tags": [
+      "Vegetarian",
+      "Quiet",
+      "Botanical",
+      "Photogenic",
+      "No Alcohol"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "luxury_wooden_sofa",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "vegan": true,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": true,
+        "confidence": "high"
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi xe máy và ô tô rộng rãi",
+        "confidence": "verified"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-vn-01",
+    "name": "Phở Lệ — Nguyễn Trãi (Michelin Selected)",
+    "category": "Heritage Saigon Beef Pho & Traditional Broth",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "413-415 Nguyễn Trãi, Phường 7, Quận 5, TP.HCM",
+    "placeId": "ChIJ_pho_le_q5",
+    "lat": 10.7548,
+    "lng": 106.6712,
+    "rating": 4.7,
+    "reviewsCount": 4500,
+    "pricePerPersonVnd": 85000,
+    "avgPrice": "70k - 100k VND",
+    "tags": [
+      "vietnamese",
+      "pho",
+      "món việt",
+      "phở bò",
+      "truyền thống"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": false,
+        "vegan": false,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Có nhân viên xếp xe máy trước cửa"
+      },
+      "matcha": {
+        "value": false
+      }
+    },
+    "unknowns": [
+      "korean",
+      "korean bbq"
+    ]
+  },
+  {
+    "id": "hcm-vnu-02",
+    "name": "Quán Bụi — Authentic Vietnamese",
+    "category": "Traditional Vietnamese Dining",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "19 Ngô Văn Năm, Bến Nghé, District 1, HCMC",
+    "placeId": "ChIJ4S9tEji1NTER8Y3U03mYp_k",
+    "lat": 10.7818,
+    "lng": 106.7055,
+    "rating": 4.7,
+    "reviewsCount": 1890,
+    "pricePerPersonVnd": 120000,
+    "avgPrice": "90k - 180k VND",
+    "tags": [
+      "Vietnamese",
+      "Hearty Meal",
+      "Vegetarian Options",
+      "Cozy",
+      "Group Dining"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "moderate",
+        "confidence": "high"
+      },
+      "seatingComfort": {
+        "value": "comfortable_bamboo_chairs",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "vegan": true,
+        "halal": false,
+        "noAlcohol": false
+      },
+      "matcha": {
+        "value": false,
+        "confidence": "verified"
+      },
+      "wifiSpeed": {
+        "value": "normal",
+        "confidence": "high"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Có bảo vệ dắt xe tận nơi",
+        "confidence": "verified"
+      }
+    },
+    "unknowns": [
+      "korean",
+      "korean bbq",
+      "phở"
+    ]
+  },
+  {
+    "id": "hcm-vnu-12",
+    "name": "Dim Tu Tac — Ẩm Thực Quảng Đông",
+    "category": "Premium Cantonese Dim Sum & Tea House",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "29B Trần Hưng Đạo, Phường 6, Quận 5, TP.HCM",
+    "placeId": "ChIJ_dim_tu_tac_tran_hung_dao",
+    "lat": 10.7548,
+    "lng": 106.6712,
+    "rating": 4.7,
+    "reviewsCount": 2450,
+    "pricePerPersonVnd": 180000,
+    "avgPrice": "140k - 300k VND",
+    "tags": [
+      "Dimsum",
+      "Cantonese",
+      "Quiet",
+      "Family & Friends",
+      "Spacious AC"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "luxury_cushions_round_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": true,
+        "vegan": false,
+        "halal": false,
+        "noAlcohol": false
+      },
+      "matcha": {
+        "value": false,
+        "confidence": "verified"
+      },
+      "wifiSpeed": {
+        "value": "fast",
+        "confidence": "verified"
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Bãi ô tô và xe máy rộng rãi có nhân viên",
+        "confidence": "verified"
+      }
+    },
+    "unknowns": []
+  },
+  {
+    "id": "hcm-vnu-18",
+    "name": "Cơm Tấm Ba Ghiền (Michelin Bib Gourmand)",
+    "category": "Saigon Giant Char-Grilled Pork Chop Broken Rice",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM",
+    "placeId": "ChIJ_com_tam_ba_ghien",
+    "lat": 10.7932,
+    "lng": 106.672,
+    "rating": 4.5,
+    "reviewsCount": 4600,
+    "pricePerPersonVnd": 95000,
+    "avgPrice": "75k - 130k VND",
+    "tags": [
+      "Cơm Tấm Sườn Khổng Lồ",
+      "Michelin Bib Gourmand",
+      "Hearty Meal",
+      "Legendary"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "lively",
+        "confidence": "verified"
+      },
+      "seatingComfort": {
+        "value": "standard_steel_tables",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": false,
+        "vegan": false,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "matcha": {
+        "value": false,
+        "confidence": "verified"
+      },
+      "wifiSpeed": {
+        "value": "normal",
+        "confidence": "medium"
+      },
+      "parking": {
+        "ease": "moderate",
+        "note": "Bảo vệ dắt xe trước cửa",
+        "confidence": "verified"
+      }
+    },
+    "unknowns": [
+      "bbq"
+    ]
+  },
+  {
+    "id": "hcm-vnu-jp-01",
+    "name": "Sushi Hokkaido Sachi — Đông Du",
+    "category": "Premium Japanese Cuisine & Fresh Sashimi",
+    "type": "restaurant",
+    "isAlley": false,
+    "alleyNote": "",
+    "address": "40-42 Đông Du, Bến Nghé, Quận 1, TP.HCM",
+    "placeId": "ChIJ_sushi_hokkaido_q1",
+    "lat": 10.7758,
+    "lng": 106.7045,
+    "rating": 4.8,
+    "reviewsCount": 3200,
+    "pricePerPersonVnd": 350000,
+    "avgPrice": "300k - 500k VND",
+    "tags": [
+      "japanese",
+      "sushi",
+      "sashimi",
+      "nhật bản",
+      "salmon"
+    ],
+    "attributes": {
+      "noiseLevel": {
+        "value": "quiet",
+        "confidence": "verified"
+      },
+      "dietary": {
+        "vegetarian": false,
+        "vegan": false,
+        "halal": false,
+        "noAlcohol": true
+      },
+      "parking": {
+        "ease": "easy",
+        "note": "Valet đỗ xe ô tô và xe máy"
+      },
+      "matcha": {
+        "value": false
+      }
+    },
+    "unknowns": []
+  }
+]

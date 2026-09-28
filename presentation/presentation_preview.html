@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GatherMap — Classroom Pitch Deck Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #070a11;
+            color: #f8fafc;
+        }
+        .slide-container {
+            aspect-ratio: 16 / 9;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .radar-beacon {
+            animation: pulse-ring 2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.6); opacity: 0.9; }
+            80%, 100% { transform: scale(2.2); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 selection:bg-amber-500 selection:text-slate-950">
+
+    <!-- Top Navigation Bar -->
+    <header class="max-w-[1200px] w-full mx-auto flex items-center justify-between py-3 border-b border-slate-800 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center font-black text-slate-950 shadow-lg shadow-amber-500/20">
+                <i class="fa-solid fa-utensils"></i>
+            </div>
+            <div>
+                <span class="font-extrabold text-base tracking-tight text-white">GATHER<span class="text-amber-400">MAP</span></span>
+                <span class="text-[11px] text-slate-400 ml-2">Classroom Pitch Slides (3 Slides)</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <span class="text-xs text-slate-400 font-mono" id="slideIndicator">Slide 1 of 3</span>
+            <div class="flex space-x-1">
+                <button onclick="prevSlide()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center space-x-1">
+                    <i class="fa-solid fa-chevron-left"></i>
+                    <span>Prev</span>
+                </button>
+                <button onclick="nextSlide()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition flex items-center space-x-1">
+                    <span>Next</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+            <a href="GatherMap_Classroom_Presentation.pptx" download class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center space-x-1.5 shadow-md">
+                <i class="fa-solid fa-file-powerpoint"></i>
+                <span>Download .PPTX</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Slide Stage -->
+    <main class="flex-1 flex items-center justify-center my-4">
+        <div class="w-full slide-container bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden relative flex flex-col">
+
+            <!-- ============================================================= -->
+            <!-- SLIDE 1: INPUT & COORDINATION DASHBOARD -->
+            <!-- ============================================================= -->
+            <div id="slide-1" class="slide-content w-full h-full flex flex-col p-6 space-y-4">
+                <!-- Browser Header Mockup -->
+                <div class="h-10 bg-slate-950 rounded-xl px-4 flex items-center justify-between border border-slate-800 shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                        <span class="ml-4 px-3 py-0.5 rounded-md bg-slate-900 text-slate-400 text-xs font-mono border border-slate-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-lock text-[10px] text-emerald-400"></i>
+                            <span>https://gathermap.app/session/EAT-2026</span>
+                        </span>
+                    </div>
+                    <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">GatherMap • Input & Coordination Dashboard</span>
+                </div>
+
+                <!-- Dashboard 2-Column Content -->
+                <div class="flex-1 grid grid-cols-12 gap-5 min-h-0">
+                    <!-- Left: Group Context & Wishes Box -->
+                    <div class="col-span-6 bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <!-- Members Roster -->
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-extrabold text-amber-400 uppercase flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-users"></i>
+                                    <span>Group Members (4 Starting Locations)</span>
+                                </span>
+                                <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 font-bold">Quận 10 Focus</span>
+                            </div>
+                            <div class="space-y-1.5 text-xs">
+                                <div class="flex items-center justify-between bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                    <span class="font-bold text-blue-400">● An</span>
+                                    <span class="text-slate-300 text-[11px]">📍 Landmark 81, Bình Thạnh</span>
+                                    <span class="text-[10px] text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded">Vegan Only</span>
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                    <span class="font-bold text-emerald-400">● Bình</span>
+                                    <span class="text-slate-300 text-[11px]">📍 UEH Campus B, Quận 10</span>
+                                    <span class="text-[10px] text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded">Quiet / Matcha</span>
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                    <span class="font-bold text-purple-400">● Chi</span>
+                                    <span class="text-slate-300 text-[11px]">📍 Hồ Con Rùa, Quận 3</span>
+                                    <span class="text-[10px] text-purple-400 bg-purple-950/60 px-1.5 py-0.5 rounded">Aesthetic Photos</span>
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                    <span class="font-bold text-amber-400">● Dũng</span>
+                                    <span class="text-slate-300 text-[11px]">📍 Vạn Hạnh Mall, Quận 10</span>
+                                    <span class="text-[10px] text-rose-400 bg-rose-950/60 px-1.5 py-0.5 rounded">&lt; 80,000 VND</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Wishes Box -->
+                        <div class="space-y-1.5 bg-gradient-to-r from-purple-950/30 to-slate-900 p-3 rounded-xl border border-purple-900/50">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="font-bold text-purple-300 flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
+                                    <span>Representative's Wishes & Group Chat Input</span>
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-mono">Gemini NLP</span>
+                            </div>
+                            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-[11px] text-purple-100 italic leading-relaxed">
+                                "An hôm nay ăn chay nha mn. Bình cần chỗ yên tĩnh có matcha để ôn thi cuối kỳ. Chi thích quán decor đẹp chụp hình check-in, còn Dũng thì budget dưới 80k/người thui. Kiếm quán nào công bằng ở giữa nha!"
+                            </div>
+                        </div>
+
+                        <!-- Radius & CTA -->
+                        <div class="flex items-center space-x-3 pt-1">
+                            <div class="flex-1 bg-slate-900 p-2 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">Radius:</span>
+                                <div class="flex space-x-1 text-[11px]">
+                                    <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400">1km</span>
+                                    <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400">2km</span>
+                                    <span class="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold shadow">3km</span>
+                                    <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400">5km</span>
+                                </div>
+                            </div>
+                            <button class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 flex items-center space-x-2">
+                                <i class="fa-solid fa-rocket"></i>
+                                <span>LET'S GO! (AI)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Interactive Spatial Map -->
+                    <div class="col-span-6 bg-slate-950 border border-slate-800 rounded-xl p-4 relative overflow-hidden flex flex-col justify-between">
+                        <!-- Top Map Header -->
+                        <div class="flex items-center justify-between z-10">
+                            <span class="text-xs font-extrabold text-white flex items-center space-x-1.5 bg-slate-900/90 px-3 py-1 rounded-lg border border-slate-800">
+                                <i class="fa-solid fa-map-location-dot text-amber-400"></i>
+                                <span>Real Spatial Map (Ho Chi Minh City)</span>
+                            </span>
+                            <span class="text-[10px] text-amber-400 font-mono bg-slate-900/90 px-2 py-1 rounded-lg border border-slate-800">10.7769° N, 106.6780° E</span>
+                        </div>
+
+                        <!-- Stylized Visual Pins Simulation -->
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <!-- Radius Circle -->
+                            <div class="w-80 h-80 rounded-full border-2 border-dashed border-amber-500/40 flex items-center justify-center relative">
+                                <!-- Center Beacon -->
+                                <div class="w-8 h-8 rounded-full bg-amber-500/30 border-2 border-amber-400 flex items-center justify-center relative">
+                                    <div class="w-3 h-3 rounded-full bg-amber-400 shadow-lg shadow-amber-400"></div>
+                                    <div class="absolute -top-7 whitespace-nowrap bg-slate-900 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 border border-amber-500/50">
+                                        🎯 Weiszfeld Geometric Median
+                                    </div>
+                                </div>
+
+                                <!-- Pins Around Circle -->
+                                <div class="absolute top-6 right-8 bg-slate-900/90 border border-blue-500 px-2 py-1 rounded text-[10px] text-blue-300 font-bold">
+                                    An (Landmark 81) • 3.8km
+                                </div>
+                                <div class="absolute bottom-8 left-6 bg-slate-900/90 border border-emerald-500 px-2 py-1 rounded text-[10px] text-emerald-300 font-bold">
+                                    Bình (UEH B, Q10) • 1.2km
+                                </div>
+                                <div class="absolute top-8 left-10 bg-slate-900/90 border border-purple-500 px-2 py-1 rounded text-[10px] text-purple-300 font-bold">
+                                    Chi (Hồ Con Rùa) • 2.1km
+                                </div>
+                                <div class="absolute bottom-16 right-10 bg-slate-900/90 border border-amber-500 px-2 py-1 rounded text-[10px] text-amber-300 font-bold">
+                                    Dũng (Vạn Hạnh Mall) • 1.4km
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Legend -->
+                        <div class="z-10 bg-slate-900/90 p-2 rounded-lg border border-slate-800 text-[11px] text-amber-200 flex items-center space-x-2">
+                            <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                            <span><strong>Fairness Standard:</strong> Equal-weight Weiszfeld algorithm minimizes total Euclidean distance and avoids single-outlier distortion.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================= -->
+            <!-- SLIDE 2: AI / LLM REASONING CORE -->
+            <!-- ============================================================= -->
+            <div id="slide-2" class="slide-content w-full h-full flex flex-col p-6 space-y-4 hidden">
+                <!-- Top Header -->
+                <div class="shrink-0 border-b border-slate-800 pb-2">
+                    <span class="text-xs font-bold text-purple-400 uppercase tracking-wider">AI Reasoning Core • Google Gemini 3.8 Flash</span>
+                    <h2 class="text-xl font-black text-white">From Chaotic Group Chat to Calibrated Mathematical Criteria</h2>
+                </div>
+
+                <!-- 3 Architecture Columns -->
+                <div class="flex-1 grid grid-cols-3 gap-5 min-h-0">
+                    <!-- Column 1: Unstructured Chat Input -->
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <div>
+                            <span class="text-[10px] font-bold text-blue-400 uppercase">Step 1: Input Stream</span>
+                            <h3 class="text-sm font-bold text-white mb-2">Unstructured Group Chat</h3>
+
+                            <div class="space-y-2 text-[11px]">
+                                <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                    <strong class="text-blue-400 block text-[10px]">An (10:15 AM)</strong>
+                                    <span>"Ê trưa nay đi đâu mn? Tui đang ăn chay nha, đừng dẫn đi quán nướng 🥩❌"</span>
+                                </div>
+                                <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                    <strong class="text-emerald-400 block text-[10px]">Bình (10:16 AM)</strong>
+                                    <span>"Tìm quán nào yên tĩnh xíu ngồi học bài nha, có matcha latte càng tốt 🍵📚"</span>
+                                </div>
+                                <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                    <strong class="text-purple-400 block text-[10px]">Chi (10:18 AM)</strong>
+                                    <span>"Decor đẹp chụp hình sống ảo xíu nha quý zị, gần Q10 thui đi xa nắng lắm 📸☀️"</span>
+                                </div>
+                                <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                    <strong class="text-amber-400 block text-[10px]">Dũng (10:19 AM)</strong>
+                                    <span>"Cuối tháng kẹt tiền lắm ae, budget &lt; 80k/người thui nhé! 💸"</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-rose-950/40 border border-rose-800/60 p-2.5 rounded-lg text-rose-200 text-[11px]">
+                            <strong>⚠️ The Problem:</strong> Conflicting human desires and hidden constraints usually trigger 30+ minutes of indecision.
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Gemini 3.8 Flash Parser -->
+                    <div class="bg-slate-950/80 border-2 border-purple-500/60 rounded-xl p-4 flex flex-col justify-between space-y-3 shadow-lg shadow-purple-500/10">
+                        <div>
+                            <span class="text-[10px] font-bold text-purple-400 uppercase">Step 2: Gemini 3.8 Flash</span>
+                            <h3 class="text-sm font-bold text-white mb-2">Two-Stage Semantic Parser</h3>
+
+                            <div class="space-y-2">
+                                <!-- Hard Filters -->
+                                <div class="bg-emerald-950/40 border border-emerald-800/60 p-2.5 rounded-lg text-emerald-200 text-xs space-y-1">
+                                    <span class="font-extrabold text-[10px] uppercase text-emerald-400 block">Stage 2A: Hard Constraints (Zero Compromise)</span>
+                                    <p class="text-[11px]">• <code>vegetarianRequired: true</code> (An's diet)</p>
+                                    <p class="text-[11px]">• <code>noAlcohol: true</code> (Safe outing)</p>
+                                    <p class="text-[11px]">• <code>maxPriceVnd: 80,000</code> (Dũng's budget)</p>
+                                    <p class="text-[11px]">• <code>radiusMeters: &lt;= 3,000m</code> (Distance cap)</p>
+                                </div>
+
+                                <!-- Soft Preferences -->
+                                <div class="bg-purple-950/40 border border-purple-800/60 p-2.5 rounded-lg text-purple-200 text-xs space-y-1">
+                                    <span class="font-extrabold text-[10px] uppercase text-purple-300 block">Stage 2B: Weighted Soft Preferences</span>
+                                    <p class="text-[11px]">• Matcha Specialty Drink: <strong>Weight 5/5</strong> (Bình)</p>
+                                    <p class="text-[11px]">• Quiet Study Atmosphere: <strong>Weight 5/5</strong> (Bình)</p>
+                                    <p class="text-[11px]">• Photogenic Decor: <strong>Weight 4/5</strong> (Chi)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-amber-950/40 border border-amber-800/60 p-2 rounded-lg text-amber-200 text-[11px]">
+                            <strong>🛡️ Safeguard:</strong> Confirmation Modal lets the representative verify or toggle tags before database matching.
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Mathematical Fairness Model -->
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <div>
+                            <span class="text-[10px] font-bold text-amber-400 uppercase">Step 3: Equal-Weight Formula</span>
+                            <h3 class="text-sm font-bold text-white mb-2">65/35 Egalitarian Scoring</h3>
+
+                            <!-- Formula Box -->
+                            <div class="bg-amber-950/30 border border-amber-800/60 p-3 rounded-lg text-center space-y-1">
+                                <span class="text-[10px] text-amber-400 uppercase font-bold tracking-wider">Core Scoring Formula</span>
+                                <div class="text-base font-black text-amber-300 font-mono">
+                                    Score = 0.65 × Avg + 0.35 × Min
+                                </div>
+                                <p class="text-[10px] text-slate-300 pt-1">
+                                    <strong>65% Group Avg:</strong> Satisfies collective taste.<br>
+                                    <strong>35% Min Sat:</strong> Protects least-satisfied member!
+                                </p>
+                            </div>
+
+                            <!-- Curated DB -->
+                            <div class="mt-3 bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1 text-xs">
+                                <span class="font-bold text-slate-200 text-[11px] block">Verified Data Authority</span>
+                                <p class="text-[10px] text-slate-400">• 40 Curated District 10 Venues (Cafes, Milk Tea, Desserts)</p>
+                                <p class="text-[10px] text-slate-400">• 50+ Real Quotes (TikTok KOC, Google Local Guides)</p>
+                                <p class="text-[10px] text-slate-400">• Pre-computed noise, parking, and vegetarian viabilities</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-emerald-950/40 border border-emerald-800/60 p-2.5 rounded-lg text-emerald-200 text-[11px]">
+                            <strong>✅ Output:</strong> Delivers Top 3 ranked spots with transparent individual reasons and tradeoffs.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================= -->
+            <!-- SLIDE 3: RESULTS DASHBOARD (BASED ON USER'S SKETCH) -->
+            <!-- ============================================================= -->
+            <div id="slide-3" class="slide-content w-full h-full flex flex-col p-6 space-y-4 hidden">
+                <!-- Browser Header Mockup -->
+                <div class="h-10 bg-slate-950 rounded-xl px-4 flex items-center justify-between border border-slate-800 shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                        <span class="ml-4 px-3 py-0.5 rounded-md bg-slate-900 text-slate-400 text-xs font-mono border border-slate-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-lock text-[10px] text-emerald-400"></i>
+                            <span>https://gathermap.app/session/EAT-2026/shortlist</span>
+                        </span>
+                    </div>
+                    <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">GatherMap • Recommended Shortlist Dashboard</span>
+                </div>
+
+                <!-- 2-Column Layout -->
+                <div class="flex-1 grid grid-cols-12 gap-5 min-h-0">
+                    <!-- Left: Realization of User's Hand-Drawn Rectangle -->
+                    <div class="col-span-6 bg-slate-950 border-2 border-amber-500/70 rounded-xl overflow-hidden flex flex-col justify-between shadow-xl">
+
+                        <!-- 1. TOP SECTION: Real Photographs of Venue (User's Sketch Top Box) -->
+                        <div class="relative h-32 bg-gradient-to-r from-amber-950 via-slate-900 to-slate-950 p-3 flex flex-col justify-between border-b border-slate-800">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-xs shadow">🏆 #1 TOP MATCH</span>
+                                    <span class="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold">🟢 OPEN (07:00 - 23:00)</span>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-lg bg-slate-950/90 border border-amber-500/50 text-amber-400 font-extrabold text-xs shadow">
+                                    ⭐ 92 / 100
+                                </span>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-extrabold text-white">PHÊ LA — CƯ XÁ BẮC HẢI</h3>
+                                <p class="text-[11px] text-amber-200">Specialty Oolong Tea, Camp Style & Quiet Study Nook • 45k - 75k VND</p>
+                            </div>
+                        </div>
+
+                        <!-- 2. MIDDLE SECTION: General Info About Venue (User's Sketch Middle Circle) -->
+                        <div class="p-3.5 space-y-2 bg-slate-900/90">
+                            <div class="flex items-center justify-between text-xs text-slate-300">
+                                <span>📍 125 Cư Xá Bắc Hải, Phường 15, Quận 10</span>
+                                <span class="text-amber-400 font-bold font-mono">1.1 km from center (~4 mins)</span>
+                            </div>
+
+                            <!-- Gemini AI Concierge Box -->
+                            <div class="bg-purple-950/30 border border-purple-800/50 p-2.5 rounded-lg text-[11px] text-purple-200">
+                                <strong class="text-purple-300 block mb-0.5 font-bold">✨ Gemini AI Concierge Rationale:</strong>
+                                "Perfect harmony: Features Oolong Matcha Latte satisfying Bình (96%), pure plant-based tea drinks meeting An's vegan rule (90%), trendy aesthetic camp seating for Chi (88%), and drinks priced 55k-65k well within Dũng's 80k budget (94%)."
+                            </div>
+
+                            <!-- Individual Satisfaction Meters -->
+                            <div class="space-y-1 pt-1">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">Member Satisfaction Breakdown:</span>
+                                <div class="grid grid-cols-4 gap-2 text-center text-[10px]">
+                                    <div class="bg-slate-950 p-1.5 rounded border border-emerald-500/40">
+                                        <div class="font-bold text-emerald-400 text-xs">90%</div>
+                                        <div class="text-slate-400 text-[9px]">An (Vegan)</div>
+                                    </div>
+                                    <div class="bg-slate-950 p-1.5 rounded border border-purple-500/40">
+                                        <div class="font-bold text-purple-400 text-xs">96%</div>
+                                        <div class="text-slate-400 text-[9px]">Bình (Quiet)</div>
+                                    </div>
+                                    <div class="bg-slate-950 p-1.5 rounded border border-blue-500/40">
+                                        <div class="font-bold text-blue-400 text-xs">88%</div>
+                                        <div class="text-slate-400 text-[9px]">Chi (Photos)</div>
+                                    </div>
+                                    <div class="bg-slate-950 p-1.5 rounded border border-amber-500/40">
+                                        <div class="font-bold text-amber-400 text-xs">94%</div>
+                                        <div class="text-slate-400 text-[9px]">Dũng (&lt;80k)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. BOTTOM SECTION: Interactive Action Pills (User's Sketch Arrows) -->
+                        <div class="p-3 bg-slate-950 border-t border-slate-800 grid grid-cols-3 gap-2">
+                            <!-- Button 1: Reviews of other users -->
+                            <div class="bg-slate-900 border border-blue-500/40 p-2 rounded-lg text-left">
+                                <span class="text-[10px] font-bold text-blue-400 block flex items-center space-x-1">
+                                    <i class="fa-solid fa-comments"></i>
+                                    <span>User Reviews</span>
+                                </span>
+                                <span class="text-[10px] text-slate-300 block mt-0.5">⭐ 4.6 (120+ rev)</span>
+                                <span class="text-[9px] text-slate-400 block">• Quiet zone • Good parking</span>
+                            </div>
+
+                            <!-- Button 2: Menu / Prices -->
+                            <div class="bg-slate-900 border border-amber-500/40 p-2 rounded-lg text-left">
+                                <span class="text-[10px] font-bold text-amber-400 block flex items-center space-x-1">
+                                    <i class="fa-solid fa-tag"></i>
+                                    <span>Menu & Prices</span>
+                                </span>
+                                <span class="text-[10px] text-slate-300 block mt-0.5">45k - 75k VND</span>
+                                <span class="text-[9px] text-slate-400 block">• Oolong Khói (55k)</span>
+                            </div>
+
+                            <!-- Button 3: Group Voting & 1-Click Navigation -->
+                            <div class="bg-emerald-950/50 border border-emerald-500/50 p-2 rounded-lg text-left flex flex-col justify-between">
+                                <div>
+                                    <span class="text-[10px] font-bold text-emerald-400 block flex items-center space-x-1">
+                                        <i class="fa-solid fa-diamond-turn-right"></i>
+                                        <span>Direct Navigation</span>
+                                    </span>
+                                    <span class="text-[9px] text-emerald-300">🗳️ Vote: 3/4 Approved</span>
+                                </div>
+                                <span class="text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded text-center block mt-1">Google Maps ➔</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Convergence Map & Runner-Up Shortlist -->
+                    <div class="col-span-6 bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <!-- Route Convergence Box -->
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <span class="text-xs font-bold text-white flex items-center space-x-1.5">
+                                <i class="fa-solid fa-route text-amber-400"></i>
+                                <span>Travel Routes Converging to Phê La:</span>
+                            </span>
+                            <div class="space-y-1 text-xs">
+                                <div class="flex justify-between bg-slate-950 p-1.5 rounded text-[11px]">
+                                    <span class="text-blue-400 font-bold">An (Landmark 81):</span>
+                                    <span class="text-slate-300">3.9 km (~12 mins ride)</span>
+                                </div>
+                                <div class="flex justify-between bg-slate-950 p-1.5 rounded text-[11px]">
+                                    <span class="text-emerald-400 font-bold">Bình (UEH Campus B):</span>
+                                    <span class="text-slate-300">1.1 km (~4 mins ride)</span>
+                                </div>
+                                <div class="flex justify-between bg-slate-950 p-1.5 rounded text-[11px]">
+                                    <span class="text-purple-400 font-bold">Chi (Hồ Con Rùa):</span>
+                                    <span class="text-slate-300">2.2 km (~7 mins ride)</span>
+                                </div>
+                                <div class="flex justify-between bg-slate-950 p-1.5 rounded text-[11px]">
+                                    <span class="text-amber-400 font-bold">Dũng (Vạn Hạnh Mall):</span>
+                                    <span class="text-slate-300">1.3 km (~4 mins ride)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Runner-Up Alternatives -->
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block">Runner-Up Candidate Venues</span>
+                            <div class="space-y-1.5 text-xs">
+                                <div class="bg-slate-950 p-2 rounded-lg border border-slate-800 flex items-center justify-between">
+                                    <div>
+                                        <strong class="text-white">#2 Dallas Cakes & Cafe</strong>
+                                        <p class="text-[10px] text-slate-400">Sweet bakery (An & Chi love), slightly higher price (75k-85k)</p>
+                                    </div>
+                                    <span class="text-amber-400 font-bold text-xs">86/100</span>
+                                </div>
+                                <div class="bg-slate-950 p-2 rounded-lg border border-slate-800 flex items-center justify-between">
+                                    <div>
+                                        <strong class="text-white">#3 Chidori Coffee in Bed</strong>
+                                        <p class="text-[10px] text-slate-400">Ultra-quiet study pods (Bình 98%), requires advance booking</p>
+                                    </div>
+                                    <span class="text-amber-400 font-bold text-xs">84/100</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Share Outing Box -->
+                        <div class="bg-gradient-to-r from-amber-950/40 to-slate-900 p-2.5 rounded-xl border border-amber-500/30 flex items-center justify-between text-xs">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-share-nodes text-amber-400 text-sm"></i>
+                                <span class="text-slate-200 font-semibold text-[11px]">Share Outing: <code class="text-amber-400 bg-slate-950 px-1.5 py-0.5 rounded">EAT-2026</code></span>
+                            </div>
+                            <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded font-bold">1-Click Zalo/Mess</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Slide Navigation Footer -->
+    <footer class="max-w-[1200px] w-full mx-auto flex items-center justify-between py-2 text-xs text-slate-500 border-t border-slate-800/80 shrink-0">
+        <div>
+            <span>Use <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">←</kbd> <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">→</kbd> or Click buttons to navigate</span>
+        </div>
+        <div>
+            <span>GatherMap Product Presentation • Designed exclusively for Kiris</span>
+        </div>
+    </footer>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 3;
+
+        function updateSlide() {
+            document.querySelectorAll('.slide-content').forEach((el, index) => {
+                if (index + 1 === currentSlide) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+            document.getElementById('slideIndicator').innerText = `Slide ${currentSlide} of ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+name: GatherMap CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'refactor/**'
+  pull_request:
+    branches:
+      - main
+      - 'refactor/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test Suite & Browser E2E
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: gathermap_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 22 (LTS)
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium with dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Suite 1 - Recommendation Architecture & Semantic Engine
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:architecture
+
+      - name: Suite 2 - Pipeline Deterministic Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:pipeline
+
+      - name: Suite 3 - Voting & Session Lifecycle Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:voting
+
+      - name: Suite 4 - Supabase Outing Overwrite Protection Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:overwrite
+
+      - name: Suite 5 - Share Token Security & Route Protection Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:security
+
+      - name: Suite 6 - Radius State Synchronization & Search Retry Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:radius
+
+      - name: Suite 7 - Legacy Migration & Controlled Transition Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:legacy
+
+      - name: Suite 8 - Supabase Migration Fixture & Dedup Archive Tests
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:fixture
+
+      - name: Suite 9 - Real PostgreSQL Migration & Live RLS Security Suite
+        env:
+          CI: 'true'
+          TEST_POSTGRES_URL: 'postgresql://postgres:postgrespassword@localhost:5432/gathermap_test'
+        run: npm run test:postgres
+
+      - name: Suite 10 - Playwright Dual-Browser E2E Map & UI Suite
+        env:
+          CI: 'true'
+          SQLITE_DB_PATH: 'tests/ci-test.db'
+        run: npm run test:e2e
