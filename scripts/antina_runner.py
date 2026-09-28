@@ -405,19 +405,27 @@ def ensure_product_revision_fixable(task: Task, root: Path) -> None:
                           + ", ".join(forbidden))
 
 
-def is_rate_limit_error(exc: Exception) -> bool:
+def is_retryable_model_error(exc: Exception) -> bool:
     message = str(exc).lower()
     return any(
         term in message
         for term in (
             "429",
+            "503",
             "resource_exhausted",
+            "unavailable",
+            "high demand",
+            "spikes in demand",
             "generate_content_free_tier_requests",
             "rate limit",
             "quota exceeded",
             "generativelanguage.googleapis.com",
         )
     )
+
+
+# Backwards compatibility alias
+is_rate_limit_error = is_retryable_model_error
 
 
 def parse_retry_delay(exc: Exception, default_delay: float) -> float:
@@ -490,11 +498,16 @@ ISSUE #{task.issue}
                     )
                     return await response.text()
             except Exception as exc:
-                if is_rate_limit_error(exc):
+                if is_retryable_model_error(exc):
                     if attempt < MAX_QUOTA_RETRIES:
                         delay = parse_retry_delay(exc, INITIAL_QUOTA_DELAY_SECONDS * attempt)
                         await asyncio.sleep(delay)
                         continue
+                    if "503" in str(exc) or "high demand" in str(exc).lower() or "unavailable" in str(exc).lower():
+                        raise RunnerError(
+                            "Gemini model provider unavailable (HTTP 503 high demand spike). "
+                            "Temporary model outage persisted after retries. Try again later."
+                        ) from None
                     raise RunnerError(
                         "Gemini rate limit exceeded (5 requests/min on Free Tier for gemini-3.7-flash). "
                         "Rate limit remained exhausted after retries. Action required by Kiris: verify project tier/billing."
