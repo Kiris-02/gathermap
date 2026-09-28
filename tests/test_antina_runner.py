@@ -467,6 +467,53 @@ class RunnerTests(unittest.TestCase):
             self.assertNotIn("my-ultra-secret-key-999", msg)
             self.assertNotIn("API_KEY", msg)
 
+    def test_run_antigravity_retries_on_503_high_demand_spike_and_succeeds(self):
+        task = runner.task_from_issue(issue("to:antina", "state:ready"), "OWNER")
+        attempts = 0
+
+        class FakeChatResponse:
+            async def text(self):
+                return "Agent completed work after 503 recovery."
+
+        class Spike503Agent:
+            def __init__(self, *args, **kwargs):
+                pass
+            async def __aenter__(self):
+                return self
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+            async def chat(self, prompt):
+                nonlocal attempts
+                attempts += 1
+                if attempts == 1:
+                    raise Exception("Error 503: This model is currently experiencing high demand. Spikes in demand are usually temporary.")
+                return FakeChatResponse()
+
+        class MockAntigravity:
+            Agent = Spike503Agent
+            LocalAgentConfig = lambda **kwargs: kwargs
+            types = type("Types", (), {
+                "CapabilitiesConfig": lambda **kwargs: kwargs,
+                "BuiltinTools": type("Tools", (), {
+                    "LIST_DIR": "list", "SEARCH_DIR": "search", "FIND_FILE": "find",
+                    "VIEW_FILE": "view", "CREATE_FILE": "create", "EDIT_FILE": "edit",
+                    "FINISH": "finish"
+                })
+            })
+            hooks = type("Hooks", (), {
+                "policy": type("Policy", (), {
+                    "allow": lambda *a, **kw: None,
+                    "deny": lambda *a, **kw: None,
+                })
+            })
+
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.dict(runner.os.environ, {"GEMINI_API_KEY": "secret-key-12345", "GH_TOKEN": "gh-token"}), \
+             patch.dict("sys.modules", {"google.antigravity": MockAntigravity, "google.antigravity.hooks": MockAntigravity.hooks}), \
+             patch("asyncio.sleep", return_value=None):
+            result = asyncio.run(runner.run_antigravity(task, Path(temp)))
+            self.assertEqual(result, "Agent completed work after 503 recovery.")
+            self.assertEqual(attempts, 2)
 
     def test_changed_protected_path_fails_before_publish(self):
         with tempfile.TemporaryDirectory() as temp, \
