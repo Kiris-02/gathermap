@@ -1,0 +1,6 @@
+{
+  "description": "Temporary GitHub -> Kir Local Bridge (polling every 180s)",
+  "command": "python",
+  "args": ["bridge.py", "--interval", "180", "--mode", "daemon"],
+  "restart_policy": "always"
+}
