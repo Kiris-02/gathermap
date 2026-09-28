@@ -117,7 +117,50 @@ whitespace errors in protected paths before the SDK session starts.
 
 The runner creates new branches as `agent/<normalized-task-id>`. A ready task
 with a pre-existing remote branch, or a revision without exactly one open PR,
-stops at `NEEDS_KIRIS` for recovery rather than guessing.
+### Quota handling and bounded backoff
+
+The runner enforces bounded exponential backoff on Gemini API rate limit errors
+(HTTP 429 / `RESOURCE_EXHAUSTED` on `generativelanguage.googleapis.com/generate_content_free_tier_requests`).
+The Free Tier limit for `gemini-3.7-flash` is 5 requests per minute (RPM).
+A single multi-turn agent interaction performing multiple tool calls in rapid
+succession will easily exceed 5 RPM. Because the quota window resets every minute,
+transient spikes are handled with up to 3 retry attempts with exponential backoff
+(15s, 30s). If quota remains exhausted after retries, the job fails closed to
+`NEEDS_KIRIS` with an actionable, sanitized message. API keys and secrets are
+never printed or logged.
+
+If paid access is desired, Kiris can link a billing account to the project in
+Google AI Studio or Google Cloud Console, which raises the quota to standard Pay-as-you-go
+tiers (360+ RPM). Under the Free Tier, tasks must tolerate rate limit delays.
+
+### PR Checks and downstream CI gate
+
+The runner strictly verifies that all required checks:
+1. `Antina required validation` (from `antina-validation.yml`)
+2. `Test Suite & Browser E2E` (from `ci.yml`)
+
+pass against the exact commit SHA of the PR HEAD. The check gate treats empty,
+pending, skipped, stale, approval-required (`ACTION_REQUIRED` / `WAITING`), and failed
+checks as failures that stop the loop.
+
+**Security Boundary on `GITHUB_TOKEN`**:
+Per GitHub Actions documentation (https://docs.github.com/en/actions/concepts/security/github_token),
+events created by `GITHUB_TOKEN` (such as push or pull_request) do NOT trigger downstream
+`pull_request` workflows. This prevents recursive workflow loops. Consequently, when
+`antina_runner.py` creates a PR using `GITHUB_TOKEN`, downstream check workflows do not run
+automatically without human approval or an external trigger.
+
+**Proposals for downstream CI execution**:
+- **Proposal A (Recommended - Minimal Fine-Grained Secret)**:
+  Configure an Actions secret `ANTINA_BOT_TOKEN` containing a fine-grained Personal Access
+  Token (or GitHub App) with only `contents: write` and `pull-requests: write`. When Antina
+  uses this token to push branches and open PRs, GitHub treats it as an independent identity
+  and triggers `Antina validation` and `GatherMap CI` automatically without requiring manual approval.
+- **Proposal B (Workflow Dispatch with Expanded Permissions)**:
+  Add `workflow_dispatch` triggers to `antina-validation.yml` and `ci.yml`, grant `actions: write`
+  to `antina-runner.yml`, and have `antina_runner.py` dispatch the checks directly against the PR ref.
+
+Per safety rules, broader token permissions and new secrets remain stopped for Kiris's explicit decision.
 
 ### Disable / rollback
 
@@ -134,6 +177,8 @@ deploy code.
 2. GitHub label changes are not transactional. Per-Issue workflow concurrency
    prevents duplicate executions in the supported path, but manual/local v1
    claimers must not run concurrently with the workflow.
+3. Automated downstream check triggering requires Kiris to choose Proposal A (PAT)
+   or Proposal B (workflow_dispatch).
 
 Until an end-to-end disposable task passes, the automatic runner remains
 unproven in production use. Production migrations, deployment,

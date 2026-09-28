@@ -275,24 +275,198 @@ class RunnerTests(unittest.TestCase):
                 runner.ensure_product_revision_fixable(task, root)
 
     def test_check_rollup_distinguishes_pending_failure_and_success(self):
-        self.assertEqual(runner.checks_state([]), "pending")
+        req = frozenset({"Antina required validation"})
+        self.assertEqual(runner.checks_state([], required=req), "pending")
         self.assertEqual(runner.checks_state([
             {"name": "unrelated", "status": "COMPLETED", "conclusion": "SUCCESS"}
-        ]), "pending")
+        ], required=req), "pending")
         self.assertEqual(runner.checks_state([{
             "name": "Antina required validation", "status": "IN_PROGRESS"
-        }]), "pending")
-        for conclusion in ["FAILURE", "CANCELLED", "SKIPPED", "NEUTRAL"]:
+        }], required=req), "pending")
+        for conclusion in ["FAILURE", "CANCELLED", "TIMED_OUT", "NEUTRAL"]:
             self.assertEqual(runner.checks_state([{
                 "name": "Antina required validation",
                 "status": "COMPLETED",
                 "conclusion": conclusion,
-            }]), "failed")
+            }], required=req), "failed")
         self.assertEqual(runner.checks_state([{
             "name": "Antina required validation",
             "status": "COMPLETED",
             "conclusion": "SUCCESS",
-        }]), "success")
+        }], required=req), "success")
+
+    def test_check_state_distinguishes_approval_required_stale_and_skipped(self):
+        self.assertEqual(runner.check_state({"status": "ACTION_REQUIRED"}), "approval_required")
+        self.assertEqual(runner.check_state({"status": "WAITING", "conclusion": "ACTION_REQUIRED"}), "approval_required")
+        self.assertEqual(runner.check_state({"status": "COMPLETED", "conclusion": "ACTION_REQUIRED"}), "approval_required")
+        self.assertEqual(runner.check_state({"status": "COMPLETED", "conclusion": "STALE"}), "stale")
+        self.assertEqual(runner.check_state({"status": "COMPLETED", "conclusion": "SKIPPED"}), "skipped")
+        self.assertEqual(runner.check_state({"status": "QUEUED"}), "pending")
+        self.assertEqual(runner.check_state({"status": "COMPLETED", "conclusion": "SUCCESS"}), "success")
+
+    def test_checks_state_requires_all_configured_checks(self):
+        # When only one of the required checks is present, status is pending
+        rollup_one = [
+            {"name": "Antina required validation", "status": "COMPLETED", "conclusion": "SUCCESS"}
+        ]
+        self.assertEqual(runner.checks_state(rollup_one), "pending")
+
+        # When both required checks are present and successful, status is success
+        rollup_both = [
+            {"name": "Antina required validation", "status": "COMPLETED", "conclusion": "SUCCESS"},
+            {"name": "Test Suite & Browser E2E", "status": "COMPLETED", "conclusion": "SUCCESS"},
+        ]
+        self.assertEqual(runner.checks_state(rollup_both), "success")
+
+        # Any check requiring approval halts with approval_required
+        rollup_approval = [
+            {"name": "Antina required validation", "status": "COMPLETED", "conclusion": "SUCCESS"},
+            {"name": "Test Suite & Browser E2E", "status": "ACTION_REQUIRED", "conclusion": ""},
+        ]
+        self.assertEqual(runner.checks_state(rollup_approval), "approval_required")
+
+        # Any check skipped halts with skipped
+        rollup_skipped = [
+            {"name": "Antina required validation", "status": "COMPLETED", "conclusion": "SKIPPED"},
+            {"name": "Test Suite & Browser E2E", "status": "COMPLETED", "conclusion": "SUCCESS"},
+        ]
+        self.assertEqual(runner.checks_state(rollup_skipped), "skipped")
+
+    def test_checks_state_and_wait_for_checks_detect_stale_head(self):
+        rollup = [
+            {"name": "Antina required validation", "status": "COMPLETED", "conclusion": "SUCCESS"},
+            {"name": "Test Suite & Browser E2E", "status": "COMPLETED", "conclusion": "SUCCESS"},
+        ]
+        self.assertEqual(runner.checks_state(rollup, expected_head="head1", pr_head="head2"), "stale")
+        self.assertEqual(runner.checks_state(rollup, expected_head="head1", pr_head="head1"), "success")
+
+        # wait_for_checks raises on stale head
+        with patch.object(runner, "gh_json", return_value={"headRefOid": "head2", "statusCheckRollup": rollup}), \
+             self.assertRaisesRegex(runner.RunnerError, "does not match expected commit"):
+            runner.wait_for_checks(9, expected_head="head1", timeout=1)
+
+        # wait_for_checks raises on approval required
+        approval_rollup = [
+            {"name": "Antina required validation", "status": "COMPLETED", "conclusion": "SUCCESS"},
+            {"name": "Test Suite & Browser E2E", "status": "ACTION_REQUIRED"},
+        ]
+        with patch.object(runner, "gh_json", return_value={"headRefOid": "head1", "statusCheckRollup": approval_rollup}), \
+             self.assertRaisesRegex(runner.RunnerError, "human approval"):
+            runner.wait_for_checks(9, expected_head="head1", timeout=1)
+
+        # wait_for_checks raises on skipped
+        skipped_rollup = [
+            {"name": "Antina required validation", "status": "COMPLETED", "conclusion": "SKIPPED"},
+            {"name": "Test Suite & Browser E2E", "status": "COMPLETED", "conclusion": "SUCCESS"},
+        ]
+        with patch.object(runner, "gh_json", return_value={"headRefOid": "head1", "statusCheckRollup": skipped_rollup}), \
+             self.assertRaisesRegex(runner.RunnerError, "skipped"):
+            runner.wait_for_checks(9, expected_head="head1", timeout=1)
+
+    def test_is_rate_limit_error_and_delay_parsing(self):
+        err_429 = Exception("Error 429: Rate limit exceeded. Please retry in 406.75ms.")
+        self.assertTrue(runner.is_rate_limit_error(err_429))
+        self.assertAlmostEqual(runner.parse_retry_delay(err_429, default_delay=5.0), 5.0)
+
+        err_long = Exception("RESOURCE_EXHAUSTED: Please retry in 25s.")
+        self.assertTrue(runner.is_rate_limit_error(err_long))
+        self.assertEqual(runner.parse_retry_delay(err_long, default_delay=5.0), 25.0)
+
+        err_other = ValueError("Some syntax error")
+        self.assertFalse(runner.is_rate_limit_error(err_other))
+
+    def test_run_antigravity_retries_on_rate_limit_and_fails_safely_without_key_leak(self):
+        task = runner.task_from_issue(issue("to:antina", "state:ready"), "OWNER")
+        attempts = 0
+
+        class FakeChatResponse:
+            async def text(self):
+                return "Agent completed work."
+
+        class FlakyAgent:
+            def __init__(self, *args, **kwargs):
+                pass
+            async def __aenter__(self):
+                return self
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+            async def chat(self, prompt):
+                nonlocal attempts
+                attempts += 1
+                if attempts == 1:
+                    raise Exception("Error 429: Quota exceeded for metric generate_content_free_tier_requests")
+                return FakeChatResponse()
+
+        class MockAntigravity:
+            Agent = FlakyAgent
+            LocalAgentConfig = lambda **kwargs: kwargs
+            types = type("Types", (), {
+                "CapabilitiesConfig": lambda **kwargs: kwargs,
+                "BuiltinTools": type("Tools", (), {
+                    "LIST_DIR": "list", "SEARCH_DIR": "search", "FIND_FILE": "find",
+                    "VIEW_FILE": "view", "CREATE_FILE": "create", "EDIT_FILE": "edit",
+                    "FINISH": "finish"
+                })
+            })
+            hooks = type("Hooks", (), {
+                "policy": type("Policy", (), {
+                    "allow": lambda *a, **kw: None,
+                    "deny": lambda *a, **kw: None,
+                })
+            })
+
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.dict(runner.os.environ, {"GEMINI_API_KEY": "secret-key-12345", "GH_TOKEN": "gh-token"}), \
+             patch.dict("sys.modules", {"google.antigravity": MockAntigravity, "google.antigravity.hooks": MockAntigravity.hooks}), \
+             patch("asyncio.sleep", return_value=None):
+            result = asyncio.run(runner.run_antigravity(task, Path(temp)))
+            self.assertEqual(result, "Agent completed work.")
+            self.assertEqual(attempts, 2)
+
+    def test_run_antigravity_persistent_rate_limit_raises_sanitized_runner_error(self):
+        task = runner.task_from_issue(issue("to:antina", "state:ready"), "OWNER")
+
+        class AlwaysExhaustedAgent:
+            def __init__(self, *args, **kwargs):
+                pass
+            async def __aenter__(self):
+                return self
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+            async def chat(self, prompt):
+                raise Exception("Error 429: RESOURCE_EXHAUSTED: generate_content_free_tier_requests limit: 5")
+
+        class MockAntigravity:
+            Agent = AlwaysExhaustedAgent
+            LocalAgentConfig = lambda **kwargs: kwargs
+            types = type("Types", (), {
+                "CapabilitiesConfig": lambda **kwargs: kwargs,
+                "BuiltinTools": type("Tools", (), {
+                    "LIST_DIR": "list", "SEARCH_DIR": "search", "FIND_FILE": "find",
+                    "VIEW_FILE": "view", "CREATE_FILE": "create", "EDIT_FILE": "edit",
+                    "FINISH": "finish"
+                })
+            })
+            hooks = type("Hooks", (), {
+                "policy": type("Policy", (), {
+                    "allow": lambda *a, **kw: None,
+                    "deny": lambda *a, **kw: None,
+                })
+            })
+
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.dict(runner.os.environ, {"GEMINI_API_KEY": "my-ultra-secret-key-999", "GH_TOKEN": "gh-token"}), \
+             patch.dict("sys.modules", {"google.antigravity": MockAntigravity, "google.antigravity.hooks": MockAntigravity.hooks}), \
+             patch("asyncio.sleep", return_value=None):
+            with self.assertRaises(runner.RunnerError) as ctx:
+                asyncio.run(runner.run_antigravity(task, Path(temp)))
+
+            msg = str(ctx.exception)
+            self.assertIn("Gemini rate limit exceeded", msg)
+            self.assertIn("Free Tier", msg)
+            self.assertNotIn("my-ultra-secret-key-999", msg)
+            self.assertNotIn("API_KEY", msg)
+
 
     def test_changed_protected_path_fails_before_publish(self):
         with tempfile.TemporaryDirectory() as temp, \
