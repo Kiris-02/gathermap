@@ -6,11 +6,14 @@ on:
       - chore/agent-orchestrator-v1
       - feat/platform-antina-runner-v1
       - feat/platform-existing-pr-revision-v1
+      - feat/local-antina-worker
     paths:
       - scripts/agent_cycle.py
       - scripts/antina_runner.py
+      - scripts/local_antina_worker.py
       - tests/test_agent_cycle.py
       - tests/test_antina_runner.py
+      - tests/test_local_antina_worker.py
       - requirements-antina.txt
       - .github/workflows/antina-runner.yml
       - .github/workflows/antina-validation.yml
@@ -19,8 +22,10 @@ on:
     paths:
       - scripts/agent_cycle.py
       - scripts/antina_runner.py
+      - scripts/local_antina_worker.py
       - tests/test_agent_cycle.py
       - tests/test_antina_runner.py
+      - tests/test_local_antina_worker.py
       - requirements-antina.txt
       - .github/workflows/antina-runner.yml
       - .github/workflows/antina-validation.yml

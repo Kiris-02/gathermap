@@ -15,3 +15,6 @@ temp-*.db
 tests/*.db
 temp-browser-profile-*
 test.txt
+.worktrees/
+.antina_worker.lock
+.antina_worker_checkpoint.json
