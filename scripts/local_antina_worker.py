@@ -732,6 +732,103 @@ def assert_clean_git_diff(worktree_path: Path, task: Task) -> list[str]:
     return sorted(list(set(changed_files)))
 
 
+def assert_clean_committed_range(
+    worktree_path: Path,
+    task: Task,
+    base_sha: str,
+    cur_head: str,
+) -> list[str]:
+    """Validate a recovered committed tree against a trusted baseline before push or handoff.
+
+    Enforces that:
+    1. The worktree is on task.branch and the branch is not protected.
+    2. base_sha is an ancestor of cur_head (no foreign/diverged history).
+    3. If task is a revision with a pinned revision_head, base_sha matches the pin.
+    4. At least one file was modified between base_sha and cur_head.
+    5. All modified files are within task.allowed_paths and none are protected.
+    6. No merge conflict markers exist in the commit range.
+    7. git diff --check passes with code 0 on the commit range.
+    8. Local product tests (npm test) pass cleanly.
+    9. The working tree remains clean after running tests.
+
+    Fails closed on any violation, raising WorkerError.
+    """
+    # 1. Exact branch binding
+    cur_branch = run_cmd("git", "rev-parse", "--abbrev-ref", "HEAD", cwd=worktree_path).strip()
+    if cur_branch != task.branch:
+        raise WorkerError(f"Recovered worktree is on branch '{cur_branch}', expected '{task.branch}'")
+
+    if cur_branch in {"main", "master"} or any(cur_branch.startswith(p) for p in PROTECTED_PREFIXES):
+        raise WorkerError(f"Recovered worktree branch '{cur_branch}' is protected")
+
+    # 2. Base ancestor check
+    try:
+        run_cmd("git", "merge-base", "--is-ancestor", base_sha, cur_head, cwd=worktree_path)
+    except Exception as exc:
+        raise WorkerError(
+            f"Recovered commit {cur_head[:8]} is not a direct descendant of trusted baseline {base_sha[:8]}. "
+            "Refusing to resume divergent or rebased history."
+        ) from exc
+
+    # 3. Pinned revision head verification
+    if task.is_revision and task.revision_head:
+        if not base_sha.startswith(task.revision_head.lower()):
+            raise WorkerError(
+                f"Committed baseline {base_sha[:8]} does not match pinned revision_head {task.revision_head[:8]}"
+            )
+
+    # 4. Changed paths extraction
+    diff_name_output = run_cmd("git", "diff", "--name-status", f"{base_sha}..{cur_head}", cwd=worktree_path)
+    if not diff_name_output.strip():
+        raise WorkerError(f"Commit range {base_sha[:8]}..{cur_head[:8]} contains zero file modifications")
+
+    changed_files: list[str] = []
+    for line in diff_name_output.splitlines():
+        if not line.strip():
+            continue
+        parts = line.strip().split("\t")
+        if len(parts) < 2:
+            continue
+        if len(parts) >= 3 and parts[0].startswith("R"):
+            changed_files.append(parts[1].strip().strip('"').replace("\\", "/"))
+            changed_files.append(parts[2].strip().strip('"').replace("\\", "/"))
+        else:
+            changed_files.append(parts[-1].strip().strip('"').replace("\\", "/"))
+
+    # 5. Protected file check
+    for path in changed_files:
+        if path in PROTECTED_FILES or any(path.startswith(prefix) for prefix in PROTECTED_PREFIXES):
+            raise WorkerError(f"Committed tree modified protected file: {path}. Halting immediately.")
+
+    # 6. Allowed paths whitelist check
+    for path in changed_files:
+        if path not in task.allowed_paths:
+            raise WorkerError(
+                f"Committed tree modified file outside allowed paths: {path} (allowed: {task.allowed_paths})"
+            )
+
+    # 7. Merge conflict markers check
+    diff_output = run_cmd("git", "diff", f"{base_sha}..{cur_head}", cwd=worktree_path)
+    for marker in ("<<<<<<<", "=======", ">>>>>>>"):
+        if marker in diff_output:
+            raise WorkerError(f"Committed tree contains unresolved merge conflict marker '{marker}'")
+
+    # 8. Blocking whitespace check on commit range
+    run_cmd("git", "diff", "--check", f"{base_sha}..{cur_head}", cwd=worktree_path, check=True)
+
+    # 9. Local product tests execution
+    print(f"[{task.task_id}] Executing local regression tests (npm test) on recovered commit {cur_head[:8]}...", flush=True)
+    run_local_tests(worktree_path, task)
+    print(f"[{task.task_id}] Local tests passed 100% on recovered commit!", flush=True)
+
+    # 10. Cleanliness post-test
+    status_output = run_cmd("git", "status", "--porcelain", cwd=worktree_path)
+    if status_output.strip():
+        raise WorkerError(f"Worktree has unexpected uncommitted modifications after test execution: {status_output.strip()}")
+
+    return sorted(list(set(changed_files)))
+
+
 # ---------------------------------------------------------------------------
 # Worktree Management (Isolated & Reversible)
 # ---------------------------------------------------------------------------
@@ -1009,7 +1106,12 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
                 existing_head = None
                 try:
                     cur_head = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir).lower()
-                    base_ref = f"origin/{task.branch}" if task.is_revision else "origin/main"
+                    if task.is_revision and task.revision_head:
+                        base_ref = task.revision_head
+                    elif task.is_revision:
+                        base_ref = f"origin/{task.branch}"
+                    else:
+                        base_ref = "origin/main"
                     base_sha = run_cmd("git", "rev-parse", base_ref, cwd=worktree_dir).lower()
                     if cur_head != base_sha:
                         has_commit = True
@@ -1023,10 +1125,22 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
                         "Leaving worktree and checkpoint intact for human inspection."
                     )
 
-                resumption_advanced = True
-
                 if has_uncommitted:
                     print(f"[{task.task_id}] Preserved worktree has uncommitted modifications. Resuming verification...", flush=True)
+                    # If there were also prior commits ahead of base, validate that commit range as well
+                    if has_commit:
+                        diff_name_output = run_cmd("git", "diff", "--name-status", f"{base_sha}..{cur_head}", cwd=worktree_dir)
+                        for line in diff_name_output.splitlines():
+                            if not line.strip():
+                                continue
+                            parts = line.strip().split("\t")
+                            if len(parts) >= 2:
+                                p = parts[-1].strip().strip('"').replace("\\", "/")
+                                if p in PROTECTED_FILES or any(p.startswith(pr) for pr in PROTECTED_PREFIXES):
+                                    raise WorkerError(f"Prior commit modified protected file: {p}. Halting immediately.")
+                                if p not in task.allowed_paths:
+                                    raise WorkerError(f"Prior commit modified file outside allowed paths: {p} (allowed: {task.allowed_paths})")
+
                     save_checkpoint(repo_root, {
                         "task_id": task.task_id,
                         "issue": task.issue_number,
@@ -1060,10 +1174,13 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
                     )
                     run_cmd("git", "commit", "-m", commit_msg, cwd=worktree_dir)
                     head_sha = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir).lower()
+                    resumption_advanced = True
                 else:
                     head_sha = existing_head
-                    print(f"[{task.task_id}] Resuming from existing committed HEAD: {head_sha[:8]}", flush=True)
-                    changed_files = task.allowed_paths
+                    print(f"[{task.task_id}] Validating clean divergent committed HEAD: {head_sha[:8]} against baseline {base_sha[:8]}...", flush=True)
+                    changed_files = assert_clean_committed_range(worktree_dir, task, base_sha, head_sha)
+                    print(f"[{task.task_id}] Recovered commit {head_sha[:8]} validated clean. Files: {changed_files}", flush=True)
+                    resumption_advanced = True
 
                 if local_only:
                     print(f"[{task.task_id}] [LOCAL_ONLY] Local verification passed. Remote push, PR creation, and review handoffs skipped.", flush=True)
