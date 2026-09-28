@@ -108,6 +108,7 @@ class Task:
     revision_pr: int | None = None
     revision_head: str | None = None
     revision_branch: str | None = None
+    review_findings: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -151,12 +152,37 @@ def gh_json(*args: str, cwd: Path | None = None) -> Any:
         raise WorkerError(f"Malformed JSON from gh command: {raw[:200]}") from exc
 
 
+def validate_github_remote_url(url: str, expected_repo: str = REPO) -> bool:
+    """Strictly validate that a Git remote URL targets github.com/<expected_repo>."""
+    clean = url.strip().replace("\\", "/")
+    # HTTPS: https://([user:pass@]?)github.com/owner/repo(.git)?(/?)
+    https_match = re.match(r"^https://(?:[^@/]+@)?github\.com/([^/]+)/([^/]+?)(?:\.git)?/?$", clean, re.IGNORECASE)
+    if https_match:
+        owner, repo = https_match.group(1), https_match.group(2)
+        return f"{owner}/{repo}".lower() == expected_repo.lower()
+
+    # SSH standard URL: ssh://[user@]github.com[:port]/owner/repo(.git)?(/?)
+    ssh_match = re.match(r"^ssh://(?:[^@/]+@)?github\.com(?::\d+)?/([^/]+)/([^/]+?)(?:\.git)?/?$", clean, re.IGNORECASE)
+    if ssh_match:
+        owner, repo = ssh_match.group(1), ssh_match.group(2)
+        return f"{owner}/{repo}".lower() == expected_repo.lower()
+
+    # SSH scp-style: [user@]github.com:owner/repo(.git)?(/?)
+    scp_match = re.match(r"^(?:[^@/:]+@)?github\.com:([^/]+)/([^/]+?)(?:\.git)?/?$", clean, re.IGNORECASE)
+    if scp_match:
+        owner, repo = scp_match.group(1), scp_match.group(2)
+        return f"{owner}/{repo}".lower() == expected_repo.lower()
+
+    return False
+
+
 def verify_repo_remote(repo_root: Path) -> None:
-    """Ensure repository remote points strictly to the expected repository."""
-    url = run_cmd("git", "remote", "get-url", "origin", cwd=repo_root)
-    clean_url = url.replace("\\", "/").rstrip("/")
-    if not (clean_url.endswith(f"{REPO}.git") or clean_url.endswith(REPO)):
-        raise WorkerError(f"Invalid git remote origin '{url}': must point to {REPO}")
+    """Ensure repository remotes (both fetch and push) point strictly to the expected repository."""
+    for remote_flag in ([], ["--push"]):
+        cmd = ["git", "remote", "get-url"] + remote_flag + ["origin"]
+        url = run_cmd(*cmd, cwd=repo_root)
+        if not validate_github_remote_url(url, REPO):
+            raise WorkerError(f"Invalid git remote origin '{url}': must point strictly to github.com/{REPO}")
 
 
 # ---------------------------------------------------------------------------
@@ -186,11 +212,37 @@ def is_process_running(pid: int) -> bool:
             return False
 
 
+def is_agent_conversation_active(conversation_id: str, timeout_seconds: float = 15.0) -> bool:
+    """Check if an agent conversation is still actively running or writing to transcript."""
+    if not conversation_id:
+        return False
+    transcript_file = get_conversation_transcript_path(conversation_id)
+    if not transcript_file.exists():
+        return False
+    try:
+        mtime = transcript_file.stat().st_mtime
+        if (time.time() - mtime) > timeout_seconds:
+            return False
+        lines = transcript_file.read_text(encoding="utf-8", errors="replace").splitlines()
+        for line in reversed(lines):
+            line = line.strip()
+            if not line:
+                continue
+            step = json.loads(line)
+            if step.get("source") == "MODEL" and step.get("type") == "PLANNER_RESPONSE" and step.get("status") in {"DONE", "ERROR"}:
+                return False
+            break
+        return True
+    except Exception:
+        return False
+
+
 def acquire_lock(repo_root: Path, task_id: str) -> Path:
     """Acquire persistent worker lock atomically via O_CREAT | O_EXCL.
 
-    Fails closed if another process is actively running.
-    Reclaims stale lock if the previous holder process is dead.
+    Fails closed if another process is actively running, or if an interrupted task's
+    preserved checkpoint remains unresolved for a different task.
+    Reclaims stale lock if the previous holder process is dead and no foreign checkpoint is active.
     """
     lock_path = repo_root / LOCK_FILE
     lock_data = {
@@ -200,6 +252,22 @@ def acquire_lock(repo_root: Path, task_id: str) -> Path:
     }
     payload = json.dumps(lock_data, indent=2).encode("utf-8")
     flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+
+    # Pre-check active checkpoint before claiming
+    ckpt = load_checkpoint(repo_root)
+    if ckpt and ckpt.get("stage") in {"AGENT_TIMED_OUT", "INTERRUPTED", "AGENT_RUNNING", "AGENT_MONITORING"}:
+        preserved_task = ckpt.get("task_id")
+        if preserved_task and preserved_task != task_id:
+            raise WorkerError(
+                f"Cannot acquire lock: an interrupted task '{preserved_task}' is preserved in checkpoint "
+                f"(stage: {ckpt.get('stage')}). Reconcile or unlock first."
+            )
+        conv_id = ckpt.get("conversation_id")
+        if conv_id and is_agent_conversation_active(conv_id):
+            raise WorkerError(
+                f"Cannot acquire lock: agent conversation '{conv_id}' for task '{preserved_task}' "
+                "is still actively running."
+            )
 
     try:
         fd = os.open(str(lock_path), flags)
@@ -216,7 +284,12 @@ def acquire_lock(repo_root: Path, task_id: str) -> Path:
                     f"Worker lock active by live PID {pid} for task {existing.get('task_id')}. "
                     "Another local worker is currently executing."
                 )
-            # Dead PID: stale lock
+            # Dead PID: verify no conflicting preserved checkpoint before reclaim
+            if ckpt and ckpt.get("task_id") and ckpt.get("task_id") != task_id:
+                raise WorkerError(
+                    f"Cannot reclaim stale lock: checkpoint for task '{ckpt.get('task_id')}' is preserved "
+                    f"(stage: {ckpt.get('stage')}). Run unlock or resume the preserved task."
+                )
             print(f"⚠️ Stale lock detected (dead PID {pid}). Reclaiming lock atomically.", flush=True)
             lock_path.unlink(missing_ok=True)
             fd = os.open(str(lock_path), flags)
@@ -429,8 +502,10 @@ def monitor_agent_execution(conversation_id: str, timeout_seconds: int = 600) ->
 # Task Parsing & Safety Boundary Enforcement
 # ---------------------------------------------------------------------------
 
-def parse_task_from_issue(issue: dict) -> Task:
-    """Validate issue format and extract structured Task parameters."""
+def parse_task_from_issue(issue: dict, matching_checkpoint_issue: int | None = None) -> Task:
+    """Validate issue format and extract structured Task parameters.
+    Admits state:working ONLY IF it matches an owned checkpoint issue.
+    """
     if issue.get("state") != "OPEN":
         raise IgnoreTask(f"Issue #{issue.get('number')} is not open")
 
@@ -444,11 +519,15 @@ def parse_task_from_issue(issue: dict) -> Task:
     if "to:antina" not in issue_labels:
         raise IgnoreTask(f"Issue #{issue.get('number')} does not have 'to:antina'")
 
-    # Verify ready/revision state
+    # Verify ready/revision state or admit matching owned checkpoint
     ready_state = issue_labels & READY_LABELS
     if not ready_state:
-        raise IgnoreTask(f"Issue #{issue.get('number')} has no ready/revision state label")
-    state_label = next(iter(ready_state))
+        if matching_checkpoint_issue and int(issue.get("number", -1)) == matching_checkpoint_issue and "state:working" in issue_labels:
+            state_label = "state:working"
+        else:
+            raise IgnoreTask(f"Issue #{issue.get('number')} has no ready/revision state label")
+    else:
+        state_label = next(iter(ready_state))
 
     # Reject forbidden labels
     blocking = issue_labels & FORBIDDEN_LABELS
@@ -508,27 +587,54 @@ def parse_task_from_issue(issue: dict) -> Task:
     revision_branch_match = re.search(r"^\s*-\s*\*\*revision_branch\*\*:\s*`?([A-Za-z0-9_./\-]+)`?\s*$", body, re.MULTILINE)
     revision_branch = revision_branch_match.group(1).strip() if revision_branch_match else None
 
-    branch = revision_branch if revision_branch else f"agent/{task_id.lower()}"
+    # Strict branch target validation: reject main, master, or protected paths
+    if revision_branch:
+        if revision_branch in {"main", "master"} or any(revision_branch.startswith(p) for p in PROTECTED_PREFIXES):
+            raise WorkerError(f"Protected branch '{revision_branch}' cannot be used as revision branch")
 
-    # If revision requested: locate or verify existing PR
+    branch = revision_branch if revision_branch else f"agent/{task_id.lower()}"
+    if branch in {"main", "master"} or any(branch.startswith(p) for p in PROTECTED_PREFIXES):
+        raise WorkerError(f"Target branch '{branch}' is protected")
+
+    review_findings: str | None = None
+
+    # If revision requested: locate and thoroughly validate existing PR
     if is_revision:
         if revision_pr is None:
-            prs = gh_json("pr", "list", "--repo", REPO, "--head", branch, "--state", "open", "--json", "number,headRefOid")
+            prs = gh_json("pr", "list", "--repo", REPO, "--head", branch, "--state", "open", "--json", "number,headRefOid,headRefName,baseRefName")
             if not prs:
                 raise WorkerError(f"Revision requested on Issue #{issue.get('number')} but no open PR found for branch '{branch}'.")
             revision_pr = int(prs[0]["number"])
             if revision_head is None:
                 revision_head = prs[0].get("headRefOid", "").lower()
 
-        # Enforce revision count limit (Protocol rule 7)
         if revision_pr:
-            pr_data = gh_json("pr", "view", str(revision_pr), "--repo", REPO, "--json", "commits,headRefOid")
+            pr_data = gh_json("pr", "view", str(revision_pr), "--repo", REPO, "--json", "number,state,headRefName,baseRefName,headRefOid,comments")
+            if pr_data.get("state") != "OPEN":
+                raise WorkerError(f"Revision PR #{revision_pr} is not OPEN (state: {pr_data.get('state')})")
+            if pr_data.get("baseRefName") != "main":
+                raise WorkerError(f"Revision PR #{revision_pr} base branch is '{pr_data.get('baseRefName')}', must be 'main'")
+            pr_head_branch = pr_data.get("headRefName", "")
+            if pr_head_branch in {"main", "master"} or any(pr_head_branch.startswith(p) for p in PROTECTED_PREFIXES):
+                raise WorkerError(f"Revision PR #{revision_pr} head branch '{pr_head_branch}' is protected")
+            if revision_branch and pr_head_branch != revision_branch:
+                raise WorkerError(f"Revision PR #{revision_pr} head branch '{pr_head_branch}' does not match specified revision_branch '{revision_branch}'")
+            branch = pr_head_branch
+
             pr_head = pr_data.get("headRefOid", "").lower()
             if revision_head and not pr_head.startswith(revision_head):
                 raise WorkerError(f"Stale revision pin: PR #{revision_pr} current HEAD ({pr_head[:8]}) does not match revision_head ({revision_head[:8]}).")
-            commit_count = len(pr_data.get("commits", []))
-            if commit_count > MAX_REVISION_ROUNDS + 1:
-                raise WorkerError(f"Task exceeded maximum revision limit ({MAX_REVISION_ROUNDS} revision rounds). Halting to NEEDS_KIRIS.")
+            if not revision_head:
+                revision_head = pr_head
+
+            # Revision accounting: count review rounds via GRUM_REVIEW comments
+            comments = pr_data.get("comments") or []
+            grum_reviews = [c for c in comments if "GRUM_REVIEW" in c.get("body", "")]
+            review_rounds = len(grum_reviews)
+            if review_rounds > MAX_REVISION_ROUNDS:
+                raise WorkerError(f"Task exceeded maximum revision limit ({MAX_REVISION_ROUNDS} review rounds). Halting to NEEDS_KIRIS.")
+            if grum_reviews:
+                review_findings = grum_reviews[-1].get("body", "").strip()
 
     return Task(
         issue_number=int(issue["number"]),
@@ -542,6 +648,7 @@ def parse_task_from_issue(issue: dict) -> Task:
         revision_pr=revision_pr,
         revision_head=revision_head,
         revision_branch=revision_branch,
+        review_findings=review_findings,
     )
 
 
@@ -652,6 +759,12 @@ def create_isolated_worktree(repo_root: Path, task: Task) -> Path:
             cwd=repo_root,
         )
         run_cmd("git", "checkout", "-B", task.branch, f"origin/{task.branch}", cwd=worktree_dir)
+        worktree_head = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir).lower()
+        if task.revision_head and not worktree_head.startswith(task.revision_head.lower()):
+            raise WorkerError(
+                f"Fetched branch '{task.branch}' HEAD ({worktree_head[:8]}) does not match pinned revision_head ({task.revision_head[:8]}). "
+                "Remote branch has diverged."
+            )
     else:
         # Fresh task: start clean from origin/main
         run_cmd("git", "branch", "-D", task.branch, cwd=repo_root, check=False)
@@ -807,6 +920,7 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
     agent_conv_id: str | None = None
     pr_number: int | None = None
     head_sha: str | None = None
+    execution_failed = False
 
     try:
         # Checkpoint reconciliation
@@ -822,23 +936,26 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
                 # Proceed directly to handoff
                 return publish_handoff(repo_root, task, pr_number, head_sha, checks_rollup, summary="Resumed from checkpoint")
 
-        # Step 1: Transition Issue to state:working
-        print(f"[{task.task_id}] Step 1: Claiming Issue #{task.issue_number} (setting state:working)...", flush=True)
-        save_checkpoint(repo_root, {"task_id": task.task_id, "issue": task.issue_number, "stage": "CLAIMING"})
-        run_cmd(
-            "gh", "issue", "edit", str(task.issue_number), "--repo", REPO,
-            "--remove-label", task.state_label,
-            "--add-label", "state:working",
-        )
-
-        status_comment = f"""## 🔄 ANTINA_STATUS
+        # Step 1: Transition Issue to state:working (skipped if local_only)
+        if not local_only:
+            print(f"[{task.task_id}] Step 1: Claiming Issue #{task.issue_number} (setting state:working)...", flush=True)
+            save_checkpoint(repo_root, {"task_id": task.task_id, "issue": task.issue_number, "stage": "CLAIMING"})
+            if task.state_label != "state:working":
+                run_cmd(
+                    "gh", "issue", "edit", str(task.issue_number), "--repo", REPO,
+                    "--remove-label", task.state_label,
+                    "--add-label", "state:working",
+                )
+            status_comment = f"""## 🔄 ANTINA_STATUS
 
 - **task_id**: `{task.task_id}`
 - **state**: `ANTINA_WORKING`
 - **branch**: `{task.branch}`
 - **notes**: Local Antina Worker claimed task under Antigravity local session. Setting up isolated worktree.
 """
-        run_cmd("gh", "issue", "comment", str(task.issue_number), "--repo", REPO, "--body", status_comment)
+            run_cmd("gh", "issue", "comment", str(task.issue_number), "--repo", REPO, "--body", status_comment)
+        else:
+            print(f"[{task.task_id}] [LOCAL_ONLY] Step 1: Skipping remote issue claim and status comment.", flush=True)
 
         # Step 2: Setup isolated worktree
         print(f"[{task.task_id}] Step 2: Creating isolated Git worktree...", flush=True)
@@ -857,7 +974,12 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
         target_hint = "\nTARGET FILES TO INSPECT AND MODIFY:\n" + "\n".join(f"- {worktree_dir / p}" for p in task.allowed_paths)
         revision_hint = ""
         if task.is_revision:
-            revision_hint = f"\nREVISION NOTICE: You are updating existing PR #{task.revision_pr}. Address review feedback directly on this branch.\n"
+            revision_hint = (
+                f"\nREVISION NOTICE: You are updating existing PR #{task.revision_pr} ({task.branch}). "
+                "Address review feedback directly on this branch.\n"
+            )
+            if task.review_findings:
+                revision_hint += f"\nLATEST REVIEW FINDINGS TO RESOLVE:\n{task.review_findings}\n"
 
         prompt = f"""You are Antina, the automated implementation agent for Kiris-02/gathermap.
 Read and follow .agents/README.md, PROTOCOL.md, ANTINA.md, TASK_FORMAT.md, and SAFETY.md.
@@ -954,7 +1076,11 @@ Issue #{task.issue_number}
         # Step 8: Create or update PR
         if task.is_revision:
             pr_number = task.revision_pr
-            pr_info = gh_json("pr", "view", str(pr_number), "--repo", REPO, "--json", "number,url,headRefOid")
+            pr_info = gh_json("pr", "view", str(pr_number), "--repo", REPO, "--json", "number,url,headRefOid,state,baseRefName")
+            if pr_info.get("state") != "OPEN":
+                raise WorkerError(f"Revision PR #{pr_number} is no longer OPEN before publication (state: {pr_info.get('state')})")
+            if pr_info.get("baseRefName") != "main":
+                raise WorkerError(f"Revision PR #{pr_number} base branch changed to '{pr_info.get('baseRefName')}', expected 'main'")
             print(f"[{task.task_id}] Step 9: Reusing existing PR #{pr_number}: {pr_info['url']}", flush=True)
         else:
             print(f"[{task.task_id}] Step 9: Creating Pull Request on GitHub...", flush=True)
@@ -1000,27 +1126,51 @@ Issue #{task.issue_number}
         )
 
     except Exception as exc:
-        try:
-            run_cmd(
-                "gh", "issue", "edit", str(task.issue_number), "--repo", REPO,
-                "--remove-label", "state:working",
-                "--add-label", "needs:kiris",
-            )
-            failure_comment = f"""## 🛑 ANTINA_FAILURE
+        execution_failed = True
+        is_timeout = "timed out" in str(exc).lower()
+        ckpt_stage = "AGENT_TIMED_OUT" if is_timeout else "INTERRUPTED"
+        save_checkpoint(repo_root, {
+            "task_id": task.task_id,
+            "issue": task.issue_number,
+            "stage": ckpt_stage,
+            "conversation_id": agent_conv_id,
+            "worktree": str(worktree_dir) if worktree_dir else None,
+            "error": str(exc),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        })
+        if not local_only:
+            try:
+                run_cmd(
+                    "gh", "issue", "edit", str(task.issue_number), "--repo", REPO,
+                    "--remove-label", "state:working",
+                    "--add-label", "needs:kiris",
+                )
+                failure_comment = f"""## 🛑 ANTINA_FAILURE
 
 - **task_id**: `{task.task_id}`
 - **error**: `{str(exc)}`
 - **notes**: Local Antina Worker halted safely. Escalated to Kiris for inspection.
 """
-            run_cmd("gh", "issue", "comment", str(task.issue_number), "--repo", REPO, "--body", failure_comment)
-        except Exception:
-            pass
+                run_cmd("gh", "issue", "comment", str(task.issue_number), "--repo", REPO, "--body", failure_comment)
+            except Exception:
+                pass
         raise
     finally:
-        # Establish whether agent is still running before deleting worktree
-        if worktree_dir:
-            remove_isolated_worktree(repo_root, worktree_dir)
-        release_lock(repo_root)
+        # Establish whether agent is still running before destructive cleanup
+        agent_active = False
+        if agent_conv_id:
+            agent_active = is_agent_conversation_active(agent_conv_id)
+
+        if execution_failed or agent_active:
+            print(
+                f"[{task.task_id}] Execution interrupted or agent active ({agent_active}). "
+                f"Preserving isolated worktree at '{worktree_dir}' and keeping lock active for safety.",
+                flush=True,
+            )
+        else:
+            if worktree_dir:
+                remove_isolated_worktree(repo_root, worktree_dir)
+            release_lock(repo_root)
 
 
 def publish_handoff(
@@ -1042,8 +1192,8 @@ def publish_handoff(
         "head_sha": head_sha,
     })
 
-    pr_info = gh_json("pr", "view", str(pr_number), "--repo", REPO, "--json", "number,url,comments")
-    existing_comments = [c.get("body", "") for c in pr_info.get("comments", [])]
+    pr_info = gh_json("pr", "view", str(pr_number), "--repo", REPO, "--json", "number,url,comments,labels")
+    existing_pr_comments = [c.get("body", "") for c in pr_info.get("comments", [])]
 
     # Build check evidence list
     check_lines = []
@@ -1058,7 +1208,7 @@ def publish_handoff(
     checks_evidence = "\n  ".join(check_lines) if check_lines else "- All required checks: SUCCESS"
 
     # Publish ANTINA_REPORT on PR if not already present for this commit
-    if not any(f"`{head_sha}`" in c and "## 📤 ANTINA_REPORT" in c for c in existing_comments):
+    if not any(f"`{head_sha}`" in c and "## 📤 ANTINA_REPORT" in c for c in existing_pr_comments):
         files_str = "\n".join(f"- `{f}`" for f in (changed_files or task.allowed_paths))
         report = f"""## 📤 ANTINA_REPORT
 
@@ -1086,7 +1236,7 @@ def publish_handoff(
         run_cmd("gh", "pr", "comment", str(pr_number), "--repo", REPO, "--body", report)
 
     # Publish idempotent ANTINA_HANDOFF on PR (required wake-up for Grum webhook)
-    if not any(f"`{head_sha}`" in c and "## 🤝 ANTINA_HANDOFF" in c for c in existing_comments):
+    if not any(f"`{head_sha}`" in c and "## 🤝 ANTINA_HANDOFF" in c for c in existing_pr_comments):
         pr_handoff = f"""## 🤝 ANTINA_HANDOFF
 
 - **task_id**: `{task.task_id}`
@@ -1100,29 +1250,48 @@ def publish_handoff(
         run_cmd("gh", "pr", "comment", str(pr_number), "--repo", REPO, "--body", pr_handoff)
 
     # Apply PR routing labels
-    run_cmd(
-        "gh", "pr", "edit", str(pr_number), "--repo", REPO,
-        "--add-label", "to:grum,state:review",
-    )
+    pr_labels = {l.get("name") for l in pr_info.get("labels", [])}
+    if not ({"to:grum", "state:review"} <= pr_labels):
+        run_cmd(
+            "gh", "pr", "edit", str(pr_number), "--repo", REPO,
+            "--add-label", "to:grum,state:review",
+        )
+
+    # Check existing comments on Issue
+    issue_info = gh_json("issue", "view", str(task.issue_number), "--repo", REPO, "--json", "comments,labels")
+    existing_issue_comments = [c.get("body", "") for c in issue_info.get("comments", [])]
 
     # Publish ANTINA_HANDOFF on Issue
-    issue_handoff = f"""## 🤝 ANTINA_HANDOFF
+    if not any(f"`{head_sha}`" in c and "## 🤝 ANTINA_HANDOFF" in c for c in existing_issue_comments):
+        issue_handoff = f"""## 🤝 ANTINA_HANDOFF
 
 - **task_id**: `{task.task_id}`
 - **pr**: {pr_info['url']}
 - **commit**: `{head_sha}`
 - **notes**: Implementation complete and verified green. Ready for Grum independent inspection.
 """
-    run_cmd("gh", "issue", "comment", str(task.issue_number), "--repo", REPO, "--body", issue_handoff)
+        run_cmd("gh", "issue", "comment", str(task.issue_number), "--repo", REPO, "--body", issue_handoff)
 
     # Transition Issue labels
-    run_cmd(
-        "gh", "issue", "edit", str(task.issue_number), "--repo", REPO,
-        "--remove-label", "to:antina",
-        "--remove-label", "state:working",
-        "--add-label", "to:grum",
-        "--add-label", "state:review",
-    )
+    issue_labels = {l.get("name") for l in issue_info.get("labels", [])}
+    remove_labels = []
+    if "to:antina" in issue_labels:
+        remove_labels.append("to:antina")
+    if "state:working" in issue_labels:
+        remove_labels.append("state:working")
+    add_labels = []
+    if "to:grum" not in issue_labels:
+        add_labels.append("to:grum")
+    if "state:review" not in issue_labels:
+        add_labels.append("state:review")
+
+    edit_cmd = ["gh", "issue", "edit", str(task.issue_number), "--repo", REPO]
+    for rl in remove_labels:
+        edit_cmd.extend(["--remove-label", rl])
+    for al in add_labels:
+        edit_cmd.extend(["--add-label", al])
+    if remove_labels or add_labels:
+        run_cmd(*edit_cmd)
 
     clear_checkpoint(repo_root)
     return {
@@ -1171,8 +1340,9 @@ def cmd_status(repo_root: Path) -> None:
     print("================================================================\n")
 
 
-def cmd_unlock(repo_root: Path, force: bool = False) -> None:
-    """Clear stale lock and checkpoint. Rejects unlocking a live active worker unless forced."""
+def cmd_unlock(repo_root: Path, force: bool = False, clear_ckpt: bool = False) -> None:
+    """Clear stale lock. Rejects unlocking a live active worker unless forced.
+    Preserves checkpoints unless --clear-checkpoint or --force is specified."""
     lock_path = repo_root / LOCK_FILE
     if lock_path.exists():
         try:
@@ -1189,14 +1359,47 @@ def cmd_unlock(repo_root: Path, force: bool = False) -> None:
         except Exception:
             pass
 
+    ckpt = load_checkpoint(repo_root)
+    if ckpt and not force:
+        conv_id = ckpt.get("conversation_id")
+        if conv_id and is_agent_conversation_active(conv_id):
+            raise WorkerError(
+                f"Cannot unlock: agent conversation '{conv_id}' is still actively running. "
+                "Wait for it to finish or pass --force."
+            )
+
     release_lock(repo_root)
-    clear_checkpoint(repo_root)
-    print("✅ Stale lock and checkpoint cleared.")
+
+    if force or clear_ckpt:
+        clear_checkpoint(repo_root)
+        print("✅ Lock and checkpoint cleared.")
+    else:
+        if ckpt:
+            print(f"✅ Lock released. Checkpoint preserved for task {ckpt.get('task_id')} at stage '{ckpt.get('stage')}'. Pass --clear-checkpoint to clear.")
+        else:
+            print("✅ Lock released. No checkpoint was active.")
 
 
 def cmd_poll(repo_root: Path, local_only: bool = False) -> bool:
-    """Poll GitHub for pending eligible tasks and execute the first one."""
-    print("🔍 Polling GitHub Issues for eligible GRUM_TASK (labels: to:antina, state:ready/state:revision)...")
+    """Poll GitHub for pending eligible tasks or reconcile an owned interrupted task."""
+    print("🔍 Checking worker state and polling GitHub Issues...")
+    ckpt = load_checkpoint(repo_root)
+    ckpt_issue = int(ckpt.get("issue")) if ckpt and ckpt.get("issue") else None
+
+    # Reconcile owned matching checkpoint before general task selection
+    if ckpt_issue:
+        try:
+            print(f"🔄 Found owned checkpoint for Issue #{ckpt_issue}. Checking eligibility...", flush=True)
+            raw_issue = gh_json("issue", "view", str(ckpt_issue), "--repo", REPO, "--json", "number,title,body,state,labels")
+            task = parse_task_from_issue(raw_issue, matching_checkpoint_issue=ckpt_issue)
+            print(f"🎯 Resuming owned task {task.task_id} on Issue #{task.issue_number}: {task.title}")
+            res = execute_task(repo_root, task, local_only=local_only)
+            print(f"🎉 Task {task.task_id} completed successfully: {res.get('commit', '')[:8]}")
+            return True
+        except (IgnoreTask, WorkerError) as e:
+            print(f"ℹ️ Owned checkpoint task could not be resumed: {e}")
+
+    # General poll
     issues = gh_json("issue", "list", "--repo", REPO, "--label", "to:antina", "--json", "number,title,body,state,labels")
     if not issues:
         print("ℹ️ No issues with label 'to:antina' found.")
@@ -1204,7 +1407,7 @@ def cmd_poll(repo_root: Path, local_only: bool = False) -> bool:
 
     for raw_issue in issues:
         try:
-            task = parse_task_from_issue(raw_issue)
+            task = parse_task_from_issue(raw_issue, matching_checkpoint_issue=ckpt_issue)
             print(f"🎯 Found eligible task {task.task_id} on Issue #{task.issue_number}: {task.title}")
             res = execute_task(repo_root, task, local_only=local_only)
             print(f"🎉 Task {task.task_id} completed successfully: {res.get('commit', '')[:8]}")
@@ -1218,9 +1421,11 @@ def cmd_poll(repo_root: Path, local_only: bool = False) -> bool:
 
 
 def cmd_run_task(repo_root: Path, issue_number: int, local_only: bool = False) -> None:
-    """Execute a specific issue number."""
+    """Execute a specific issue number, admitting matching owned checkpoint."""
+    ckpt = load_checkpoint(repo_root)
+    ckpt_issue = int(ckpt.get("issue")) if ckpt and ckpt.get("issue") else None
     raw_issue = gh_json("issue", "view", str(issue_number), "--repo", REPO, "--json", "number,title,body,state,labels")
-    task = parse_task_from_issue(raw_issue)
+    task = parse_task_from_issue(raw_issue, matching_checkpoint_issue=ckpt_issue)
     print(f"🎯 Executing task {task.task_id} for Issue #{task.issue_number}: {task.title}")
     res = execute_task(repo_root, task, local_only=local_only)
     print(f"🎉 Task {task.task_id} completed successfully: {res.get('commit', '')[:8]}")
@@ -1248,6 +1453,7 @@ def main() -> int:
 
     unlock_parser = subparsers.add_parser("unlock", help="Force clear stale lock and checkpoint")
     unlock_parser.add_argument("--force", action="store_true", help="Force unlock even if PID is alive")
+    unlock_parser.add_argument("--clear-checkpoint", action="store_true", help="Also clear the checkpoint file")
 
     poll_parser = subparsers.add_parser("poll", help="Poll once for pending eligible tasks")
     poll_parser.add_argument("--local-only", action="store_true", help="Run local verification only without pushing or PR handoff")
@@ -1265,7 +1471,7 @@ def main() -> int:
     if args.subcommand == "status":
         cmd_status(repo_root)
     elif args.subcommand == "unlock":
-        cmd_unlock(repo_root, force=args.force)
+        cmd_unlock(repo_root, force=args.force, clear_ckpt=args.clear_checkpoint)
     elif args.subcommand == "poll":
         cmd_poll(repo_root, local_only=args.local_only)
     elif args.subcommand == "run-task":

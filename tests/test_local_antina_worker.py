@@ -151,20 +151,27 @@ class LocalAntinaWorkerTests(unittest.TestCase):
 """,
         }
         with patch.object(worker, "gh_json") as mock_gh:
-            # PR has 2 commits (initial + 1 revision) -> within limit
+            # PR has 1 review round (within limit)
             mock_gh.return_value = {
+                "state": "OPEN",
+                "baseRefName": "main",
+                "headRefName": "agent/gat-smoke-001",
                 "headRefOid": "8712aa66d5ba6adac24cf14c01c4ee9312e1383f",
-                "commits": [{"oid": "c1"}, {"oid": "c2"}],
+                "comments": [{"body": "## 🔍 GRUM_REVIEW: REVISION_REQUIRED\nFix timeout constant."}],
             }
             task = worker.parse_task_from_issue(issue)
             self.assertTrue(task.is_revision)
             self.assertEqual(task.revision_pr, 22)
             self.assertEqual(task.branch, "agent/gat-smoke-001")
+            self.assertEqual(task.review_findings, "## 🔍 GRUM_REVIEW: REVISION_REQUIRED\nFix timeout constant.")
 
-            # Exceeding revision limit (more than 4 rounds)
+            # Exceeding revision limit (more than 4 GRUM_REVIEW rounds)
             mock_gh.return_value = {
+                "state": "OPEN",
+                "baseRefName": "main",
+                "headRefName": "agent/gat-smoke-001",
                 "headRefOid": "8712aa66d5ba6adac24cf14c01c4ee9312e1383f",
-                "commits": [{"oid": f"c{i}"} for i in range(7)],
+                "comments": [{"body": f"## 🔍 GRUM_REVIEW round {i}"} for i in range(5)],
             }
             with self.assertRaises(worker.WorkerError) as ctx:
                 worker.parse_task_from_issue(issue)
@@ -359,11 +366,302 @@ class LocalAntinaWorkerTests(unittest.TestCase):
             mock_run.side_effect = lambda *args, **kwargs: "8712aa66" if "rev-parse" in args else ""
             res = worker.execute_task(self.temp_dir, task, local_only=True)
             self.assertEqual(res["status"], "local_only_success")
-            # Verify git push was NEVER called
+            # Verify git push and gh commands were NEVER called
             for call in mock_run.call_args_list:
                 args = call[0]
                 self.assertNotIn("push", args)
                 self.assertNotIn("create", args)
+                if args and args[0] == "gh":
+                    self.fail(f"gh command was called in local_only mode: {args}")
+
+    def test_validate_github_remote_url_strictness(self) -> None:
+        # Valid URLs
+        valid_urls = [
+            "https://github.com/Kiris-02/gathermap.git",
+            "https://github.com/Kiris-02/gathermap",
+            "https://x-access-token:ghp_12345@github.com/Kiris-02/gathermap.git",
+            "git@github.com:Kiris-02/gathermap.git",
+            "git@github.com:Kiris-02/gathermap",
+            "ssh://git@github.com/Kiris-02/gathermap.git",
+            "ssh://git@github.com:22/Kiris-02/gathermap.git",
+        ]
+        for url in valid_urls:
+            self.assertTrue(worker.validate_github_remote_url(url), f"Expected valid: {url}")
+
+        # Invalid or malicious lookalike URLs
+        invalid_urls = [
+            "https://attacker.com/Kiris-02/gathermap.git",
+            "https://evil.github.com/Kiris-02/gathermap.git",
+            "https://github.com.attacker.com/Kiris-02/gathermap.git",
+            "https://github.com/evil-org/gathermap.git",
+            "https://github.com/Kiris-02/other-project.git",
+            "git@evil.com:Kiris-02/gathermap.git",
+            "git@github.com:attacker/gathermap.git",
+            "ssh://evil.com/Kiris-02/gathermap.git",
+            "ssh://git@github.com/attacker/gathermap.git",
+            "http://github.com/Kiris-02/gathermap.git",
+        ]
+        for url in invalid_urls:
+            self.assertFalse(worker.validate_github_remote_url(url), f"Expected invalid: {url}")
+
+    def test_verify_repo_remote_validates_both_fetch_and_push(self) -> None:
+        # Both fetch and push valid
+        with patch.object(worker, "run_cmd", side_effect=["https://github.com/Kiris-02/gathermap.git", "git@github.com:Kiris-02/gathermap.git"]):
+            worker.verify_repo_remote(self.temp_dir)
+
+        # Push remote pointing to malicious host
+        with patch.object(worker, "run_cmd", side_effect=["https://github.com/Kiris-02/gathermap.git", "https://attacker.com/Kiris-02/gathermap.git"]):
+            with self.assertRaises(worker.WorkerError) as ctx:
+                worker.verify_repo_remote(self.temp_dir)
+            self.assertIn("Invalid git remote origin", str(ctx.exception))
+
+    def test_parse_task_rejects_protected_revision_branches(self) -> None:
+        base_issue = {
+            "number": 22,
+            "title": "Revision task",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:revision"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-REV`
+- **revision_pr**: `22`
+- **revision_head**: `8712aa66`
+- **revision_branch**: `{branch}`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        # Reject revision_branch = main
+        issue_main = dict(base_issue)
+        issue_main["body"] = base_issue["body"].format(branch="main")
+        with self.assertRaises(worker.WorkerError) as ctx:
+            worker.parse_task_from_issue(issue_main)
+        self.assertIn("Protected branch 'main'", str(ctx.exception))
+
+        # Reject revision_branch = master
+        issue_master = dict(base_issue)
+        issue_master["body"] = base_issue["body"].format(branch="master")
+        with self.assertRaises(worker.WorkerError) as ctx:
+            worker.parse_task_from_issue(issue_master)
+        self.assertIn("Protected branch 'master'", str(ctx.exception))
+
+        # Reject when PR headRefName is main
+        issue_ok = dict(base_issue)
+        issue_ok["body"] = base_issue["body"].format(branch="agent/gat-smoke-001")
+        with patch.object(worker, "gh_json") as mock_gh:
+            mock_gh.return_value = {
+                "state": "OPEN",
+                "baseRefName": "main",
+                "headRefName": "main",
+                "headRefOid": "8712aa66d5ba6adac24cf14c01c4ee9312e1383f",
+            }
+            with self.assertRaises(worker.WorkerError) as ctx:
+                worker.parse_task_from_issue(issue_ok)
+            self.assertIn("is protected", str(ctx.exception))
+
+        # Reject when PR baseRefName is not main
+        with patch.object(worker, "gh_json") as mock_gh:
+            mock_gh.return_value = {
+                "state": "OPEN",
+                "baseRefName": "feature-branch",
+                "headRefName": "agent/gat-smoke-001",
+                "headRefOid": "8712aa66d5ba6adac24cf14c01c4ee9312e1383f",
+            }
+            with self.assertRaises(worker.WorkerError) as ctx:
+                worker.parse_task_from_issue(issue_ok)
+            self.assertIn("must be 'main'", str(ctx.exception))
+
+        # Reject when PR state is CLOSED
+        with patch.object(worker, "gh_json") as mock_gh:
+            mock_gh.return_value = {
+                "state": "CLOSED",
+                "baseRefName": "main",
+                "headRefName": "agent/gat-smoke-001",
+                "headRefOid": "8712aa66d5ba6adac24cf14c01c4ee9312e1383f",
+            }
+            with self.assertRaises(worker.WorkerError) as ctx:
+                worker.parse_task_from_issue(issue_ok)
+            self.assertIn("is not OPEN", str(ctx.exception))
+
+        # Reject when PR head branch does not match revision_branch
+        with patch.object(worker, "gh_json") as mock_gh:
+            mock_gh.return_value = {
+                "state": "OPEN",
+                "baseRefName": "main",
+                "headRefName": "agent/different-branch",
+                "headRefOid": "8712aa66d5ba6adac24cf14c01c4ee9312e1383f",
+            }
+            with self.assertRaises(worker.WorkerError) as ctx:
+                worker.parse_task_from_issue(issue_ok)
+            self.assertIn("does not match specified revision_branch", str(ctx.exception))
+
+    def test_create_isolated_worktree_revalidates_pinned_head(self) -> None:
+        task = worker.Task(
+            issue_number=22,
+            task_id="GAT-REV",
+            title="Revision task",
+            body="",
+            state_label="state:revision",
+            branch="agent/gat-smoke-001",
+            allowed_paths=["src/config/constants.js"],
+            is_revision=True,
+            revision_pr=22,
+            revision_head="8712aa66",
+        )
+        with patch.object(worker, "run_cmd") as mock_run:
+            # rev-parse returns a diverged commit
+            mock_run.side_effect = lambda *args, **kwargs: "99999999abcdef" if "rev-parse" in args else ""
+            with self.assertRaises(worker.WorkerError) as ctx:
+                worker.create_isolated_worktree(self.temp_dir, task)
+            self.assertIn("does not match pinned revision_head", str(ctx.exception))
+
+    def test_execute_task_preserves_worktree_and_lock_on_timeout(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-TIMEOUT",
+            title="Timeout Task",
+            body="",
+            state_label="state:ready",
+            branch="agent/gat-timeout",
+            allowed_paths=["src/config/constants.js"],
+        )
+        mock_worktree = self.temp_dir / ".worktrees" / "agent-gat-timeout"
+        mock_worktree.mkdir(parents=True, exist_ok=True)
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "create_isolated_worktree", return_value=mock_worktree), \
+             patch.object(worker, "start_agent_conversation", return_value="conv-timeout"), \
+             patch.object(worker, "monitor_agent_execution", side_effect=worker.WorkerError("Agent execution timed out after 600 seconds")), \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove_wt, \
+             patch.object(worker, "release_lock") as mock_release_lock, \
+             patch.object(worker, "run_cmd"):
+            with self.assertRaises(worker.WorkerError):
+                worker.execute_task(self.temp_dir, task)
+
+            # Assert worktree removal was NOT called
+            mock_remove_wt.assert_not_called()
+            # Assert lock release was NOT called
+            mock_release_lock.assert_not_called()
+
+            # Assert checkpoint stage is AGENT_TIMED_OUT and records conversation ID
+            ckpt = worker.load_checkpoint(self.temp_dir)
+            self.assertIsNotNone(ckpt)
+            self.assertEqual(ckpt["stage"], "AGENT_TIMED_OUT")
+            self.assertEqual(ckpt["conversation_id"], "conv-timeout")
+
+            # Assert another task cannot steal/reclaim lock while interrupted task is preserved
+            with self.assertRaises(worker.WorkerError) as ctx:
+                worker.acquire_lock(self.temp_dir, "GAT-OTHER")
+            self.assertIn("Cannot acquire lock: an interrupted task", str(ctx.exception))
+
+    def test_local_only_mode_zero_remote_mutations_on_failure_path(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-FAIL",
+            title="Fail Task",
+            body="",
+            state_label="state:ready",
+            branch="agent/gat-fail",
+            allowed_paths=["src/config/constants.js"],
+        )
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "acquire_lock"), \
+             patch.object(worker, "create_isolated_worktree", side_effect=worker.WorkerError("Worktree setup failed")), \
+             patch.object(worker, "run_cmd") as mock_run:
+            with self.assertRaises(worker.WorkerError):
+                worker.execute_task(self.temp_dir, task, local_only=True)
+
+            # Assert NO gh commands were executed
+            for call in mock_run.call_args_list:
+                args = call[0]
+                if args and args[0] == "gh":
+                    self.fail(f"gh command was called in local_only error handler: {args}")
+
+    def test_recovery_admits_state_working_for_owned_checkpoint_only(self) -> None:
+        issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+        # Without matching checkpoint: ignored
+        with self.assertRaises(worker.IgnoreTask):
+            worker.parse_task_from_issue(issue, matching_checkpoint_issue=None)
+
+        with self.assertRaises(worker.IgnoreTask):
+            worker.parse_task_from_issue(issue, matching_checkpoint_issue=999)
+
+        # With matching checkpoint issue: admitted!
+        task = worker.parse_task_from_issue(issue, matching_checkpoint_issue=19)
+        self.assertEqual(task.issue_number, 19)
+        self.assertEqual(task.state_label, "state:working")
+
+    def test_cmd_unlock_preserves_checkpoint_by_default(self) -> None:
+        # Setup lock and checkpoint
+        lock_path = self.temp_dir / worker.LOCK_FILE
+        lock_path.write_text(json.dumps({"pid": 99999999, "task_id": "GAT-PRESERVED"}), encoding="utf-8")
+        worker.save_checkpoint(self.temp_dir, {"task_id": "GAT-PRESERVED", "stage": "INTERRUPTED"})
+
+        with patch.object(worker, "is_process_running", return_value=False):
+            # Normal unlock clears lock but preserves checkpoint
+            worker.cmd_unlock(self.temp_dir, force=False, clear_ckpt=False)
+            self.assertFalse(lock_path.exists())
+            self.assertIsNotNone(worker.load_checkpoint(self.temp_dir))
+
+            # Unlock with clear_ckpt clears checkpoint
+            worker.cmd_unlock(self.temp_dir, force=False, clear_ckpt=True)
+            self.assertIsNone(worker.load_checkpoint(self.temp_dir))
+
+    def test_publish_handoff_idempotency_prevents_duplicate_comments(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-TEST",
+            title="Test",
+            body="",
+            state_label="state:ready",
+            branch="agent/gat-test",
+            allowed_paths=["src/config/constants.js"],
+        )
+        head_sha = "8712aa66d5ba6adac24cf14c01c4ee9312e1383f"
+        # Mock PR and Issue already having the report and handoff comments
+        mock_pr_info = {
+            "number": 22,
+            "url": "https://github.com/Kiris-02/gathermap/pull/22",
+            "labels": [{"name": "to:grum"}, {"name": "state:review"}],
+            "comments": [
+                {"body": f"## 📤 ANTINA_REPORT\n- **commit**: `{head_sha}`"},
+                {"body": f"## 🤝 ANTINA_HANDOFF\n- **commit**: `{head_sha}`"},
+            ],
+        }
+        mock_issue_info = {
+            "number": 19,
+            "labels": [{"name": "to:grum"}, {"name": "state:review"}],
+            "comments": [
+                {"body": f"## 🤝 ANTINA_HANDOFF\n- **commit**: `{head_sha}`"},
+            ],
+        }
+
+        with patch.object(worker, "gh_json", side_effect=[mock_pr_info, mock_issue_info]), \
+             patch.object(worker, "run_cmd") as mock_run:
+            res = worker.publish_handoff(
+                self.temp_dir,
+                task,
+                pr_number=22,
+                head_sha=head_sha,
+                checks_rollup=[{"name": "CI", "conclusion": "SUCCESS"}],
+            )
+            self.assertEqual(res["status"], "success")
+
+            # Assert no comments were added to PR or Issue
+            for call in mock_run.call_args_list:
+                args = call[0]
+                if args and args[0] == "gh" and len(args) >= 3 and args[2] == "comment":
+                    self.fail(f"Duplicate comment posted: {args}")
 
 
 if __name__ == "__main__":
