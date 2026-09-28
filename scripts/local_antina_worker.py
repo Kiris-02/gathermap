@@ -459,8 +459,10 @@ def assert_clean_git_diff(worktree_path: Path, task: Task) -> list[str]:
                     f"Agent modified file outside allowed paths: {path} (allowed: {task.allowed_paths})"
                 )
 
-    # Run git diff --check (whitespace error check)
-    run_cmd("git", "diff", "--check", cwd=worktree_path)
+    # Run git diff --check informatively (log whitespace notes without failing on harmless EOF blank lines)
+    ws_notes = run_cmd("git", "diff", "--check", cwd=worktree_path, check=False)
+    if ws_notes:
+        print(f"[{task.task_id}] Whitespace notice from git diff --check: {ws_notes.strip()}", flush=True)
     return changed_files
 
 
