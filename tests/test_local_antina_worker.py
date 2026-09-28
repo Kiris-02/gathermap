@@ -1314,9 +1314,387 @@ class LocalAntinaWorkerTests(unittest.TestCase):
             for call in mock_cmd.call_args_list:
                 args = call[0]
                 self.assertNotIn("push", args)
+    def test_recovery_mixed_valid_succeeds(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        constants_file = wt_dir / "src" / "config" / "constants.js"
+        constants_file.parent.mkdir(parents=True, exist_ok=True)
+        constants_file.write_text("export const CLIENT_CONFIG = { timeout: 30000 };\n", encoding="utf-8")
+
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_TIMED_OUT",
+            "conversation_id": "conv-idle",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        committed = False
+
+        def fake_run_cmd(*args, **kwargs):
+            nonlocal committed
+            cmd_str = " ".join(args)
+            if "status --porcelain" in cmd_str:
+                return " M src/config/constants.js\n"
+            if "rev-parse --abbrev-ref" in cmd_str:
+                return "agent/gat-smoke-001"
+            if "rev-parse origin/main" in cmd_str:
+                return "1111111111111111111111111111111111111111"
+            if "rev-parse HEAD" in cmd_str:
+                return "3333333333333333333333333333333333333333" if committed else "2222222222222222222222222222222222222222"
+            if "commit" in cmd_str:
+                committed = True
+                return ""
+            if "merge-base --is-ancestor" in cmd_str:
+                return ""
+            if "diff --name-status" in cmd_str:
+                return "M\tsrc/config/constants.js\n"
+            if "diff --check" in cmd_str or "diff --cached --check" in cmd_str:
+                return ""
+            if "diff" in cmd_str:
+                return "+export const CLIENT_CONFIG = { timeout: 30000 };\n"
+            if "npm test" in cmd_str:
+                return "PASS\n"
+            return ""
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=fake_run_cmd), \
+             patch.object(worker, "remove_isolated_worktree"):
+            success = worker.cmd_poll(self.temp_dir, local_only=True)
+            self.assertTrue(success)
+            self.assertIsNone(worker.load_checkpoint(self.temp_dir))
+
+    def test_recovery_mixed_invalid_ancestry_fails_closed(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_RUNNING",
+            "conversation_id": "conv-idle",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        def fake_run_cmd(*args, **kwargs):
+            cmd_str = " ".join(args)
+            if "status --porcelain" in cmd_str:
+                return " M src/config/constants.js\n"
+            if "rev-parse --abbrev-ref" in cmd_str:
+                return "agent/gat-smoke-001"
+            if "rev-parse origin/main" in cmd_str:
+                return "1111111111111111111111111111111111111111"
+            if "rev-parse HEAD" in cmd_str:
+                return "2222222222222222222222222222222222222222"
+            if "merge-base --is-ancestor" in cmd_str:
+                raise worker.WorkerError("Not an ancestor")
+            return ""
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=fake_run_cmd) as mock_cmd, \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            success = worker.cmd_poll(self.temp_dir, local_only=False)
+            self.assertFalse(success)
+            for call in mock_cmd.call_args_list:
+                args = call[0]
+                self.assertNotIn("push", args)
+                self.assertNotIn("commit", args)
             mock_remove.assert_not_called()
             self.assertIsNotNone(worker.load_checkpoint(self.temp_dir))
 
+    def test_recovery_mixed_prior_commit_out_of_scope_fails_closed(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_RUNNING",
+            "conversation_id": "conv-idle",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        def fake_run_cmd(*args, **kwargs):
+            cmd_str = " ".join(args)
+            if "status --porcelain" in cmd_str:
+                return " M src/config/constants.js\n"
+            if "rev-parse --abbrev-ref" in cmd_str:
+                return "agent/gat-smoke-001"
+            if "rev-parse origin/main" in cmd_str:
+                return "1111111111111111111111111111111111111111"
+            if "rev-parse HEAD" in cmd_str:
+                return "2222222222222222222222222222222222222222"
+            if "merge-base --is-ancestor" in cmd_str:
+                return ""
+            if "diff --name-status" in cmd_str:
+                return "M\tsrc/server.js\n"
+            return ""
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=fake_run_cmd) as mock_cmd, \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            success = worker.cmd_poll(self.temp_dir, local_only=False)
+            self.assertFalse(success)
+            for call in mock_cmd.call_args_list:
+                args = call[0]
+                self.assertNotIn("push", args)
+                self.assertNotIn("commit", args)
+            mock_remove.assert_not_called()
+            self.assertIsNotNone(worker.load_checkpoint(self.temp_dir))
+
+    def test_recovery_mixed_prior_commit_protected_file_fails_closed(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_RUNNING",
+            "conversation_id": "conv-idle",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        def fake_run_cmd(*args, **kwargs):
+            cmd_str = " ".join(args)
+            if "status --porcelain" in cmd_str:
+                return " M src/config/constants.js\n"
+            if "rev-parse --abbrev-ref" in cmd_str:
+                return "agent/gat-smoke-001"
+            if "rev-parse origin/main" in cmd_str:
+                return "1111111111111111111111111111111111111111"
+            if "rev-parse HEAD" in cmd_str:
+                return "2222222222222222222222222222222222222222"
+            if "merge-base --is-ancestor" in cmd_str:
+                return ""
+            if "diff --name-status" in cmd_str:
+                return "M\tscripts/local_antina_worker.py\n"
+            return ""
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=fake_run_cmd) as mock_cmd, \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            success = worker.cmd_poll(self.temp_dir, local_only=False)
+            self.assertFalse(success)
+            for call in mock_cmd.call_args_list:
+                args = call[0]
+                self.assertNotIn("push", args)
+                self.assertNotIn("commit", args)
+            mock_remove.assert_not_called()
+            self.assertIsNotNone(worker.load_checkpoint(self.temp_dir))
+
+    def test_recovery_mixed_prior_commit_conflict_marker_fails_closed(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_RUNNING",
+            "conversation_id": "conv-idle",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        def fake_run_cmd(*args, **kwargs):
+            cmd_str = " ".join(args)
+            if "status --porcelain" in cmd_str:
+                return " M src/config/constants.js\n"
+            if "rev-parse --abbrev-ref" in cmd_str:
+                return "agent/gat-smoke-001"
+            if "rev-parse origin/main" in cmd_str:
+                return "1111111111111111111111111111111111111111"
+            if "rev-parse HEAD" in cmd_str:
+                return "2222222222222222222222222222222222222222"
+            if "merge-base --is-ancestor" in cmd_str:
+                return ""
+            if "diff --name-status" in cmd_str:
+                return "M\tsrc/config/constants.js\n"
+            if "diff --check" in cmd_str:
+                return ""
+            if "diff" in cmd_str:
+                return "<<<<<<< HEAD\nconflict\n=======\n>>>>>>>\n"
+            return ""
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=fake_run_cmd) as mock_cmd, \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            success = worker.cmd_poll(self.temp_dir, local_only=False)
+            self.assertFalse(success)
+            for call in mock_cmd.call_args_list:
+                args = call[0]
+                self.assertNotIn("push", args)
+                self.assertNotIn("commit", args)
+            mock_remove.assert_not_called()
+            self.assertIsNotNone(worker.load_checkpoint(self.temp_dir))
+
+    def test_recovery_mixed_prior_commit_whitespace_error_fails_closed(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_RUNNING",
+            "conversation_id": "conv-idle",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        def fake_run_cmd(*args, **kwargs):
+            cmd_str = " ".join(args)
+            if "status --porcelain" in cmd_str:
+                return " M src/config/constants.js\n"
+            if "rev-parse --abbrev-ref" in cmd_str:
+                return "agent/gat-smoke-001"
+            if "rev-parse origin/main" in cmd_str:
+                return "1111111111111111111111111111111111111111"
+            if "rev-parse HEAD" in cmd_str:
+                return "2222222222222222222222222222222222222222"
+            if "merge-base --is-ancestor" in cmd_str:
+                return ""
+            if "diff --name-status" in cmd_str:
+                return "M\tsrc/config/constants.js\n"
+            if "diff --check" in cmd_str:
+                raise worker.WorkerError("Trailing whitespace error")
+            if "diff" in cmd_str:
+                return "+export const CLIENT_CONFIG = {};\n"
+            return ""
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=fake_run_cmd) as mock_cmd, \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            success = worker.cmd_poll(self.temp_dir, local_only=False)
+            self.assertFalse(success)
+            for call in mock_cmd.call_args_list:
+                args = call[0]
+                self.assertNotIn("push", args)
+                self.assertNotIn("commit", args)
+            mock_remove.assert_not_called()
+            self.assertIsNotNone(worker.load_checkpoint(self.temp_dir))
+
+    def test_recovery_baseline_resolution_failure_fails_closed(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_RUNNING",
+            "conversation_id": "conv-idle",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        def fake_run_cmd(*args, **kwargs):
+            cmd_str = " ".join(args)
+            if "status --porcelain" in cmd_str:
+                return " M src/config/constants.js\n"
+            if "rev-parse origin/main" in cmd_str:
+                raise worker.WorkerError("fatal: ambiguous argument 'origin/main'")
+            if "rev-parse HEAD" in cmd_str:
+                return "2222222222222222222222222222222222222222"
+            return ""
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=fake_run_cmd) as mock_cmd, \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            success = worker.cmd_poll(self.temp_dir, local_only=False)
+            self.assertFalse(success)
+            for call in mock_cmd.call_args_list:
+                args = call[0]
+                self.assertNotIn("push", args)
+                self.assertNotIn("commit", args)
+            mock_remove.assert_not_called()
+            self.assertIsNotNone(worker.load_checkpoint(self.temp_dir))
 
 if __name__ == "__main__":
     unittest.main()

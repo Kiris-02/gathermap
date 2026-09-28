@@ -732,7 +732,7 @@ def assert_clean_git_diff(worktree_path: Path, task: Task) -> list[str]:
     return sorted(list(set(changed_files)))
 
 
-def assert_clean_committed_range(
+def validate_committed_range(
     worktree_path: Path,
     task: Task,
     base_sha: str,
@@ -745,11 +745,9 @@ def assert_clean_committed_range(
     2. base_sha is an ancestor of cur_head (no foreign/diverged history).
     3. If task is a revision with a pinned revision_head, base_sha matches the pin.
     4. At least one file was modified between base_sha and cur_head.
-    5. All modified files are within task.allowed_paths and none are protected.
+    5. All modified files are within task.allowed_paths and none are protected (including renames).
     6. No merge conflict markers exist in the commit range.
     7. git diff --check passes with code 0 on the commit range.
-    8. Local product tests (npm test) pass cleanly.
-    9. The working tree remains clean after running tests.
 
     Fails closed on any violation, raising WorkerError.
     """
@@ -816,17 +814,32 @@ def assert_clean_committed_range(
     # 8. Blocking whitespace check on commit range
     run_cmd("git", "diff", "--check", f"{base_sha}..{cur_head}", cwd=worktree_path, check=True)
 
-    # 9. Local product tests execution
+    return sorted(list(set(changed_files)))
+
+
+def assert_clean_committed_range(
+    worktree_path: Path,
+    task: Task,
+    base_sha: str,
+    cur_head: str,
+) -> list[str]:
+    """Validate a recovered committed tree against a trusted baseline before push or handoff.
+    Used for clean-only committed recovery (has_uncommitted == False).
+    Runs validate_committed_range, runs local tests, and asserts clean worktree post-test.
+    """
+    changed_files = validate_committed_range(worktree_path, task, base_sha, cur_head)
+
+    # Local product tests execution
     print(f"[{task.task_id}] Executing local regression tests (npm test) on recovered commit {cur_head[:8]}...", flush=True)
     run_local_tests(worktree_path, task)
     print(f"[{task.task_id}] Local tests passed 100% on recovered commit!", flush=True)
 
-    # 10. Cleanliness post-test
+    # Cleanliness post-test
     status_output = run_cmd("git", "status", "--porcelain", cwd=worktree_path)
     if status_output.strip():
         raise WorkerError(f"Worktree has unexpected uncommitted modifications after test execution: {status_output.strip()}")
 
-    return sorted(list(set(changed_files)))
+    return changed_files
 
 
 # ---------------------------------------------------------------------------
@@ -1104,20 +1117,24 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
 
                 has_commit = False
                 existing_head = None
+                if task.is_revision and task.revision_head:
+                    base_ref = task.revision_head
+                elif task.is_revision:
+                    base_ref = f"origin/{task.branch}"
+                else:
+                    base_ref = "origin/main"
+
                 try:
-                    cur_head = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir).lower()
-                    if task.is_revision and task.revision_head:
-                        base_ref = task.revision_head
-                    elif task.is_revision:
-                        base_ref = f"origin/{task.branch}"
-                    else:
-                        base_ref = "origin/main"
-                    base_sha = run_cmd("git", "rev-parse", base_ref, cwd=worktree_dir).lower()
-                    if cur_head != base_sha:
-                        has_commit = True
-                        existing_head = cur_head
-                except Exception:
-                    pass
+                    cur_head = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir).strip().lower()
+                    base_sha = run_cmd("git", "rev-parse", base_ref, cwd=worktree_dir).strip().lower()
+                except Exception as exc:
+                    raise WorkerError(
+                        f"Failed to resolve recovered worktree HEAD or trusted baseline ({base_ref}): {exc}"
+                    ) from exc
+
+                if cur_head != base_sha:
+                    has_commit = True
+                    existing_head = cur_head
 
                 if not has_uncommitted and not has_commit:
                     raise WorkerError(
@@ -1129,17 +1146,9 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
                     print(f"[{task.task_id}] Preserved worktree has uncommitted modifications. Resuming verification...", flush=True)
                     # If there were also prior commits ahead of base, validate that commit range as well
                     if has_commit:
-                        diff_name_output = run_cmd("git", "diff", "--name-status", f"{base_sha}..{cur_head}", cwd=worktree_dir)
-                        for line in diff_name_output.splitlines():
-                            if not line.strip():
-                                continue
-                            parts = line.strip().split("\t")
-                            if len(parts) >= 2:
-                                p = parts[-1].strip().strip('"').replace("\\", "/")
-                                if p in PROTECTED_FILES or any(p.startswith(pr) for pr in PROTECTED_PREFIXES):
-                                    raise WorkerError(f"Prior commit modified protected file: {p}. Halting immediately.")
-                                if p not in task.allowed_paths:
-                                    raise WorkerError(f"Prior commit modified file outside allowed paths: {p} (allowed: {task.allowed_paths})")
+                        print(f"[{task.task_id}] Validating existing committed range {base_sha[:8]}..{cur_head[:8]} before resuming uncommitted work...", flush=True)
+                        prior_committed_files = validate_committed_range(worktree_dir, task, base_sha, cur_head)
+                        print(f"[{task.task_id}] Existing committed range validated clean. Files: {prior_committed_files}", flush=True)
 
                     save_checkpoint(repo_root, {
                         "task_id": task.task_id,
@@ -1173,7 +1182,15 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
                         else f"feat(antina): complete {task.task_id} (#{task.issue_number})"
                     )
                     run_cmd("git", "commit", "-m", commit_msg, cwd=worktree_dir)
-                    head_sha = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir).lower()
+                    head_sha = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir).strip().lower()
+
+                    # If there were prior commits, validate the complete combined range from base_sha to head_sha
+                    if has_commit:
+                        print(f"[{task.task_id}] Validating combined committed range {base_sha[:8]}..{head_sha[:8]}...", flush=True)
+                        changed_files = validate_committed_range(worktree_dir, task, base_sha, head_sha)
+                    else:
+                        changed_files = sorted(list(set(changed_files)))
+
                     resumption_advanced = True
                 else:
                     head_sha = existing_head
