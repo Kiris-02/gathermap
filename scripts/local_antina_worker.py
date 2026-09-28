@@ -90,9 +90,15 @@ class Task:
 
 def run_cmd(*args: str, cwd: Path | None = None, check: bool = True) -> str:
     """Execute a system command safely without shell expansion."""
+    if not args:
+        return ""
+    cmd_args = list(args)
+    resolved_exe = shutil.which(cmd_args[0])
+    if resolved_exe:
+        cmd_args[0] = resolved_exe
     try:
         res = subprocess.run(
-            args,
+            cmd_args,
             cwd=str(cwd) if cwd else None,
             capture_output=True,
             text=True,
