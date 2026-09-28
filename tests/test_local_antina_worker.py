@@ -309,6 +309,62 @@ class LocalAntinaWorkerTests(unittest.TestCase):
         ]
         self.assertEqual(worker.checks_state(one_failed, required), "failed")
 
+    def test_interruption_recovery_resumes_waiting_ci(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-TEST",
+            title="Test",
+            body="",
+            state_label="state:ready",
+            branch="agent/gat-test",
+            allowed_paths=["src/config/constants.js"],
+        )
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-TEST",
+            "stage": "WAITING_CI",
+            "pr_number": 22,
+            "head_sha": "8712aa66",
+        })
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "acquire_lock"), \
+             patch.object(worker, "release_lock"), \
+             patch.object(worker, "wait_for_pr_checks", return_value=[{"name": "CI", "conclusion": "SUCCESS"}]) as mock_wait, \
+             patch.object(worker, "publish_handoff", return_value={"status": "success", "task_id": "GAT-TEST"}) as mock_handoff:
+            res = worker.execute_task(self.temp_dir, task)
+            self.assertEqual(res["status"], "success")
+            mock_wait.assert_called_once_with(22, "8712aa66")
+            mock_handoff.assert_called_once()
+
+    def test_local_only_mode_skips_push_and_handoff(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-TEST",
+            title="Test",
+            body="",
+            state_label="state:ready",
+            branch="agent/gat-test",
+            allowed_paths=["src/config/constants.js"],
+        )
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "acquire_lock"), \
+             patch.object(worker, "release_lock"), \
+             patch.object(worker, "create_isolated_worktree", return_value=self.temp_dir), \
+             patch.object(worker, "start_agent_conversation", return_value="conv-123"), \
+             patch.object(worker, "monitor_agent_execution", return_value={"total_steps": 1, "summary": "Done"}), \
+             patch.object(worker, "assert_clean_git_diff", return_value=["src/config/constants.js"]), \
+             patch.object(worker, "run_local_tests", return_value="PASS"), \
+             patch.object(worker, "remove_isolated_worktree"), \
+             patch.object(worker, "run_cmd") as mock_run:
+            mock_run.side_effect = lambda *args, **kwargs: "8712aa66" if "rev-parse" in args else ""
+            res = worker.execute_task(self.temp_dir, task, local_only=True)
+            self.assertEqual(res["status"], "local_only_success")
+            # Verify git push was NEVER called
+            for call in mock_run.call_args_list:
+                args = call[0]
+                self.assertNotIn("push", args)
+                self.assertNotIn("create", args)
+
 
 if __name__ == "__main__":
     unittest.main()
