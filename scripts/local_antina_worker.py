@@ -219,23 +219,23 @@ def clear_checkpoint(repo_root: Path) -> None:
 
 def find_agentapi_cmd() -> list[str]:
     """Locate the supported Antigravity CLI / language_server agentapi interface."""
-    # 1. Check user antigravity bin batch wrapper
-    home = Path.home()
-    agentapi_bat = home / ".gemini" / "antigravity" / "bin" / "agentapi.bat"
-    if agentapi_bat.is_file():
-        return [str(agentapi_bat.resolve())]
-
-    # 2. Check PATH
-    which_bat = shutil.which("agentapi.bat") or shutil.which("agentapi")
-    if which_bat:
-        return [which_bat]
-
-    # 3. Direct language_server binary in Antigravity install
+    # 1. Direct language_server binary in Antigravity install (preserves multiline arguments)
     local_app_data = os.environ.get("LOCALAPPDATA", "")
     if local_app_data:
         ls_path = Path(local_app_data) / "Programs" / "antigravity" / "resources" / "bin" / "language_server.exe"
         if ls_path.is_file():
             return [str(ls_path.resolve()), "agentapi"]
+
+    # 2. Check user antigravity bin batch wrapper
+    home = Path.home()
+    agentapi_bat = home / ".gemini" / "antigravity" / "bin" / "agentapi.bat"
+    if agentapi_bat.is_file():
+        return [str(agentapi_bat.resolve())]
+
+    # 3. Check PATH
+    which_bat = shutil.which("agentapi.bat") or shutil.which("agentapi")
+    if which_bat:
+        return [which_bat]
 
     raise WorkerError(
         "Antigravity local agentapi interface not found. "
@@ -615,6 +615,7 @@ def execute_task(repo_root: Path, task: Task, skip_ci: bool = False) -> dict[str
     worktree_dir: Path | None = None
     try:
         # Step 1: Transition Issue to state:working
+        print(f"[{task.task_id}] Step 1: Claiming Issue #{task.issue_number} (setting state:working)...", flush=True)
         save_checkpoint(repo_root, {"task_id": task.task_id, "issue": task.issue_number, "stage": "CLAIMING"})
         run_cmd(
             "gh", "issue", "edit", str(task.issue_number), "--repo", REPO,
@@ -632,8 +633,10 @@ def execute_task(repo_root: Path, task: Task, skip_ci: bool = False) -> dict[str
         run_cmd("gh", "issue", "comment", str(task.issue_number), "--repo", REPO, "--body", status_comment)
 
         # Step 2: Setup isolated worktree
+        print(f"[{task.task_id}] Step 2: Creating isolated Git worktree from origin/main...", flush=True)
         save_checkpoint(repo_root, {"task_id": task.task_id, "issue": task.issue_number, "stage": "WORKTREE_SETUP"})
         worktree_dir = create_isolated_worktree(repo_root, task)
+        print(f"[{task.task_id}] Worktree established at: {worktree_dir}", flush=True)
 
         # Step 3: Build agent prompt and execute via local agentapi
         save_checkpoint(repo_root, {
@@ -643,6 +646,10 @@ def execute_task(repo_root: Path, task: Task, skip_ci: bool = False) -> dict[str
             "worktree": str(worktree_dir),
         })
 
+        target_hint = ""
+        if task.allowed_paths:
+            target_hint = f"\nTARGET FILES TO INSPECT AND MODIFY:\n" + "\n".join(f"- {worktree_dir / p}" for p in task.allowed_paths)
+
         prompt = f"""You are Antina, the automated implementation agent for Kiris-02/gathermap.
 Read and follow .agents/README.md, PROTOCOL.md, ANTINA.md, TASK_FORMAT.md, and SAFETY.md.
 
@@ -650,14 +657,17 @@ CRITICAL INSTRUCTIONS:
 1. Work ONLY inside this working directory: {worktree_dir}
 2. Never call git commit, push, merge, or gh commands. The outer local worker harness owns all git and PR operations.
 3. Never edit protected files (.agents/, .github/, supabase/migrations/, secrets, runner scripts).
-4. Strictly implement the GRUM_TASK specified below.
+4. Strictly implement the GRUM_TASK specified below.{target_hint}
 5. Finish with a concise factual summary of the changes made.
 
 TASK DETAILS:
 Issue #{task.issue_number}
 {task.body}
 """
+        print(f"[{task.task_id}] Step 3: Dispatching task to Antigravity agentapi...", flush=True)
         conv_id = start_agent_conversation(prompt, title=f"Antina: {task.task_id}")
+        print(f"[{task.task_id}] Conversation started with ID: {conv_id}", flush=True)
+
         save_checkpoint(repo_root, {
             "task_id": task.task_id,
             "issue": task.issue_number,
@@ -666,9 +676,12 @@ Issue #{task.issue_number}
             "worktree": str(worktree_dir),
         })
 
+        print(f"[{task.task_id}] Step 4: Monitoring Antigravity agent execution...", flush=True)
         agent_result = monitor_agent_execution(conv_id, timeout_seconds=600)
+        print(f"[{task.task_id}] Agent finished: {agent_result.get('total_steps')} steps, tools executed: {agent_result.get('tools_executed')}", flush=True)
 
         # Step 4: Verify working tree diff
+        print(f"[{task.task_id}] Step 5: Validating worktree diff against constraints and safety rules...", flush=True)
         save_checkpoint(repo_root, {
             "task_id": task.task_id,
             "issue": task.issue_number,
@@ -676,11 +689,15 @@ Issue #{task.issue_number}
             "worktree": str(worktree_dir),
         })
         changed_files = assert_clean_git_diff(worktree_dir, task)
+        print(f"[{task.task_id}] Diff verified clean. Modified files: {changed_files}", flush=True)
 
         # Step 5: Run deterministic local test verification
+        print(f"[{task.task_id}] Step 6: Executing local regression tests (npm test)...", flush=True)
         test_output = run_local_tests(worktree_dir)
+        print(f"[{task.task_id}] Local tests passed 100%!", flush=True)
 
         # Step 6: Commit and Push branch
+        print(f"[{task.task_id}] Step 7: Committing changes in worktree...", flush=True)
         save_checkpoint(repo_root, {
             "task_id": task.task_id,
             "issue": task.issue_number,
@@ -696,7 +713,9 @@ Issue #{task.issue_number}
             cwd=worktree_dir,
         )
         head_sha = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir)
+        print(f"[{task.task_id}] Committed HEAD SHA: {head_sha}", flush=True)
 
+        print(f"[{task.task_id}] Step 8: Pushing branch {task.branch} to origin...", flush=True)
         save_checkpoint(repo_root, {
             "task_id": task.task_id,
             "issue": task.issue_number,
@@ -706,6 +725,7 @@ Issue #{task.issue_number}
         run_cmd("git", "push", "--set-upstream", "origin", task.branch, cwd=worktree_dir)
 
         # Step 7: Create or update PR
+        print(f"[{task.task_id}] Step 9: Creating Pull Request on GitHub...", flush=True)
         save_checkpoint(repo_root, {
             "task_id": task.task_id,
             "issue": task.issue_number,
@@ -722,9 +742,11 @@ Issue #{task.issue_number}
         )
         pr_info = gh_json("pr", "view", pr_url, "--repo", REPO, "--json", "number,url,headRefOid")
         pr_number = int(pr_info["number"])
+        print(f"[{task.task_id}] PR #{pr_number} opened: {pr_info['url']}", flush=True)
 
         # Step 8: Wait for CI checks (unless skipped for dry run)
         if not skip_ci:
+            print(f"[{task.task_id}] Step 10: Waiting for required GitHub Actions CI checks to turn green on HEAD {head_sha[:8]}...", flush=True)
             save_checkpoint(repo_root, {
                 "task_id": task.task_id,
                 "issue": task.issue_number,
@@ -733,8 +755,10 @@ Issue #{task.issue_number}
                 "head_sha": head_sha,
             })
             wait_for_pr_checks(pr_number, head_sha)
+            print(f"[{task.task_id}] GitHub Actions CI checks passed green!", flush=True)
 
         # Step 9: Post ANTINA_REPORT in PR and ANTINA_HANDOFF in Issue
+        print(f"[{task.task_id}] Step 11: Publishing ANTINA_REPORT and ANTINA_HANDOFF...", flush=True)
         save_checkpoint(repo_root, {
             "task_id": task.task_id,
             "issue": task.issue_number,
