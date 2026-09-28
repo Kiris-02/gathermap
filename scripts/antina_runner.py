@@ -45,7 +45,12 @@ PROTECTED_FILES = {
     "scripts/agent_cycle.py",
     "scripts/antina_runner.py",
 }
-REQUIRED_CHECKS = frozenset({"Antina required validation"})
+REQUIRED_CHECKS = frozenset({
+    "Antina required validation",
+    "Test Suite & Browser E2E",
+})
+MAX_QUOTA_RETRIES = 3
+INITIAL_QUOTA_DELAY_SECONDS = 15.0
 SENSITIVE_ENV = re.compile(
     r"(TOKEN|SECRET|PASSWORD|CREDENTIAL|PRIVATE|API_KEY|ACTIONS_RUNTIME)",
     re.IGNORECASE,
@@ -400,6 +405,31 @@ def ensure_product_revision_fixable(task: Task, root: Path) -> None:
                           + ", ".join(forbidden))
 
 
+def is_rate_limit_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return any(
+        term in message
+        for term in (
+            "429",
+            "resource_exhausted",
+            "generate_content_free_tier_requests",
+            "rate limit",
+            "quota exceeded",
+            "generativelanguage.googleapis.com",
+        )
+    )
+
+
+def parse_retry_delay(exc: Exception, default_delay: float) -> float:
+    match = re.search(r"retry in\s+([0-9.]+)\s*(ms|s)?", str(exc), re.IGNORECASE)
+    if match:
+        val = float(match.group(1))
+        unit = (match.group(2) or "ms").lower()
+        delay_sec = val / 1000.0 if unit == "ms" else val
+        return max(default_delay, min(delay_sec, 60.0))
+    return default_delay
+
+
 async def run_antigravity(task: Task, root: Path) -> str:
     api_key, github_transport = scrub_sensitive_environment()
     if not api_key:
@@ -452,11 +482,24 @@ ISSUE #{task.issue}
             ),
             workspaces=[str(root.resolve())],
         )
-        async with Agent(config) as agent:
-            response = await agent.chat(
-                "Inspect the repository, implement the task, and finish with a concise factual summary."
-            )
-            return await response.text()
+        for attempt in range(1, MAX_QUOTA_RETRIES + 1):
+            try:
+                async with Agent(config) as agent:
+                    response = await agent.chat(
+                        "Inspect the repository, implement the task, and finish with a concise factual summary."
+                    )
+                    return await response.text()
+            except Exception as exc:
+                if is_rate_limit_error(exc):
+                    if attempt < MAX_QUOTA_RETRIES:
+                        delay = parse_retry_delay(exc, INITIAL_QUOTA_DELAY_SECONDS * attempt)
+                        await asyncio.sleep(delay)
+                        continue
+                    raise RunnerError(
+                        "Gemini rate limit exceeded (5 requests/min on Free Tier for gemini-3.7-flash). "
+                        "Rate limit remained exhausted after retries. Action required by Kiris: verify project tier/billing."
+                    ) from None
+                raise
     finally:
         # Restore only the GitHub transport credentials needed by the outer
         # harness. The model API key and every unrelated secret remain absent.
@@ -466,6 +509,12 @@ ISSUE #{task.issue}
 def check_state(check: dict) -> str:
     status = str(check.get("status") or check.get("state") or "").upper()
     conclusion = str(check.get("conclusion") or "").upper()
+    if status == "ACTION_REQUIRED" or conclusion == "ACTION_REQUIRED":
+        return "approval_required"
+    if conclusion == "STALE":
+        return "stale"
+    if conclusion == "SKIPPED":
+        return "skipped"
     if status in {"EXPECTED", "IN_PROGRESS", "PENDING", "QUEUED", "REQUESTED", "WAITING"}:
         return "pending"
     if status == "COMPLETED":
@@ -475,7 +524,14 @@ def check_state(check: dict) -> str:
     return "pending"
 
 
-def checks_state(rollup: list[dict], required: frozenset[str] = REQUIRED_CHECKS) -> str:
+def checks_state(
+    rollup: list[dict],
+    required: frozenset[str] = REQUIRED_CHECKS,
+    expected_head: str | None = None,
+    pr_head: str | None = None,
+) -> str:
+    if expected_head is not None and pr_head is not None and pr_head != expected_head:
+        return "stale"
     if not rollup:
         return "pending"
     grouped: dict[str, list[dict]] = {}
@@ -488,8 +544,8 @@ def checks_state(rollup: list[dict], required: frozenset[str] = REQUIRED_CHECKS)
     for name in required:
         for check in grouped[name]:
             state = check_state(check)
-            if state == "failed":
-                return "failed"
+            if state in {"failed", "approval_required", "stale", "skipped"}:
+                return state
             if state == "pending":
                 saw_pending = True
     return "pending" if saw_pending else "success"
@@ -502,13 +558,23 @@ def verify_remote_head(task: Task, root: Path, expected_head: str) -> None:
         raise RunnerError("Remote task branch does not match the pushed commit")
 
 
-def wait_for_checks(pr_number: int, timeout: int = 1800) -> None:
+def wait_for_checks(pr_number: int, expected_head: str, timeout: int = 1800) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        pr = gh_json("pr", "view", str(pr_number), "--repo", REPO, "--json", "statusCheckRollup")
-        state = checks_state(pr.get("statusCheckRollup") or [])
+        pr = gh_json("pr", "view", str(pr_number), "--repo", REPO, "--json", "statusCheckRollup,headRefOid")
+        pr_head = str(pr.get("headRefOid") or "")
+        if pr_head and pr_head != expected_head:
+            raise RunnerError(f"PR HEAD ({pr_head}) does not match expected commit ({expected_head})")
+        rollup = pr.get("statusCheckRollup") or []
+        state = checks_state(rollup, REQUIRED_CHECKS, expected_head=expected_head, pr_head=pr_head)
         if state == "success":
             return
+        if state == "approval_required":
+            raise RunnerError("PR checks require human approval to execute")
+        if state == "stale":
+            raise RunnerError("PR checks evaluated on stale commit HEAD")
+        if state == "skipped":
+            raise RunnerError("Required PR check was skipped")
         if state == "failed":
             raise RunnerError("PR checks failed")
         time.sleep(15)
@@ -558,7 +624,7 @@ def publish(
                      "--json", "number,url,headRefOid")
     if pr.get("headRefOid") != sha:
         raise RunnerError("PR head does not match the pushed Antina commit")
-    wait_for_checks(int(pr["number"]))
+    wait_for_checks(int(pr["number"]), sha)
     report = f"""## 📤 ANTINA_REPORT
 
 - **task_id**: `{task.task_id}`
@@ -574,7 +640,7 @@ def publish(
 ### 🧪 Tests & Verification
 - **Executed Command**: `git diff --check`
 - **Result**: Passed.
-- **GitHub Actions**: Exact required check `Antina required validation` passed in a separate read-only job.
+- **GitHub Actions**: Exact required checks `Antina required validation` and `Test Suite & Browser E2E` passed against commit `{sha}`.
 
 ### ⚠️ Known Risks
 - Automated SDK execution is bounded by repository and command policies; human merge remains mandatory.
