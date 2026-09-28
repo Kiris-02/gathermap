@@ -736,13 +736,47 @@ def assert_clean_git_diff(worktree_path: Path, task: Task) -> list[str]:
 # Worktree Management (Isolated & Reversible)
 # ---------------------------------------------------------------------------
 
-def create_isolated_worktree(repo_root: Path, task: Task) -> Path:
-    """Create or resume an isolated Git worktree for the task branch."""
-    worktree_dir = repo_root / ".worktrees" / f"agent-{task.task_id.lower()}"
-    run_cmd("git", "worktree", "remove", "--force", str(worktree_dir), cwd=repo_root, check=False)
+def create_isolated_worktree(repo_root: Path, task: Task, resume_existing: bool = False) -> Path:
+    """Create or safely resume an isolated Git worktree for the task branch.
+    Never removes or overwrites an existing worktree when resume_existing is True
+    or when a matching AGENT_TIMED_OUT / INTERRUPTED checkpoint exists.
+    Fails closed if an unmanaged worktree already exists on disk.
+    """
+    ckpt = load_checkpoint(repo_root)
+    if ckpt and ckpt.get("worktree") and (resume_existing or ckpt.get("task_id") == task.task_id):
+        worktree_dir = Path(ckpt["worktree"])
+    else:
+        worktree_dir = repo_root / ".worktrees" / f"agent-{task.task_id.lower()}"
+
+    has_preserved_checkpoint = (
+        ckpt is not None
+        and ckpt.get("task_id") == task.task_id
+        and ckpt.get("stage") in {
+            "AGENT_TIMED_OUT", "INTERRUPTED", "AGENT_RUNNING",
+            "AGENT_MONITORING", "LOCAL_VERIFYING", "COMMITTING"
+        }
+    )
+
     if worktree_dir.exists():
-        shutil.rmtree(worktree_dir, ignore_errors=True)
-    run_cmd("git", "worktree", "prune", cwd=repo_root, check=False)
+        if resume_existing or has_preserved_checkpoint:
+            print(f"[{task.task_id}] Preserving and reusing existing worktree at {worktree_dir}", flush=True)
+            # Re-ensure node_modules symlink/junction exists
+            root_nm = repo_root / "node_modules"
+            wt_nm = worktree_dir / "node_modules"
+            if root_nm.is_dir() and not wt_nm.exists():
+                if sys.platform == "win32":
+                    subprocess.run(["cmd", "/c", "mklink", "/J", str(wt_nm), str(root_nm)], check=False, capture_output=True)
+                else:
+                    try:
+                        wt_nm.symlink_to(root_nm, target_is_directory=True)
+                    except OSError:
+                        pass
+            return worktree_dir
+        else:
+            raise WorkerError(
+                f"Worktree '{worktree_dir}' already exists on disk but has no authorized resumption checkpoint. "
+                "Refusing to overwrite existing worktree. Inspect worktree or resolve explicitly."
+            )
 
     worktree_dir.parent.mkdir(parents=True, exist_ok=True)
 
@@ -921,6 +955,8 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
     pr_number: int | None = None
     head_sha: str | None = None
     execution_failed = False
+    is_resuming = False
+    resumption_advanced = False
 
     try:
         # Checkpoint reconciliation
@@ -928,13 +964,176 @@ def execute_task(repo_root: Path, task: Task, local_only: bool = False) -> dict[
         if ckpt and ckpt.get("task_id") == task.task_id:
             stage = ckpt.get("stage")
             print(f"[{task.task_id}] Reconciling interrupted checkpoint at stage: {stage}", flush=True)
-            if stage == "WAITING_CI" and ckpt.get("pr_number") and ckpt.get("head_sha") and not local_only:
+            if stage == "WAITING_CI" and ckpt.get("pr_number") and ckpt.get("head_sha"):
+                is_resuming = True
                 pr_number = int(ckpt["pr_number"])
                 head_sha = str(ckpt["head_sha"])
+                if local_only:
+                    print(f"[{task.task_id}] [LOCAL_ONLY] Resumed from WAITING_CI. Skipping remote CI wait and handoff.", flush=True)
+                    clear_checkpoint(repo_root)
+                    return {
+                        "status": "local_only_success",
+                        "task_id": task.task_id,
+                        "commit": head_sha,
+                        "changed_files": task.allowed_paths,
+                    }
                 print(f"[{task.task_id}] Resuming CI check waiter for PR #{pr_number} on {head_sha[:8]}...", flush=True)
                 checks_rollup = wait_for_pr_checks(pr_number, head_sha)
                 # Proceed directly to handoff
                 return publish_handoff(repo_root, task, pr_number, head_sha, checks_rollup, summary="Resumed from checkpoint")
+
+            # Case 2: Handled interruption / timeout recovery
+            if stage in {"AGENT_TIMED_OUT", "INTERRUPTED", "AGENT_RUNNING", "AGENT_MONITORING", "LOCAL_VERIFYING", "COMMITTING"}:
+                is_resuming = True
+                conv_id = ckpt.get("conversation_id")
+                agent_conv_id = conv_id
+                if conv_id and is_agent_conversation_active(conv_id):
+                    raise WorkerError(
+                        f"Cannot recover task '{task.task_id}': prior agent conversation '{conv_id}' is still actively running. "
+                        "Preserving worktree and checkpoint intact for human inspection."
+                    )
+
+                preserved_wt_path = Path(ckpt.get("worktree")) if ckpt.get("worktree") else (repo_root / ".worktrees" / f"agent-{task.task_id.lower()}")
+                if not preserved_wt_path.exists():
+                    raise WorkerError(
+                        f"Preserved worktree '{preserved_wt_path}' for task '{task.task_id}' not found on disk. "
+                        "Failing closed to leave checkpoint intact for human inspection."
+                    )
+                worktree_dir = create_isolated_worktree(repo_root, task, resume_existing=True)
+
+                # Check worktree git state
+                status_output = run_cmd("git", "status", "--porcelain", cwd=worktree_dir)
+                has_uncommitted = bool(status_output.strip())
+
+                has_commit = False
+                existing_head = None
+                try:
+                    cur_head = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir).lower()
+                    base_ref = f"origin/{task.branch}" if task.is_revision else "origin/main"
+                    base_sha = run_cmd("git", "rev-parse", base_ref, cwd=worktree_dir).lower()
+                    if cur_head != base_sha:
+                        has_commit = True
+                        existing_head = cur_head
+                except Exception:
+                    pass
+
+                if not has_uncommitted and not has_commit:
+                    raise WorkerError(
+                        f"Preserved worktree for task '{task.task_id}' has no unfinished modifications or commits to resume. "
+                        "Leaving worktree and checkpoint intact for human inspection."
+                    )
+
+                resumption_advanced = True
+
+                if has_uncommitted:
+                    print(f"[{task.task_id}] Preserved worktree has uncommitted modifications. Resuming verification...", flush=True)
+                    save_checkpoint(repo_root, {
+                        "task_id": task.task_id,
+                        "issue": task.issue_number,
+                        "stage": "LOCAL_VERIFYING",
+                        "worktree": str(worktree_dir),
+                        "conversation_id": conv_id,
+                    })
+                    changed_files = assert_clean_git_diff(worktree_dir, task)
+                    print(f"[{task.task_id}] Diff verified clean. Modified files: {changed_files}", flush=True)
+
+                    print(f"[{task.task_id}] Executing local regression tests (npm test)...", flush=True)
+                    run_local_tests(worktree_dir, task)
+                    print(f"[{task.task_id}] Local tests passed 100%!", flush=True)
+
+                    changed_files = assert_clean_git_diff(worktree_dir, task)
+
+                    print(f"[{task.task_id}] Staging and committing resumed changes...", flush=True)
+                    save_checkpoint(repo_root, {
+                        "task_id": task.task_id,
+                        "issue": task.issue_number,
+                        "stage": "COMMITTING",
+                        "worktree": str(worktree_dir),
+                    })
+                    for f in changed_files:
+                        run_cmd("git", "add", f, cwd=worktree_dir)
+                    run_cmd("git", "diff", "--cached", "--check", cwd=worktree_dir, check=True)
+                    commit_msg = (
+                        f"fix(antina): address review feedback for {task.task_id} (#{task.issue_number})"
+                        if task.is_revision
+                        else f"feat(antina): complete {task.task_id} (#{task.issue_number})"
+                    )
+                    run_cmd("git", "commit", "-m", commit_msg, cwd=worktree_dir)
+                    head_sha = run_cmd("git", "rev-parse", "HEAD", cwd=worktree_dir).lower()
+                else:
+                    head_sha = existing_head
+                    print(f"[{task.task_id}] Resuming from existing committed HEAD: {head_sha[:8]}", flush=True)
+                    changed_files = task.allowed_paths
+
+                if local_only:
+                    print(f"[{task.task_id}] [LOCAL_ONLY] Local verification passed. Remote push, PR creation, and review handoffs skipped.", flush=True)
+                    clear_checkpoint(repo_root)
+                    return {
+                        "status": "local_only_success",
+                        "task_id": task.task_id,
+                        "commit": head_sha,
+                        "changed_files": changed_files,
+                    }
+
+                # Push branch
+                print(f"[{task.task_id}] Pushing branch {task.branch} to origin...", flush=True)
+                save_checkpoint(repo_root, {
+                    "task_id": task.task_id,
+                    "issue": task.issue_number,
+                    "stage": "PUSHING",
+                    "head_sha": head_sha,
+                })
+                run_cmd("git", "push", "--set-upstream", "origin", task.branch, cwd=worktree_dir)
+
+                # Create or update PR
+                if task.is_revision:
+                    pr_number = task.revision_pr
+                    pr_info = gh_json("pr", "view", str(pr_number), "--repo", REPO, "--json", "number,url,headRefOid,state,baseRefName")
+                    if pr_info.get("state") != "OPEN":
+                        raise WorkerError(f"Revision PR #{pr_number} is no longer OPEN before publication (state: {pr_info.get('state')})")
+                    if pr_info.get("baseRefName") != "main":
+                        raise WorkerError(f"Revision PR #{pr_number} base branch changed to '{pr_info.get('baseRefName')}', expected 'main'")
+                    print(f"[{task.task_id}] Reusing existing PR #{pr_number}: {pr_info['url']}", flush=True)
+                else:
+                    save_checkpoint(repo_root, {
+                        "task_id": task.task_id,
+                        "issue": task.issue_number,
+                        "stage": "CREATING_PR",
+                        "head_sha": head_sha,
+                    })
+                    pr_url = run_cmd(
+                        "gh", "pr", "create", "--repo", REPO,
+                        "--base", "main",
+                        "--head", task.branch,
+                        "--title", f"{task.task_id}: {task.title}",
+                        "--body", f"Automated Antina implementation for #{task.issue_number}.\n\n### Summary\nResumed from preserved checkpoint.",
+                        cwd=worktree_dir,
+                    )
+                    pr_info = gh_json("pr", "view", pr_url, "--repo", REPO, "--json", "number,url,headRefOid")
+                    pr_number = int(pr_info["number"])
+                    print(f"[{task.task_id}] PR #{pr_number} opened: {pr_info['url']}", flush=True)
+
+                # Wait for CI
+                print(f"[{task.task_id}] Waiting for required GitHub Actions CI checks on HEAD {head_sha[:8]}...", flush=True)
+                save_checkpoint(repo_root, {
+                    "task_id": task.task_id,
+                    "issue": task.issue_number,
+                    "stage": "WAITING_CI",
+                    "pr_number": pr_number,
+                    "head_sha": head_sha,
+                })
+                checks_rollup = wait_for_pr_checks(pr_number, head_sha)
+                print(f"[{task.task_id}] GitHub Actions CI checks passed green!", flush=True)
+
+                return publish_handoff(
+                    repo_root,
+                    task,
+                    pr_number,
+                    head_sha,
+                    checks_rollup,
+                    summary="Resumed from preserved worktree checkpoint and verified green.",
+                    changed_files=changed_files,
+                )
 
         # Step 1: Transition Issue to state:working (skipped if local_only)
         if not local_only:
@@ -1129,31 +1328,32 @@ Issue #{task.issue_number}
         execution_failed = True
         is_timeout = "timed out" in str(exc).lower()
         ckpt_stage = "AGENT_TIMED_OUT" if is_timeout else "INTERRUPTED"
-        save_checkpoint(repo_root, {
-            "task_id": task.task_id,
-            "issue": task.issue_number,
-            "stage": ckpt_stage,
-            "conversation_id": agent_conv_id,
-            "worktree": str(worktree_dir) if worktree_dir else None,
-            "error": str(exc),
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        })
-        if not local_only:
-            try:
-                run_cmd(
-                    "gh", "issue", "edit", str(task.issue_number), "--repo", REPO,
-                    "--remove-label", "state:working",
-                    "--add-label", "needs:kiris",
-                )
-                failure_comment = f"""## 🛑 ANTINA_FAILURE
+        if not is_resuming or resumption_advanced:
+            save_checkpoint(repo_root, {
+                "task_id": task.task_id,
+                "issue": task.issue_number,
+                "stage": ckpt_stage,
+                "conversation_id": agent_conv_id,
+                "worktree": str(worktree_dir) if worktree_dir else None,
+                "error": str(exc),
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            })
+            if not local_only:
+                try:
+                    run_cmd(
+                        "gh", "issue", "edit", str(task.issue_number), "--repo", REPO,
+                        "--remove-label", "state:working",
+                        "--add-label", "needs:kiris",
+                    )
+                    failure_comment = f"""## 🛑 ANTINA_FAILURE
 
 - **task_id**: `{task.task_id}`
 - **error**: `{str(exc)}`
 - **notes**: Local Antina Worker halted safely. Escalated to Kiris for inspection.
 """
-                run_cmd("gh", "issue", "comment", str(task.issue_number), "--repo", REPO, "--body", failure_comment)
-            except Exception:
-                pass
+                    run_cmd("gh", "issue", "comment", str(task.issue_number), "--repo", REPO, "--body", failure_comment)
+                except Exception:
+                    pass
         raise
     finally:
         # Establish whether agent is still running before destructive cleanup
@@ -1398,6 +1598,7 @@ def cmd_poll(repo_root: Path, local_only: bool = False) -> bool:
             return True
         except (IgnoreTask, WorkerError) as e:
             print(f"ℹ️ Owned checkpoint task could not be resumed: {e}")
+            return False
 
     # General poll
     issues = gh_json("issue", "list", "--repo", REPO, "--label", "to:antina", "--json", "number,title,body,state,labels")

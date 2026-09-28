@@ -663,6 +663,380 @@ class LocalAntinaWorkerTests(unittest.TestCase):
                 if args and args[0] == "gh" and len(args) >= 3 and args[2] == "comment":
                     self.fail(f"Duplicate comment posted: {args}")
 
+    def test_create_isolated_worktree_never_removes_or_overwrites_with_preserved_checkpoint(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-PRESERVE-WT",
+            title="Preserve Worktree Task",
+            body="",
+            state_label="state:ready",
+            branch="agent/gat-preserve-wt",
+            allowed_paths=["src/config/constants.js"],
+        )
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-preserve-wt"
+        wt_dir.mkdir(parents=True)
+        canary_file = wt_dir / "canary.txt"
+        canary_file.write_text("precious agent progress", encoding="utf-8")
+
+        for stage in ("AGENT_TIMED_OUT", "INTERRUPTED"):
+            worker.save_checkpoint(self.temp_dir, {
+                "task_id": "GAT-PRESERVE-WT",
+                "issue": 19,
+                "stage": stage,
+                "worktree": str(wt_dir),
+            })
+            with patch.object(worker, "remove_isolated_worktree") as mock_remove:
+                returned_dir = worker.create_isolated_worktree(self.temp_dir, task)
+                self.assertEqual(returned_dir, wt_dir)
+                self.assertTrue(canary_file.exists())
+                self.assertEqual(canary_file.read_text(encoding="utf-8"), "precious agent progress")
+                mock_remove.assert_not_called()
+
+    def test_create_isolated_worktree_fails_closed_without_authorized_checkpoint(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-UNAUTHORIZED",
+            title="Unauthorized Task",
+            body="",
+            state_label="state:ready",
+            branch="agent/gat-unauthorized",
+            allowed_paths=["src/config/constants.js"],
+        )
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-unauthorized"
+        wt_dir.mkdir(parents=True)
+        canary = wt_dir / "important.txt"
+        canary.write_text("do not delete me", encoding="utf-8")
+
+        # Case A: No checkpoint at all
+        with self.assertRaises(worker.WorkerError) as ctx:
+            worker.create_isolated_worktree(self.temp_dir, task)
+        self.assertIn("Refusing to overwrite existing worktree", str(ctx.exception))
+        self.assertTrue(canary.exists())
+
+        # Case B: Checkpoint for different task
+        worker.save_checkpoint(self.temp_dir, {"task_id": "GAT-OTHER", "stage": "INTERRUPTED"})
+        with self.assertRaises(worker.WorkerError) as ctx:
+            worker.create_isolated_worktree(self.temp_dir, task)
+        self.assertIn("Refusing to overwrite existing worktree", str(ctx.exception))
+        self.assertTrue(canary.exists())
+
+    def test_recovery_fails_closed_when_prior_agent_is_still_active(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-ACTIVE-AGENT",
+            title="Active Agent Task",
+            body="",
+            state_label="state:ready",
+            branch="agent/gat-active-agent",
+            allowed_paths=["src/config/constants.js"],
+        )
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-active-agent"
+        wt_dir.mkdir(parents=True)
+        canary = wt_dir / "unfinished.txt"
+        canary.write_text("unfinished work", encoding="utf-8")
+
+        ckpt_initial = {
+            "task_id": "GAT-ACTIVE-AGENT",
+            "issue": 19,
+            "stage": "AGENT_TIMED_OUT",
+            "conversation_id": "conv-still-running",
+            "worktree": str(wt_dir),
+            "error": "Agent execution timed out after 600 seconds",
+        }
+        worker.save_checkpoint(self.temp_dir, ckpt_initial)
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=True), \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            with self.assertRaises(worker.WorkerError) as ctx:
+                worker.execute_task(self.temp_dir, task, local_only=True)
+            self.assertIn("conv-still-running", str(ctx.exception))
+            self.assertIn("still actively running", str(ctx.exception))
+            # Worktree and files must be preserved intact
+            mock_remove.assert_not_called()
+            self.assertTrue(canary.exists())
+            # Checkpoint on disk must NOT be mutated or overwritten
+            loaded_ckpt = worker.load_checkpoint(self.temp_dir)
+            self.assertEqual(loaded_ckpt["stage"], "AGENT_TIMED_OUT")
+            self.assertEqual(loaded_ckpt["conversation_id"], "conv-still-running")
+
+    def test_recovery_fails_closed_when_worktree_has_no_modifications_or_commit(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-EMPTY-WT",
+            title="Empty Worktree Task",
+            body="",
+            state_label="state:ready",
+            branch="agent/gat-empty-wt",
+            allowed_paths=["src/config/constants.js"],
+        )
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-empty-wt"
+        wt_dir.mkdir(parents=True)
+
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-EMPTY-WT",
+            "issue": 19,
+            "stage": "INTERRUPTED",
+            "conversation_id": "conv-idle",
+            "worktree": str(wt_dir),
+        })
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "run_cmd", side_effect=lambda *args, **kwargs: "" if "--porcelain" in args else "sha123"), \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            with self.assertRaises(worker.WorkerError) as ctx:
+                worker.execute_task(self.temp_dir, task, local_only=True)
+            self.assertIn("has no unfinished modifications or commits to resume", str(ctx.exception))
+            mock_remove.assert_not_called()
+            self.assertTrue(wt_dir.exists())
+
+    def test_cmd_poll_recovery_fails_closed_when_agent_active_and_preserves_worktree(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        constants_file = wt_dir / "src" / "config" / "constants.js"
+        constants_file.parent.mkdir(parents=True, exist_ok=True)
+        constants_file.write_text("export const CLIENT_CONFIG = { timeout: 30000 };\n", encoding="utf-8")
+
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_TIMED_OUT",
+            "conversation_id": "conv-still-running",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=True), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            success = worker.cmd_poll(self.temp_dir, local_only=True)
+            self.assertFalse(success)
+            mock_remove.assert_not_called()
+            self.assertTrue(constants_file.exists())
+            self.assertEqual(constants_file.read_text(encoding="utf-8"), "export const CLIENT_CONFIG = { timeout: 30000 };\n")
+            ckpt = worker.load_checkpoint(self.temp_dir)
+            self.assertEqual(ckpt["stage"], "AGENT_TIMED_OUT")
+
+    def test_cmd_run_task_recovery_fails_closed_when_agent_active_and_preserves_worktree(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        constants_file = wt_dir / "src" / "config" / "constants.js"
+        constants_file.parent.mkdir(parents=True, exist_ok=True)
+        constants_file.write_text("export const CLIENT_CONFIG = { timeout: 30000 };\n", encoding="utf-8")
+
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "INTERRUPTED",
+            "conversation_id": "conv-still-running",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=True), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            with self.assertRaises(worker.WorkerError):
+                worker.cmd_run_task(self.temp_dir, issue_number=19, local_only=True)
+            mock_remove.assert_not_called()
+            self.assertTrue(constants_file.exists())
+            self.assertEqual(constants_file.read_text(encoding="utf-8"), "export const CLIENT_CONFIG = { timeout: 30000 };\n")
+            ckpt = worker.load_checkpoint(self.temp_dir)
+            self.assertEqual(ckpt["stage"], "INTERRUPTED")
+
+    def test_recovery_fails_closed_when_resumed_tests_fail(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        constants_file = wt_dir / "src" / "config" / "constants.js"
+        constants_file.parent.mkdir(parents=True, exist_ok=True)
+        constants_file.write_text("export const CLIENT_CONFIG = { timeout: 30000 };\n", encoding="utf-8")
+
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_TIMED_OUT",
+            "conversation_id": "conv-stopped",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=lambda *args, **kwargs: " M src/config/constants.js\n" if "--porcelain" in args else ""), \
+             patch.object(worker, "run_local_tests", side_effect=worker.WorkerError("npm test failed")), \
+             patch.object(worker, "remove_isolated_worktree") as mock_remove:
+            with self.assertRaises(worker.WorkerError):
+                worker.cmd_run_task(self.temp_dir, issue_number=19, local_only=True)
+            mock_remove.assert_not_called()
+            self.assertTrue(constants_file.exists())
+
+    def test_recovery_via_cmd_poll_preserves_and_resumes_worktree(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        constants_file = wt_dir / "src" / "config" / "constants.js"
+        constants_file.parent.mkdir(parents=True, exist_ok=True)
+        constants_file.write_text("export const CLIENT_CONFIG = { timeout: 30000 };\n", encoding="utf-8")
+
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "AGENT_TIMED_OUT",
+            "conversation_id": "conv-dead",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        def fake_run_cmd(*args, **kwargs):
+            cmd_str = " ".join(args)
+            if "status --porcelain" in cmd_str:
+                return " M src/config/constants.js\n"
+            if "diff --check" in cmd_str:
+                return ""
+            if "diff" in cmd_str and "--cached" not in cmd_str:
+                return "+export const CLIENT_CONFIG = { timeout: 30000 };\n"
+            if "npm test" in cmd_str:
+                return "All 22 tests passing\n"
+            if "rev-parse" in cmd_str:
+                return "8712aa66d5ba6adac24cf14c01c4ee9312e1383f"
+            return ""
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=fake_run_cmd), \
+             patch.object(worker, "remove_isolated_worktree"):
+            success = worker.cmd_poll(self.temp_dir, local_only=True)
+            self.assertTrue(success)
+            # Assert checkpoint cleared after successful completion
+            self.assertIsNone(worker.load_checkpoint(self.temp_dir))
+
+    def test_recovery_via_cmd_run_task_preserves_and_resumes_worktree(self) -> None:
+        wt_dir = self.temp_dir / ".worktrees" / "agent-gat-smoke-001"
+        wt_dir.mkdir(parents=True)
+        constants_file = wt_dir / "src" / "config" / "constants.js"
+        constants_file.parent.mkdir(parents=True, exist_ok=True)
+        constants_file.write_text("export const CLIENT_CONFIG = { timeout: 30000 };\n", encoding="utf-8")
+
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-SMOKE-001",
+            "issue": 19,
+            "stage": "INTERRUPTED",
+            "conversation_id": "conv-stopped",
+            "worktree": str(wt_dir),
+        })
+
+        mock_issue = {
+            "number": 19,
+            "title": "[GAT-SMOKE-001] Export CLIENT_CONFIG",
+            "state": "OPEN",
+            "labels": [{"name": "to:antina"}, {"name": "state:working"}],
+            "body": """## 📋 GRUM_TASK
+- **task_id**: `GAT-SMOKE-001`
+### 📁 Files of Interest
+- `src/config/constants.js`
+""",
+        }
+
+        def fake_run_cmd(*args, **kwargs):
+            cmd_str = " ".join(args)
+            if "status --porcelain" in cmd_str:
+                return " M src/config/constants.js\n"
+            if "diff --check" in cmd_str:
+                return ""
+            if "diff" in cmd_str and "--cached" not in cmd_str:
+                return "+export const CLIENT_CONFIG = { timeout: 30000 };\n"
+            if "npm test" in cmd_str:
+                return "PASS\n"
+            if "rev-parse" in cmd_str:
+                return "8712aa66d5ba6adac24cf14c01c4ee9312e1383f"
+            return ""
+
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "is_agent_conversation_active", return_value=False), \
+             patch.object(worker, "gh_json", return_value=mock_issue), \
+             patch.object(worker, "run_cmd", side_effect=fake_run_cmd), \
+             patch.object(worker, "remove_isolated_worktree"):
+            worker.cmd_run_task(self.temp_dir, issue_number=19, local_only=True)
+            self.assertIsNone(worker.load_checkpoint(self.temp_dir))
+
+    def test_recovery_waiting_ci_does_not_duplicate_commits_or_prs(self) -> None:
+        task = worker.Task(
+            issue_number=19,
+            task_id="GAT-TEST-CI",
+            title="CI Wait Task",
+            body="",
+            state_label="state:working",
+            branch="agent/gat-test-ci",
+            allowed_paths=["src/config/constants.js"],
+        )
+        head_sha = "8712aa66d5ba6adac24cf14c01c4ee9312e1383f"
+        worker.save_checkpoint(self.temp_dir, {
+            "task_id": "GAT-TEST-CI",
+            "issue": 19,
+            "stage": "WAITING_CI",
+            "pr_number": 21,
+            "head_sha": head_sha,
+        })
+
+        # Test local_only: skips waiting for CI and remote handoff
+        with patch.object(worker, "verify_repo_remote"), \
+             patch.object(worker, "wait_for_pr_checks") as mock_wait, \
+             patch.object(worker, "publish_handoff") as mock_handoff:
+            res = worker.execute_task(self.temp_dir, task, local_only=True)
+            self.assertEqual(res["status"], "local_only_success")
+            self.assertEqual(res["commit"], head_sha)
+            mock_wait.assert_not_called()
+            mock_handoff.assert_not_called()
+            self.assertIsNone(worker.load_checkpoint(self.temp_dir))
+
 
 if __name__ == "__main__":
     unittest.main()
