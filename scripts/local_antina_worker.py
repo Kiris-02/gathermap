@@ -439,9 +439,11 @@ def assert_clean_git_diff(worktree_path: Path, task: Task) -> list[str]:
     for line in status_output.splitlines():
         if not line.strip():
             continue
-        # Format: XY <file> or XY <old> -> <new>
-        parts = line[3:].strip().split(" -> ")
-        file_path = parts[-1].strip().replace("\\", "/")
+        # Format: XY <file> or XY <old> -> <new> (handles leading space stripping gracefully)
+        parts = line.strip().split(maxsplit=1)
+        if len(parts) < 2:
+            continue
+        file_path = parts[1].split(" -> ")[-1].strip().strip('"').replace("\\", "/")
         changed_files.append(file_path)
 
     # Check against protected prefixes and files
@@ -469,17 +471,15 @@ def assert_clean_git_diff(worktree_path: Path, task: Task) -> list[str]:
 def create_isolated_worktree(repo_root: Path, task: Task) -> Path:
     """Create a completely isolated Git worktree for the task branch."""
     worktree_dir = repo_root / ".worktrees" / f"agent-{task.task_id.lower()}"
+    run_cmd("git", "worktree", "remove", "--force", str(worktree_dir), cwd=repo_root, check=False)
     if worktree_dir.exists():
-        run_cmd("git", "worktree", "remove", "--force", str(worktree_dir), cwd=repo_root, check=False)
-        if worktree_dir.exists():
-            shutil.rmtree(worktree_dir, ignore_errors=True)
+        shutil.rmtree(worktree_dir, ignore_errors=True)
+    run_cmd("git", "worktree", "prune", cwd=repo_root, check=False)
 
     worktree_dir.parent.mkdir(parents=True, exist_ok=True)
 
-    # Check if branch already exists locally or remotely
-    branch_exists_local = run_cmd("git", "branch", "--list", task.branch, cwd=repo_root) != ""
-    if branch_exists_local:
-        run_cmd("git", "branch", "-D", task.branch, cwd=repo_root)
+    # Clean up local branch if exists
+    run_cmd("git", "branch", "-D", task.branch, cwd=repo_root, check=False)
 
     # Add fresh worktree branching from origin/main
     run_cmd("git", "fetch", "origin", "main", cwd=repo_root)
@@ -696,6 +696,10 @@ Issue #{task.issue_number}
         test_output = run_local_tests(worktree_dir)
         print(f"[{task.task_id}] Local tests passed 100%!", flush=True)
 
+        # Clean up any test-generated artifacts (e.g. screenshots, temp databases)
+        run_cmd("git", "checkout", "--", "tests/screenshots", cwd=worktree_dir, check=False)
+        run_cmd("git", "clean", "-fd", "tests/", cwd=worktree_dir, check=False)
+
         # Step 6: Commit and Push branch
         print(f"[{task.task_id}] Step 7: Committing changes in worktree...", flush=True)
         save_checkpoint(repo_root, {
@@ -704,7 +708,10 @@ Issue #{task.issue_number}
             "stage": "COMMITTING",
             "worktree": str(worktree_dir),
         })
-        run_cmd("git", "add", "--all", cwd=worktree_dir)
+        # Re-verify diff after tests and add only verified changed files
+        changed_files = assert_clean_git_diff(worktree_dir, task)
+        for f in changed_files:
+            run_cmd("git", "add", f, cwd=worktree_dir)
         run_cmd(
             "git",
             "commit",
