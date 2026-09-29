@@ -19,7 +19,7 @@ All files in this review directory adhere to strict Unix line endings (LF, `\n`)
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [`bridge.py`](bridge.py) | `b8d7c602521d86c0ed910c34bd4b742f74f13c047b8c6a4f60c2b019c983115c` | 33,968 | 812 | LF | Hardened local daemon with fail-closed idle, atomic lock, safe contender behavior, strict 40-hex revision binding, fail-closed journaling, explicit delivery status, and structured task validation |
 | [`sidecar.json`](sidecar.json) | `5f356c5e56a4be13b4d96046765b9a90bd6d03727075dc9c02ba8109f91252e1` | 200 | 6 | LF | Antigravity 2.0 sidecar registration specification (`restart_policy: always`) |
-| [`test_bridge.py`](test_bridge.py) | `362a04c49c224d3cb507cb4f1eee09cfa47a987ec331b1355558fcbabfb6242d` | 24,735 | 512 | LF | 21-test automated regression suite covering all Grum review findings, contender safety, and platform safety guarantees |
+| [`test_bridge.py`](test_bridge.py) | `bf2a0d5d1ad67b8c0f1fc75ccce25b8319058dccede6c851d6afd104088217ce` | 24,829 | 514 | LF | 21-test automated regression suite covering all Grum review findings, contender safety, and platform safety guarantees |
 
 ---
 

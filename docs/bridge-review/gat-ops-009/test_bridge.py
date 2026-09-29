@@ -43,6 +43,8 @@ def _multiprocess_lock_worker(lock_path_str: str) -> int:
     if acquired:
         # Hold the lock briefly so competing processes experience contention
         time.sleep(0.15)
+        # Cleanly release the lock explicitly as owner
+        bridge.release_lock(lock_path)
         return 1
     return 0
 
