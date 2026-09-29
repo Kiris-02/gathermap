@@ -18,6 +18,7 @@ on:
       - .github/workflows/antina-runner.yml
       - .github/workflows/antina-validation.yml
       - .github/workflows/platform-guardrails.yml
+      - docs/bridge-review/**
   pull_request:
     paths:
       - scripts/agent_cycle.py
@@ -30,6 +31,7 @@ on:
       - .github/workflows/antina-runner.yml
       - .github/workflows/antina-validation.yml
       - .github/workflows/platform-guardrails.yml
+      - docs/bridge-review/**
 
 permissions:
   contents: read
@@ -44,3 +46,8 @@ jobs:
           python-version: '3.12'
       - name: Run guarded handoff tests
         run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Run bridge regression tests
+        run: |
+          if [ -f docs/bridge-review/gat-ops-009/test_bridge.py ]; then
+            python -m unittest -v docs/bridge-review/gat-ops-009/test_bridge.py
+          fi

@@ -3,8 +3,10 @@
 
 Thoroughly validates all safety findings from Grum's independent review:
 1. Fail-closed idle check when conversation DB is missing, unreadable, or has no step records.
-2. Kernel atomic lock (O_CREAT | O_EXCL) with true multi-process concurrent race test.
-3. Strict revision binding requiring reviewed_head in GRUM_REVIEW to match current PR headRefOid.
+2. Kernel atomic lock (O_CREAT | O_EXCL) with true multi-process concurrent race test,
+   guaranteeing partial/unreadable locks are never deleted by contenders without verified dead owner.
+3. Strict 40-hex revision binding requiring exact full commit SHA equality with PR headRefOid
+   (rejecting abbreviated prefixes and mismatched SHAs).
 4. Fail-closed state journaling (dispatch aborted on write error; corrupt state blocks startup).
 5. Explicit dispatch status semantics (DISPATCHED_TO_CONVERSATION vs recipient ACK).
 6. Rejection of conflicting state:* labels and strict validation of GRUM_TASK structure.
@@ -19,23 +21,29 @@ import json
 import os
 import shutil
 import sqlite3
+import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-# Import bridge module
+# Ensure bridge module is importable when test is invoked from any directory (e.g. root in CI)
+BRIDGE_DIR = Path(__file__).parent.resolve()
+if str(BRIDGE_DIR) not in sys.path:
+    sys.path.insert(0, str(BRIDGE_DIR))
+
 import bridge
 
 
 def _multiprocess_lock_worker(lock_path_str: str) -> int:
-    """Module-level worker for Windows multiprocessing race testing."""
+    """Module-level worker for Windows & Linux multiprocessing race testing."""
     lock_path = Path(lock_path_str)
     acquired = bridge.acquire_lock(lock_path)
     if acquired:
-        # Verify file exists and holds our PID while we hold it
-        exists = lock_path.exists()
-        return 1 if exists else 0
+        # Hold the lock briefly so competing processes experience contention
+        time.sleep(0.15)
+        return 1
     return 0
 
 
@@ -148,7 +156,7 @@ class TestBridgeHardening(unittest.TestCase):
         self.assertFalse(bridge.acquire_lock())
 
         # Release lock
-        bridge.release_lock()
+        self.assertTrue(bridge.release_lock())
         self.assertFalse(bridge.LOCK_FILE.exists())
 
     def test_atomic_lock_concurrent_multiprocess_race(self):
@@ -167,6 +175,24 @@ class TestBridgeHardening(unittest.TestCase):
         # Note: Upon worker exit, atexit releases the lock cleanly
         self.assertFalse(race_lock.exists(), "Winner process atexit should have cleanly released the lock upon termination")
 
+    def test_atomic_lock_rejects_unreadable_or_partial_lock_without_deleting(self):
+        """A partial, empty, or unreadable lock must NOT be deleted by a contender."""
+        corrupt_lock = self.test_dir / "corrupt.lock"
+        corrupt_lock.write_text("MALFORMED_NOT_JSON{{{", encoding="utf-8")
+
+        acquired = bridge.acquire_lock(corrupt_lock)
+        self.assertFalse(acquired, "Contender must not acquire lock over unreadable lock file!")
+        self.assertTrue(corrupt_lock.exists(), "Contender must NEVER delete an unreadable lock without verified dead owner!")
+
+    def test_release_lock_refuses_to_unlink_unreadable_or_foreign_lock(self):
+        """release_lock must refuse to delete a lock file if not proven owned by current PID."""
+        foreign_lock = self.test_dir / "foreign.lock"
+        foreign_lock.write_text(json.dumps({"pid": os.getpid() + 9999}), encoding="utf-8")
+
+        released = bridge.release_lock(foreign_lock)
+        self.assertFalse(released, "release_lock must return False when PID does not match")
+        self.assertTrue(foreign_lock.exists(), "release_lock must not delete another process's lock file")
+
     def test_atomic_lock_recovers_from_dead_pid(self):
         """If lock file contains a dead PID, a new process cleanly takes over."""
         dead_pid = 999999
@@ -180,11 +206,11 @@ class TestBridgeHardening(unittest.TestCase):
         bridge.release_lock()
 
     # -----------------------------------------------------------------------
-    # Requirement 3: Strict Revision Binding (reviewed_head == headRefOid)
+    # Requirement 3: Strict 40-Hex Revision Binding (reviewed_head == headRefOid)
     # -----------------------------------------------------------------------
     @patch("bridge.run_gh_json")
     def test_revision_binding_rejects_stale_reviewed_head_mismatch(self, mock_gh):
-        """If reviewed_head in GRUM_REVIEW does not match PR headRefOid, it must be rejected."""
+        """If full 40-hex reviewed_head does not match PR headRefOid, it must be rejected."""
         issue_body = "## 📋 GRUM_TASK\n- **task_id**: GAT-REV-01\nSee pull/21 for details."
         mock_gh.return_value = {
             "state": "OPEN",
@@ -206,8 +232,31 @@ class TestBridgeHardening(unittest.TestCase):
         self.assertIn("bbbb1111", reason)
 
     @patch("bridge.run_gh_json")
-    def test_revision_binding_accepts_matching_reviewed_head(self, mock_gh):
-        """When reviewed_head matches current PR headRefOid, it must be accepted."""
+    def test_revision_binding_rejects_abbreviated_sha(self, mock_gh):
+        """Abbreviated SHAs (e.g. 7 or 12 chars) must be strictly rejected even if prefix matches."""
+        issue_body = "## 📋 GRUM_TASK\n- **task_id**: GAT-REV-01\nSee pull/21 for details."
+        full_head = "aaaa111122223333444455556666777788889999"
+        mock_gh.return_value = {
+            "state": "OPEN",
+            "headRefOid": full_head,
+            "comments": [
+                {
+                    "body": (
+                        "## 🔍 GRUM_REVIEW\n"
+                        "- **decision**: REVISION_REQUIRED\n"
+                        "- **reviewed_head**: `aaaa111`\n"  # ONLY 7 CHARS!
+                        "- **required_changes**: Update unit tests\n"
+                    )
+                }
+            ]
+        }
+        ok, reason, _ = bridge.inspect_revision_pr("dummy/repo", issue_body)
+        self.assertFalse(ok, "Revision binding must reject abbreviated SHA!")
+        self.assertIn("does not specify a valid full 40-hex", reason)
+
+    @patch("bridge.run_gh_json")
+    def test_revision_binding_accepts_exact_full_40_hex_sha(self, mock_gh):
+        """When reviewed_head is an exact 40-hex match for current PR headRefOid, it must be accepted."""
         issue_body = "## 📋 GRUM_TASK\n- **task_id**: GAT-REV-01\nSee pull/21 for details."
         head_sha = "cccc111122223333444455556666777788889999"
         mock_gh.return_value = {
@@ -225,7 +274,7 @@ class TestBridgeHardening(unittest.TestCase):
             ]
         }
         ok, reason, details = bridge.inspect_revision_pr("dummy/repo", issue_body)
-        self.assertTrue(ok, f"Should accept revision when heads match: {reason}")
+        self.assertTrue(ok, f"Should accept revision when exact 40-hex heads match: {reason}")
         self.assertIn("PR#21", details)
         self.assertIn(f"HEAD:{head_sha}", details)
 

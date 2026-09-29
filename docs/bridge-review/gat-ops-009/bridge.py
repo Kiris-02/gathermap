@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Temporary GitHub -> Kir Local Bridge for Kiris-02/gathermap (Hardened v1.2).
+"""Temporary GitHub -> Kir Local Bridge for Kiris-02/gathermap (Hardened v1.3).
 
 Monitors GitHub every 180 seconds for eligible GRUM_TASKs and dispatches them
 directly to Kir's Antigravity conversation (6a86133d-899c-4702-a836-3a56a0127e9d)
 via the supported Antigravity 2.0 `agentapi send-message` interface.
 
-Key Architectural Guarantees & Hardening (GAT-OPS-009):
+Key Architectural Guarantees & Hardening (GAT-OPS-009 Revision 2):
 1. Fail-Closed Idle Check: If conversation DB is missing, unreadable, or has no step records,
    dispatch is held (never fail-open).
-2. Atomic Kernel Lock: Single-instance mutex enforced via OS-level atomic creation flags
-   (O_CREAT | O_EXCL), preventing TOCTOU races.
-3. Strict Revision Head Binding: For state:revision, verified that reviewed_head in GRUM_REVIEW
-   strictly matches the linked PR's current headRefOid commit SHA.
+2. Strict Kernel Mutex: Enforced via atomic OS creation (O_CREAT | O_EXCL) with immediate write.
+   A contender never unlinks a partial, in-flight, unreadable, or malformed lock file without
+   safely proving the owner PID is dead.
+3. Strict 40-Hex Revision Head Binding: For state:revision, verified that reviewed_head in
+   GRUM_REVIEW is a full 40-hex SHA and exactly matches current PR headRefOid (no prefixes).
 4. Fail-Closed State Journaling: State saving errors abort dispatch immediately; corrupted
    or malformed state files block polling without silently resetting.
 5. Explicit Delivery Semantics: Dispatches are recorded as DISPATCHED_TO_CONVERSATION, explicitly
@@ -83,24 +84,28 @@ def log(msg: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Single-Instance Lock Management (Atomic O_CREAT | O_EXCL)
+# Single-Instance Lock Management (Atomic O_CREAT | O_EXCL & Strict Ownership)
 # ---------------------------------------------------------------------------
 
 def acquire_lock(lock_path: Path | None = None) -> bool:
-    """Acquire single-instance lock file atomically via kernel O_CREAT | O_EXCL."""
+    """Acquire single-instance lock file atomically via kernel O_CREAT | O_EXCL.
+
+    Guarantees that a partial, unreadable, or malformed lock is never removed by a contender
+    without safely establishing that its owner process is dead.
+    """
     target_lock = lock_path or LOCK_FILE
     target_lock.parent.mkdir(parents=True, exist_ok=True)
     my_pid = os.getpid()
 
-    # Attempt 1: Atomic creation
+    # Attempt 1: Atomic creation and immediate payload write
     try:
         fd = os.open(str(target_lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            data = {
-                "pid": my_pid,
-                "acquired_at": datetime.now(timezone.utc).isoformat(),
-            }
-            json.dump(data, f, indent=2)
+        payload = json.dumps({
+            "pid": my_pid,
+            "acquired_at": datetime.now(timezone.utc).isoformat(),
+        }, indent=2).encode("utf-8")
+        os.write(fd, payload)
+        os.close(fd)
         atexit.register(release_lock, target_lock)
         return True
     except FileExistsError:
@@ -109,30 +114,56 @@ def acquire_lock(lock_path: Path | None = None) -> bool:
         log(f"[LOCK] Unexpected error during atomic creation: {exc}")
         return False
 
-    # File exists: Check if existing lock is held by an active process
-    try:
-        content = target_lock.read_text(encoding="utf-8").strip()
-        data = json.loads(content)
-        existing_pid = data.get("pid")
-        if existing_pid and is_process_running(existing_pid):
-            log(f"[LOCK] Active bridge instance already running with PID {existing_pid}.")
-            return False
-        else:
-            log(f"[LOCK] Stale lock file found for dead PID {existing_pid}. Removing stale lock.")
-            target_lock.unlink(missing_ok=True)
-    except Exception as exc:
-        log(f"[LOCK] Unreadable or corrupted lock file found ({exc}). Removing stale lock.")
-        target_lock.unlink(missing_ok=True)
+    # File exists: Contender must safely establish whether existing owner is alive
+    # Poll up to 5 times (total 100ms) in case another process is currently writing its JSON
+    data: dict[str, Any] | None = None
+    for _ in range(5):
+        try:
+            content = target_lock.read_text(encoding="utf-8").strip()
+            if content:
+                parsed = json.loads(content)
+                if isinstance(parsed, dict) and "pid" in parsed:
+                    data = parsed
+                    break
+        except Exception:
+            pass
+        time.sleep(0.02)
 
-    # Attempt 2: Retry atomic creation after clearing confirmed dead/corrupt lock
+    if not data:
+        # Crucial Safety Invariant: If the lock file is unreadable, empty, or malformed,
+        # we CANNOT safely establish who owns it or whether that owner is dead.
+        # Contender MUST NOT delete it; fail-closed and reject duplicate acquisition.
+        log("[LOCK] Lock file exists but owner cannot be established (unreadable/in-flight). Refusing to delete lock.")
+        return False
+
+    existing_pid = data.get("pid")
+    if not isinstance(existing_pid, int) or existing_pid <= 0:
+        log(f"[LOCK] Invalid PID in lock file ({existing_pid}). Refusing to delete lock.")
+        return False
+
+    if is_process_running(existing_pid):
+        log(f"[LOCK] Active bridge instance already running with PID {existing_pid}.")
+        return False
+
+    # Owner is safely verified to be dead
+    log(f"[LOCK] Stale lock file verified for dead PID {existing_pid}. Attempting safe takeover.")
+    try:
+        # Only unlink if the file still contains the dead PID we verified
+        current_data = json.loads(target_lock.read_text(encoding="utf-8"))
+        if current_data.get("pid") == existing_pid:
+            target_lock.unlink(missing_ok=True)
+    except Exception:
+        return False
+
+    # Attempt 2: Atomic creation after removing verified dead lock
     try:
         fd = os.open(str(target_lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            data = {
-                "pid": my_pid,
-                "acquired_at": datetime.now(timezone.utc).isoformat(),
-            }
-            json.dump(data, f, indent=2)
+        payload = json.dumps({
+            "pid": my_pid,
+            "acquired_at": datetime.now(timezone.utc).isoformat(),
+        }, indent=2).encode("utf-8")
+        os.write(fd, payload)
+        os.close(fd)
         atexit.register(release_lock, target_lock)
         return True
     except (FileExistsError, OSError):
@@ -140,23 +171,29 @@ def acquire_lock(lock_path: Path | None = None) -> bool:
         return False
 
 
-def release_lock(lock_path: Path | None = None) -> None:
-    """Release the single-instance lock file if owned by this process."""
+def release_lock(lock_path: Path | None = None) -> bool:
+    """Release the single-instance lock file strictly if owned by this process."""
     target_lock = lock_path or LOCK_FILE
+    my_pid = os.getpid()
     try:
-        if target_lock.exists():
-            try:
-                data = json.loads(target_lock.read_text(encoding="utf-8"))
-                if data.get("pid") == os.getpid():
-                    target_lock.unlink(missing_ok=True)
-                    log("[LOCK] Lock file released cleanly.")
-                else:
-                    log(f"[LOCK] Skipping release: lock file is owned by PID {data.get('pid')}, not {os.getpid()}.")
-            except Exception:
-                target_lock.unlink(missing_ok=True)
-                log("[LOCK] Corrupt lock file removed on release.")
+        if not target_lock.exists():
+            return False
+        try:
+            data = json.loads(target_lock.read_text(encoding="utf-8"))
+        except Exception as exc:
+            log(f"[LOCK] Cannot prove ownership of unreadable lock file ({exc}); refusing to release.")
+            return False
+
+        if data.get("pid") == my_pid:
+            target_lock.unlink(missing_ok=True)
+            log(f"[LOCK] Lock file released cleanly by owner PID {my_pid}.")
+            return True
+        else:
+            log(f"[LOCK] Skipping release: lock file is owned by PID {data.get('pid')}, not {my_pid}.")
+            return False
     except Exception as exc:
         log(f"[LOCK] Error releasing lock: {exc}")
+        return False
 
 
 def is_process_running(pid: int) -> bool:
@@ -428,7 +465,7 @@ def poll_github(repo: str) -> list[dict[str, Any]]:
 def inspect_revision_pr(repo: str, issue_body: str) -> tuple[bool, str, str]:
     """Inspect linked PR for state:revision tasks to verify latest GRUM_REVIEW decision is REVISION_REQUIRED.
 
-    Strictly verifies that reviewed_head in GRUM_REVIEW matches current PR headRefOid.
+    Strictly verifies that reviewed_head is a full 40-hex SHA and exactly matches current PR headRefOid.
     """
     pr_match = re.search(r"pull/(\d+)", issue_body) or re.search(r"#(\d+)", issue_body)
     if not pr_match:
@@ -462,17 +499,17 @@ def inspect_revision_pr(repo: str, issue_body: str) -> tuple[bool, str, str]:
         if decision != "REVISION_REQUIRED":
             return False, f"Latest GRUM_REVIEW decision on PR #{pr_num} is '{decision}', not 'REVISION_REQUIRED'.", ""
 
-        # Parse reviewed_head
-        head_match = re.search(r"-\s*\*\*reviewed_head\*\*:\s*`?([a-f0-9]{7,40})`?", latest_review)
+        # Parse reviewed_head: strictly require full 40-character hex SHA
+        head_match = re.search(r"-\s*\*\*reviewed_head\*\*:\s*`?([a-f0-9]{40})`?(?![a-f0-9])", latest_review)
         reviewed_head = (head_match.group(1).strip().lower() if head_match else "")
 
         if not reviewed_head:
-            return False, f"Latest GRUM_REVIEW on PR #{pr_num} does not specify a valid reviewed_head commit SHA.", ""
+            return False, f"Latest GRUM_REVIEW on PR #{pr_num} does not specify a valid full 40-hex reviewed_head SHA.", ""
 
-        # Strict Head Binding: reviewed_head must match current PR headRefOid
-        if not (head_ref_oid.startswith(reviewed_head) or reviewed_head.startswith(head_ref_oid)):
+        # Strict Head Binding: reviewed_head must exactly match current PR headRefOid
+        if reviewed_head != head_ref_oid:
             return False, (
-                f"Stale review rejected: reviewed_head '{reviewed_head}' does not match "
+                f"Stale review rejected: reviewed_head '{reviewed_head}' does not exactly match "
                 f"current PR #{pr_num} headRefOid '{head_ref_oid}'."
             ), ""
 
@@ -716,7 +753,7 @@ def run_diagnostic_ack_probe(target_conv: str, probe_id: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Temporary GitHub -> Kir Local Bridge (Hardened v1.2)")
+    parser = argparse.ArgumentParser(description="Temporary GitHub -> Kir Local Bridge (Hardened v1.3)")
     parser.add_argument("--repo", default=DEFAULT_REPO, help="GitHub repository (owner/repo)")
     parser.add_argument("--target-conv", default=DEFAULT_TARGET_CONV, help="Kir's Antigravity conversation ID")
     parser.add_argument("--interval", type=int, default=DEFAULT_INTERVAL, help="Polling interval in seconds (default: 180)")

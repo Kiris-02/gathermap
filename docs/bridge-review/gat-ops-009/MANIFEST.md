@@ -1,11 +1,11 @@
-# GAT-OPS-009 Bridge Hardening Manifest & Test Audit
+# GAT-OPS-009 Bridge Hardening Manifest & Test Audit (Revision 2)
 
 - **task_id**: `GAT-OPS-009`
-- **created_at**: `2026-09-28T17:31:00Z` (`2026-09-29T00:31:00+07:00`)
+- **created_at**: `2026-09-29T02:00:00Z` (`2026-09-29T09:00:00+07:00`)
 - **operator**: Andy (`ad48730f-1b19-4347-a976-d3fe45d0c4e3`)
 - **branch**: `fix/gat-ops-009-bridge-hardening`
 - **tracking_issue**: [#30](https://github.com/Kiris-02/gathermap/issues/30)
-- **related_issues**: [#24](https://github.com/Kiris-02/gathermap/issues/24), [#27](https://github.com/Kiris-02/gathermap/issues/27), [PR #29](https://github.com/Kiris-02/gathermap/pull/29)
+- **related_issues**: [#24](https://github.com/Kiris-02/gathermap/issues/24), [#27](https://github.com/Kiris-02/gathermap/issues/27), [PR #29](https://github.com/Kiris-02/gathermap/pull/29), [PR #31](https://github.com/Kiris-02/gathermap/pull/31)
 - **antigravity_version**: `2.17.0.0` (CL `986210228`)
 - **target_conversation**: `6a86133d-899c-4702-a836-3a56a0127e9d` (Kir)
 
@@ -17,15 +17,15 @@ All files in this review directory adhere to strict Unix line endings (LF, `\n`)
 
 | File | SHA-256 Checksum | Bytes | Lines | Line Endings | Description |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| [`bridge.py`](bridge.py) | `fc4de0b040a4c2fb260acc0c9ff66ab1d297a674d86b68ae1b1b6729fe67bb0f` | 32,465 | 775 | LF | Hardened local daemon with fail-closed idle, atomic lock, strict revision binding, fail-closed journaling, explicit delivery status, and structured task validation |
+| [`bridge.py`](bridge.py) | `b8d7c602521d86c0ed910c34bd4b742f74f13c047b8c6a4f60c2b019c983115c` | 33,968 | 812 | LF | Hardened local daemon with fail-closed idle, atomic lock, safe contender behavior, strict 40-hex revision binding, fail-closed journaling, explicit delivery status, and structured task validation |
 | [`sidecar.json`](sidecar.json) | `5f356c5e56a4be13b4d96046765b9a90bd6d03727075dc9c02ba8109f91252e1` | 200 | 6 | LF | Antigravity 2.0 sidecar registration specification (`restart_policy: always`) |
-| [`test_bridge.py`](test_bridge.py) | `08c0a4b935fa989aa5f08e1a7ac1c78081fdf841fa20d46b3e9045051964bdad` | 22,082 | 463 | LF | 18-test automated regression suite covering all 6 Grum review findings and platform safety guarantees |
+| [`test_bridge.py`](test_bridge.py) | `362a04c49c224d3cb507cb4f1eee09cfa47a987ec331b1355558fcbabfb6242d` | 24,735 | 512 | LF | 21-test automated regression suite covering all Grum review findings, contender safety, and platform safety guarantees |
 
 ---
 
 ## 2. Hardening Matrix & Test Audit
 
-Every defect identified in Grum's [PR #29 review](https://github.com/Kiris-02/gathermap/pull/29#issuecomment-5874734934) has been addressed at the root architectural layer and verified by automated regression tests:
+Every defect identified in Grum's reviews has been addressed at the root architectural layer and verified by automated regression tests:
 
 ### Finding 1: Idle Check Fails Open
 - **Defect**: Missing conversation database or empty `steps` table fell through to `return True` ("assuming idle").
@@ -41,25 +41,37 @@ Every defect identified in Grum's [PR #29 review](https://github.com/Kiris-02/ga
   - `test_idle_check_fails_closed_when_undelivered_queue_has_messages`: **PASS** (asserts pending messages hold dispatch).
   - `test_idle_check_succeeds_only_when_done_and_no_undelivered_messages`: **PASS** (verifies normal idle detection).
 
-### Finding 2: Non-Atomic Lock & Race Testing
-- **Defect**: `acquire_lock` used check-then-write (`exists()` then `write_text()`), creating a TOCTOU race window. Existing tests only tested sequential acquisition within one process.
-- **Fix**: Replaced with OS-level atomic creation flags (`os.O_CREAT | os.O_EXCL | os.O_WRONLY`). The kernel guarantees atomic file creation; if the file exists, `FileExistsError` is raised. Dead PIDs are safely cleared only after verification, followed by a second atomic creation retry. `release_lock` verifies process PID ownership before unlinking.
+### Finding 2: Non-Atomic Lock, Partial Unlinking & Concurrent Races
+- **Defect**: Initial atomic creation wrote an empty file before writing JSON. A contender saw an empty/unreadable file, caught a JSON parse error, treated it as a stale lock, unlinked it, and acquired a second lock. `release_lock` also unlinked unreadable files without proving PID ownership.
+- **Fix**:
+  - Atomic creation writes the payload immediately (`os.write(fd, payload)` before `os.close(fd)`).
+  - Contenders reading a lock file retry up to 5 times (100ms) to allow in-flight writes to settle.
+  - **Crucial Invariant**: If a lock file is partial, empty, or unreadable, a contender **NEVER** removes it. It logs that owner death cannot be verified and fails closed (`return False`).
+  - Stale lock removal occurs **only** when JSON parses successfully, contains a valid PID, and `is_process_running(pid)` explicitly confirms the owner is dead.
+  - `release_lock` requires JSON to parse and strictly match `data.get("pid") == os.getpid()`; foreign or unreadable locks are never unlinked.
 - **Test Coverage**:
   - `test_atomic_lock_single_process_and_clean_release`: **PASS** (basic acquisition and release).
   - `test_atomic_lock_concurrent_multiprocess_race`: **PASS** (spawns 6 real OS processes racing for `race.lock`; asserts exactly 1 process acquires the lock, 5 fail, and winner cleanly releases).
-  - `test_atomic_lock_recovers_from_dead_pid`: **PASS** (dead PID is cleaned and lock acquired).
+  - `test_atomic_lock_rejects_unreadable_or_partial_lock_without_deleting`: **PASS** (asserts contender refuses to delete unreadable lock and fails closed).
+  - `test_release_lock_refuses_to_unlink_unreadable_or_foreign_lock`: **PASS** (asserts release refuses to delete unproven locks).
+  - `test_atomic_lock_recovers_from_dead_pid`: **PASS** (verified dead PID is safely taken over).
 
-### Finding 3: Stale Revision Review Head Acceptance
-- **Defect**: `inspect_revision_pr` fetched `headRefOid` from GitHub but never compared it against `reviewed_head` from `GRUM_REVIEW`.
-- **Fix**: Added strict equality comparison: `head_ref_oid.startswith(reviewed_head) or reviewed_head.startswith(head_ref_oid)`. If heads do not match, the task is rejected with `Stale review rejected: reviewed_head '...' does not match current PR #... headRefOid '...'`.
+### Finding 3: Strict 40-Hex Revision Head Binding
+- **Defect**: Revision review parsed 7–40 hex characters and compared via `startswith`, accepting abbreviated SHAs and prefix matches.
+- **Fix**:
+  - Regex requires exactly 40 hex characters: `r"-\s*\*\*reviewed_head\*\*:\s*`?([a-f0-9]{40})`?(?![a-f0-9])"`.
+  - Enforces exact string equality: `reviewed_head == head_ref_oid`.
+  - Rejects abbreviated SHAs (e.g. 7 or 12 chars) with `does not specify a valid full 40-hex`.
+  - Rejects 40-char SHA mismatches with `Stale review rejected`.
 - **Test Coverage**:
-  - `test_revision_binding_rejects_stale_reviewed_head_mismatch`: **PASS** (reproduces Grum's reproduction case with mismatched SHAs `aaaa...` vs `bbbb...`).
-  - `test_revision_binding_accepts_matching_reviewed_head`: **PASS** (accepts valid review when heads match).
+  - `test_revision_binding_rejects_abbreviated_sha`: **PASS** (rejects 7-char matching prefix).
+  - `test_revision_binding_rejects_stale_reviewed_head_mismatch`: **PASS** (rejects full 40-hex mismatch).
+  - `test_revision_binding_accepts_exact_full_40_hex_sha`: **PASS** (accepts exact 40-hex match).
 
 ### Finding 4: Swallowed Journaling Errors & Corrupted State Reset
 - **Defect**: `save_state` swallowed exceptions; poller proceeded to dispatch unjournaled tasks. Corrupted state files silently reset to default empty state.
 - **Fix**:
-  - `save_state` returns `bool` indicating success/failure.
+  - `save_state` returns `bool`.
   - Phase 1 in-flight journaling is strictly fail-closed: if `save_state` returns `False`, dispatch is **aborted immediately** before `send_to_kir` is invoked.
   - `load_state` raises `BridgeStateCorruptedError` on invalid JSON, refusing to start or reset state without human intervention.
 - **Test Coverage**:
@@ -86,46 +98,42 @@ Every defect identified in Grum's [PR #29 review](https://github.com/Kiris-02/ga
 
 ## 3. Test Execution Evidence
 
-Executed on local Python 3.12 (`python test_bridge.py -v`):
+Executed locally via `python -m unittest -v docs/bridge-review/gat-ops-009/test_bridge.py`:
 
 ```text
-test_atomic_lock_concurrent_multiprocess_race (__main__.TestBridgeHardening.test_atomic_lock_concurrent_multiprocess_race) ... ok
-test_atomic_lock_recovers_from_dead_pid (__main__.TestBridgeHardening.test_atomic_lock_recovers_from_dead_pid) ... ok
-test_atomic_lock_single_process_and_clean_release (__main__.TestBridgeHardening.test_atomic_lock_single_process_and_clean_release) ... ok
-test_canonical_and_forbidden_labels_are_blocked (__main__.TestBridgeHardening.test_canonical_and_forbidden_labels_are_blocked) ... ok
-test_conflicting_state_labels_are_rejected (__main__.TestBridgeHardening.test_conflicting_state_labels_are_rejected) ... ok
-test_corrupt_state_file_raises_and_blocks_startup (__main__.TestBridgeHardening.test_corrupt_state_file_raises_and_blocks_startup) ... ok
-test_deduplication_ignores_unrelated_metadata_and_detects_body_change (__main__.TestBridgeHardening.test_deduplication_ignores_unrelated_metadata_and_detects_body_change) ... ok
-test_dispatch_records_dispatched_to_conversation_status (__main__.TestBridgeHardening.test_dispatch_records_dispatched_to_conversation_status) ... ok
-test_grum_task_structure_validation (__main__.TestBridgeHardening.test_grum_task_structure_validation) ... ok
-test_idle_check_fails_closed_on_empty_steps_table (__main__.TestBridgeHardening.test_idle_check_fails_closed_on_empty_steps_table) ... ok
-test_idle_check_fails_closed_on_missing_db (__main__.TestBridgeHardening.test_idle_check_fails_closed_on_missing_db) ... ok
-test_idle_check_fails_closed_when_active_step_running (__main__.TestBridgeHardening.test_idle_check_fails_closed_when_active_step_running) ... ok
-test_idle_check_fails_closed_when_undelivered_queue_has_messages (__main__.TestBridgeHardening.test_idle_check_fails_closed_when_undelivered_queue_has_messages) ... ok
-test_idle_check_succeeds_only_when_done_and_no_undelivered_messages (__main__.TestBridgeHardening.test_idle_check_succeeds_only_when_done_and_no_undelivered_messages) ... ok
-test_in_flight_crash_recovery_transitions_to_uncertain_without_resend (__main__.TestBridgeHardening.test_in_flight_crash_recovery_transitions_to_uncertain_without_resend) ... ok
-test_revision_binding_accepts_matching_reviewed_head (__main__.TestBridgeHardening.test_revision_binding_accepts_matching_reviewed_head) ... ok
-test_revision_binding_rejects_stale_reviewed_head_mismatch (__main__.TestBridgeHardening.test_revision_binding_rejects_stale_reviewed_head_mismatch) ... ok
-test_save_state_failure_aborts_dispatch_before_send (__main__.TestBridgeHardening.test_save_state_failure_aborts_dispatch_before_send) ... ok
+test_atomic_lock_concurrent_multiprocess_race (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_atomic_lock_concurrent_multiprocess_race) ... ok
+test_atomic_lock_recovers_from_dead_pid (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_atomic_lock_recovers_from_dead_pid) ... ok
+test_atomic_lock_rejects_unreadable_or_partial_lock_without_deleting (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_atomic_lock_rejects_unreadable_or_partial_lock_without_deleting) ... ok
+test_atomic_lock_single_process_and_clean_release (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_atomic_lock_single_process_and_clean_release) ... ok
+test_canonical_and_forbidden_labels_are_blocked (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_canonical_and_forbidden_labels_are_blocked) ... ok
+test_conflicting_state_labels_are_rejected (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_conflicting_state_labels_are_rejected) ... ok
+test_corrupt_state_file_raises_and_blocks_startup (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_corrupt_state_file_raises_and_blocks_startup) ... ok
+test_deduplication_ignores_unrelated_metadata_and_detects_body_change (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_deduplication_ignores_unrelated_metadata_and_detects_body_change) ... ok
+test_dispatch_records_dispatched_to_conversation_status (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_dispatch_records_dispatched_to_conversation_status) ... ok
+test_grum_task_structure_validation (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_grum_task_structure_validation) ... ok
+test_idle_check_fails_closed_on_empty_steps_table (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_idle_check_fails_closed_on_empty_steps_table) ... ok
+test_idle_check_fails_closed_on_missing_db (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_idle_check_fails_closed_on_missing_db) ... ok
+test_idle_check_fails_closed_when_active_step_running (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_idle_check_fails_closed_when_active_step_running) ... ok
+test_idle_check_fails_closed_when_undelivered_queue_has_messages (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_idle_check_fails_closed_when_undelivered_queue_has_messages) ... ok
+test_idle_check_succeeds_only_when_done_and_no_undelivered_messages (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_idle_check_succeeds_only_when_done_and_no_undelivered_messages) ... ok
+test_in_flight_crash_recovery_transitions_to_uncertain_without_resend (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_in_flight_crash_recovery_transitions_to_uncertain_without_resend) ... ok
+test_release_lock_refuses_to_unlink_unreadable_or_foreign_lock (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_release_lock_refuses_to_unlink_unreadable_or_foreign_lock) ... ok
+test_revision_binding_accepts_exact_full_40_hex_sha (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_revision_binding_accepts_exact_full_40_hex_sha) ... ok
+test_revision_binding_rejects_abbreviated_sha (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_revision_binding_rejects_abbreviated_sha) ... ok
+test_revision_binding_rejects_stale_reviewed_head_mismatch (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_revision_binding_rejects_stale_reviewed_head_mismatch) ... ok
+test_save_state_failure_aborts_dispatch_before_send (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_save_state_failure_aborts_dispatch_before_send) ... ok
 
 ----------------------------------------------------------------------
-Ran 18 tests in 0.598s
+Ran 21 tests in 1.060s
 
 OK
 ```
 
 ---
 
-## 4. On-Host Executor & Workflow Reconciliations
+## 4. GitHub Actions CI Integration
 
-- **Live Host Bridge**: Safely paused per verified stop sequence.
-  - Sidecar supervisor: `"enabled": false` in `~/.gemini/config/config.json`.
-  - Process: None (PID 1188 terminated at 17:26:14 UTC).
-  - Mutex lock: None (`bridge.lock` removed after process exit confirmation).
-- **Legacy Cloud Workflow**:
-  - File: `.github/workflows/antina-runner.yml`
-  - Name: `Antina Task Runner (Ultra)`
-  - Workflow ID: `368201903`
-  - State: `disabled_manually`
-- **Issue #24 Documentation**:
-  - Body description updated to replace stale PID 13732 and delete-lock instructions with verified safe stop procedure and current `PAUSED_SAFE_STOP` status.
+- **Workflow File**: `.github/workflows/platform-guardrails.yml`
+- **Trigger**: Configured to run on `pull_request` when `docs/bridge-review/**` paths are modified.
+- **Execution Step**: Added `Run bridge regression tests` step executing `python -m unittest -v docs/bridge-review/gat-ops-009/test_bridge.py`.
+- **Reproducibility**: Guarantees that every PR commit modifying bridge review assets produces an independent, verifiable GitHub Actions run for the complete bridge test suite.
