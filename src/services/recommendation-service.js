@@ -6,7 +6,7 @@
  * 3. Filter non-negotiable hard constraints
  * 4. Score semantic preferences against review evidence
  * 5. Compute travel burden from each member's starting point
- * 6. Calculate Member Satisfaction: 70% Preference + 30% Travel Convenience
+ * 6. Calculate Member Satisfaction: 100% Preference Satisfaction (Geography strictly for candidate eligibility)
  * 7. Calculate Group Fairness: 65% Group Average + 35% Minimum Member Satisfaction
  * 8. Rank candidates, attach social proof, and persist outing session
  */
@@ -17,6 +17,7 @@ const outingRepository = require('../repositories/outing-repository');
 const { generateUniqueOutingId, generateShareToken } = require('./outing-service');
 const semanticEngine = require('../../semanticEngine');
 const { calcDistanceKm } = require('../algorithms/geometric-median');
+const { calculateMemberScore, calculateFairnessScores } = require('../algorithms/scoring');
 const { buildDirectionsUrl, buildSearchUrl } = require('./places-service');
 const { dbType } = require('../repositories/db-client');
 
@@ -190,8 +191,8 @@ async function searchAndRankVenues(params) {
                 distanceKm: friendDist
             });
 
-            // 70% preference satisfaction + 30% travel burden
-            const memberScore = Math.round(0.70 * memberSemanticMatch.semanticScore + 0.30 * travelScore);
+            // Member Score: 100% Preference Satisfaction (Geography strictly for radius candidate eligibility)
+            const memberScore = calculateMemberScore(memberSemanticMatch.semanticScore, friendDist);
 
             return {
                 friendId: friend.id,
@@ -209,7 +210,7 @@ async function searchAndRankVenues(params) {
             };
         });
 
-        const fairness = semanticEngine.calculateFairnessScores(memberBreakdowns);
+        const fairness = calculateFairnessScores(memberBreakdowns);
 
         // Generate AI / Algorithmic Rationale
         let aiRationale = '';

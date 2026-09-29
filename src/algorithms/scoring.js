@@ -1,7 +1,7 @@
 /**
  * Scoring & Fairness Formulation
  * Pure functions implementing the specification-standard formulas:
- * 1. Individual Member Score = 70% Preference Satisfaction + 30% Travel Convenience
+ * 1. Individual Member Score = 100% Preference Satisfaction (Geography strictly for candidate eligibility)
  * 2. Group Score = 65% Group Average + 35% Minimum Individual Satisfaction
  */
 
@@ -28,7 +28,8 @@ function calculateTravelScore(distanceKm) {
 
 /**
  * Computes individual member score combining preference and travel convenience.
- * Member Score = 0.70 * Preference + 0.30 * Travel
+ * Under radius-only filtering, member score = 100% preference satisfaction.
+ * distanceKm is retained for signature compatibility.
  */
 function calculateMemberScore(memberSemanticScore, distanceKm) {
     const semScore = typeof memberSemanticScore === 'number' ? memberSemanticScore : 75;
@@ -48,16 +49,21 @@ function calculateFairnessScores(memberScores = []) {
     if (!Array.isArray(memberScores) || memberScores.length === 0) {
         return {
             groupScore: 0,
+            fairnessScore: 0,
             avgScore: 0,
             minScore: 0,
+            lowestScore: 0,
+            highestScore: 0,
             fairnessIndex: 'N/A',
             lowestMember: null
         };
     }
 
-    const scores = memberScores.map(m => (typeof m === 'object' && m !== null) ? m.score : Number(m));
+    const scores = memberScores.map(m => (typeof m === 'object' && m !== null) ? (m.score ?? m.totalMemberScore ?? 0) : Number(m));
     const avgScore = Number((scores.reduce((s, val) => s + val, 0) / scores.length).toFixed(1));
     const minScore = Math.min(...scores);
+    const lowestScore = minScore;
+    const highestScore = Math.max(...scores);
 
     const groupScore = Number((
         SCORING_WEIGHTS.GROUP_AVERAGE * avgScore +
@@ -66,20 +72,22 @@ function calculateFairnessScores(memberScores = []) {
 
     let lowestMember = null;
     if (typeof memberScores[0] === 'object' && memberScores[0] !== null) {
-        lowestMember = memberScores.reduce((lowest, curr) => curr.score < lowest.score ? curr : lowest, memberScores[0]);
+        lowestMember = memberScores.reduce((lowest, curr) => {
+            const currScore = (curr.score ?? curr.totalMemberScore ?? 0);
+            const lowestScoreVal = (lowest.score ?? lowest.totalMemberScore ?? 0);
+            return currScore < lowestScoreVal ? curr : lowest;
+        }, memberScores[0]);
     }
 
-    let fairnessIndex = 'Cao';
-    if (minScore < 50) {
-        fairnessIndex = 'Thấp';
-    } else if (minScore < 70) {
-        fairnessIndex = 'Trung bình';
-    }
+    const fairnessIndex = `${(groupScore / 10).toFixed(1)} / 10`;
 
     return {
         groupScore,
+        fairnessScore: Math.round(groupScore),
         avgScore,
         minScore,
+        lowestScore,
+        highestScore,
         fairnessIndex,
         lowestMember
     };
