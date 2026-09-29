@@ -13,6 +13,7 @@
  */
 
 // In-memory versioned cache for venue semantic profiles
+const { calculateFairnessScores } = require('./src/algorithms/scoring');
 const venueProfileCache = new Map();
 const PROFILE_SCHEMA_VERSION = '2.0.0';
 
@@ -1273,30 +1274,7 @@ function scoreVenueAgainstIntent({ intentProfile = {}, venueProfile, venue, dist
     };
 }
 
-/**
- * Calculates per-member satisfaction and Weiszfeld group fairness
- */
-function calculateFairnessScores(memberScores = []) {
-    if (memberScores.length === 0) {
-        return { groupScore: 70, fairnessScore: 70, avgScore: 70, lowestScore: 70, fairnessIndex: '7.0 / 10' };
-    }
-    const scores = memberScores.map(m => typeof m === 'number' ? m : (m.score ?? m.totalMemberScore ?? 70));
-    const avgScore = Number((scores.reduce((s, x) => s + x, 0) / scores.length).toFixed(1));
-    const lowestScore = Math.min(...scores);
-    const highestScore = Math.max(...scores);
 
-    // 65% group average + 35% minimum individual satisfaction
-    const groupScore = Number((0.65 * avgScore + 0.35 * lowestScore).toFixed(1));
-
-    return {
-        groupScore,
-        fairnessScore: Math.round(groupScore),
-        avgScore,
-        lowestScore,
-        highestScore,
-        fairnessIndex: `${(groupScore / 10).toFixed(1)} / 10`
-    };
-}
 
 module.exports = {
     buildVenueSemanticProfile,

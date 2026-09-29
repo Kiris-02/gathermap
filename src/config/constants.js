@@ -15,7 +15,7 @@ const SCORING_WEIGHTS = {
 
 const TRAVEL_PARAMS = {
     AVERAGE_CITY_SPEED_KMH: 20, // HCMC average urban scooter/traffic speed
-    BASE_TRAVEL_MINUTES: 3,     // Parking, walking, and intersection buffer
+    BASE_TRAVEL_MINUTES: 5,     // Minimum 5-minute urban transit/parking buffer
     MAX_REASONABLE_DISTANCE_KM: 10
 };
 

@@ -17,7 +17,7 @@ const outingRepository = require('../repositories/outing-repository');
 const { generateUniqueOutingId, generateShareToken } = require('./outing-service');
 const semanticEngine = require('../../semanticEngine');
 const { calcDistanceKm } = require('../algorithms/geometric-median');
-const { calculateMemberScore, calculateFairnessScores } = require('../algorithms/scoring');
+const { calculateMemberScore, calculateFairnessScores, estimateTravelMins, calculateTravelScore } = require('../algorithms/scoring');
 const { buildDirectionsUrl, buildSearchUrl } = require('./places-service');
 const { dbType } = require('../repositories/db-client');
 
@@ -100,14 +100,29 @@ async function searchAndRankVenues(params) {
         });
     }
 
-    // Dynamic preferences collection
-    const allDynamicPreferences = [
-        ...(interpretation?.preferences || []),
-        ...intentProfile.cuisines.map(c => ({ text: c.value, importance: c.weight, memberName: c.memberName })),
-        ...intentProfile.dishes.map(d => ({ text: d.value, importance: d.weight, memberName: d.memberName })),
-        ...intentProfile.ambience.map(a => ({ text: a.value, importance: a.weight, memberName: a.memberName })),
-        ...intentProfile.features.map(f => ({ text: f.value, importance: f.weight, memberName: f.memberName }))
-    ];
+    // Dynamic preferences collection (deduplicated by criteria text)
+    const allDynamicPreferences = [...(interpretation?.preferences || [])];
+    const existingTexts = new Set(allDynamicPreferences.map(p => (p.text || '').toLowerCase().trim()));
+
+    const addIfNew = (list) => {
+        (list || []).forEach(item => {
+            const val = (item.value || item.text || '').toLowerCase().trim();
+            if (val && !existingTexts.has(val)) {
+                existingTexts.add(val);
+                allDynamicPreferences.push({
+                    text: item.value || item.text,
+                    importance: item.weight || item.importance || 4,
+                    memberName: item.memberName || 'Group',
+                    polarity: 'positive'
+                });
+            }
+        });
+    };
+
+    addIfNew(intentProfile.cuisines);
+    addIfNew(intentProfile.dishes);
+    addIfNew(intentProfile.ambience);
+    addIfNew(intentProfile.features);
 
     const preferenceAppliesToMember = (pref, friendName) => {
         if (!pref || typeof pref !== 'object' || !pref.memberName) return true;
@@ -176,8 +191,8 @@ async function searchAndRankVenues(params) {
             const fLat = friend.lat || center.lat;
             const fLng = friend.lng || center.lng;
             const friendDist = Number(calcDistanceKm({ lat: fLat, lng: fLng }, { lat: venue.lat, lng: venue.lng }).toFixed(1));
-            const travelMins = Math.max(5, Math.round((friendDist / 20) * 60));
-            const travelScore = Math.max(20, Math.min(100, Math.round(100 - (travelMins * 2.2))));
+            const travelMins = estimateTravelMins(friendDist);
+            const travelScore = calculateTravelScore(friendDist, travelMins);
 
             const memberPrefs = allDynamicPreferences.filter(p => preferenceAppliesToMember(p, friend.name));
             const memberSemanticMatch = semanticEngine.scoreVenueAgainstIntent({

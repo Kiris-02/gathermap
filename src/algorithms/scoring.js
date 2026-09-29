@@ -14,16 +14,16 @@ const { SCORING_WEIGHTS, TRAVEL_PARAMS } = require('../config/constants');
 function estimateTravelMins(distanceKm) {
     if (distanceKm == null || distanceKm < 0) return TRAVEL_PARAMS.BASE_TRAVEL_MINUTES;
     const travelTime = (distanceKm / TRAVEL_PARAMS.AVERAGE_CITY_SPEED_KMH) * 60;
-    return Math.max(TRAVEL_PARAMS.BASE_TRAVEL_MINUTES, Math.round(travelTime + TRAVEL_PARAMS.BASE_TRAVEL_MINUTES));
+    return Math.max(TRAVEL_PARAMS.BASE_TRAVEL_MINUTES, Math.round(travelTime));
 }
 
 /**
- * Calculates travel convenience score from 0 to 100 based on distance.
+ * Calculates travel convenience score from 20 to 100 based on travel duration or distance.
  */
-function calculateTravelScore(distanceKm) {
+function calculateTravelScore(distanceKm, travelMins = null) {
     if (distanceKm == null || distanceKm < 0) return 50;
-    // 100 points at 0 km, decreasing by 10 points per km
-    return Math.max(0, Math.min(100, Math.round(100 - (distanceKm * 10))));
+    const mins = typeof travelMins === 'number' ? travelMins : estimateTravelMins(distanceKm);
+    return Math.max(20, Math.min(100, Math.round(100 - (mins * 2.2))));
 }
 
 /**

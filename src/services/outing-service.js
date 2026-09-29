@@ -6,6 +6,7 @@
 const crypto = require('crypto');
 const outingRepository = require('../repositories/outing-repository');
 const { calcDistanceKm } = require('../algorithms/geometric-median');
+const { estimateTravelMins } = require('../algorithms/scoring');
 const { buildDirectionsUrl } = require('./places-service');
 const { dbType } = require('../repositories/db-client');
 
@@ -96,7 +97,7 @@ function generateShareText({ venue, friends = [], groupScore, outingCode = 'EAT-
 
     const friendTravels = friends.map(f => {
         const dKm = calcDistanceKm({ lat: f.lat, lng: f.lng }, { lat: venue.lat, lng: venue.lng });
-        const estMin = Math.max(3, Math.round(dKm * 3.2));
+        const estMin = estimateTravelMins(dKm);
         return '  👤 ' + f.name + ': ~' + dKm.toFixed(1) + ' km (~' + estMin + ' phút - ước tính)';
     }).join('\n');
 

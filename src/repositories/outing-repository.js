@@ -6,7 +6,7 @@
 const dbClient = require('./db-client');
 const venueRepository = require('./venue-repository');
 const { calcDistanceKm } = require('../algorithms/geometric-median');
-const semanticEngine = require('../../semanticEngine');
+const { calculateFairnessScores, estimateTravelMins, calculateTravelScore, calculateMemberScore } = require('../algorithms/scoring');
 const { buildDirectionsUrl, buildSearchUrl } = require('../services/places-service');
 
 const getSupabaseClient = () => dbClient.getSupabaseClient();
@@ -201,10 +201,10 @@ async function getRecommendations(outingId, participants = [], votesMap = {}, ou
             if (!Array.isArray(memberBreakdowns) || memberBreakdowns.length === 0) {
                 memberBreakdowns = participants.map(p => {
                     const distKm = Number(calcDistanceKm({ lat: p.lat, lng: p.lng }, { lat: venue.lat, lng: venue.lng }).toFixed(1));
-                    const travelMins = Math.max(5, Math.round((distKm / 20) * 60));
-                    const travelScore = Math.max(20, Math.min(100, Math.round(100 - (travelMins * 2.2))));
+                    const travelMins = estimateTravelMins(distKm);
+                    const travelScore = calculateTravelScore(distKm, travelMins);
                     const basePref = r.group_score || 85;
-                    const indScore = Math.round(0.70 * basePref + 0.30 * travelScore);
+                    const indScore = calculateMemberScore(basePref, distKm);
                     return {
                         friendId: p.id,
                         friendName: p.name || 'Friend',
@@ -228,7 +228,7 @@ async function getRecommendations(outingId, participants = [], votesMap = {}, ou
             }
 
             const fairnessScores = memberBreakdowns.length > 0
-                ? semanticEngine.calculateFairnessScores(memberBreakdowns)
+                ? calculateFairnessScores(memberBreakdowns)
                 : null;
 
             shortlist.push({

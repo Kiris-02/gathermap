@@ -200,6 +200,34 @@ async function runTests() {
             assert.ok(['google', 'openstreetmap', 'known_landmarks', 'gemini_nlp'].includes(geo.source), 'Source should be a recognized resolver: ' + geo.source);
         });
 
+        // --- TEST F: Scoring & Fairness Centralization & Deduplication Integrity ---
+        await test('Test F: Scoring centralization, travel estimation, and fairness parity', async () => {
+            const scoring = require('../src/algorithms/scoring');
+            const semanticEngine = require('../semanticEngine');
+
+            // 1. Verify semanticEngine and scoring share the exact same fairness function
+            assert.strictEqual(
+                semanticEngine.calculateFairnessScores,
+                scoring.calculateFairnessScores,
+                'semanticEngine.calculateFairnessScores must reference canonical scoring.calculateFairnessScores'
+            );
+
+            // 2. Travel time estimates must have a 5-minute floor and scale with distance
+            assert.strictEqual(scoring.estimateTravelMins(0), 5);
+            assert.strictEqual(scoring.estimateTravelMins(1), 5); // 1km at 20km/h = 3 min -> floor 5
+            assert.strictEqual(scoring.estimateTravelMins(2), 6); // 2km at 20km/h = 6 min
+            assert.strictEqual(scoring.estimateTravelMins(10), 30); // 10km at 20km/h = 30 min
+
+            // 3. Travel score must be bounded between 20 and 100
+            assert.ok(scoring.calculateTravelScore(0) > scoring.calculateTravelScore(5));
+            assert.ok(scoring.calculateTravelScore(10) >= 20);
+            assert.ok(scoring.calculateTravelScore(0) <= 100);
+
+            // 4. Member score must assign 100% weight to preferences
+            assert.strictEqual(scoring.calculateMemberScore(88, 0), 88);
+            assert.strictEqual(scoring.calculateMemberScore(88, 10), 88);
+        });
+
     } finally {
         if (server) {
             server.close();
