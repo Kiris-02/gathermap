@@ -39,7 +39,7 @@ GatherMap is organized into a clean, decoupled architecture:
 ### Backend (`src/`)
 - `src/algorithms/`:
   - `geometric-median.js`: Pure Weiszfeld algorithm with Haversine distance.
-  - `scoring.js`: Member satisfaction formula ($0.70 \times \text{pref} + 0.30 \times \text{travel}$) and group fairness formula ($0.65 \times \text{avg} + 0.35 \times \text{min}$).
+  - `scoring.js`: Member satisfaction formula ($1.00 \times \text{pref}$, geography strictly for radius candidate eligibility) and group fairness formula ($0.65 \times \text{avg} + 0.35 \times \text{min}$).
 - `src/repositories/`:
   - `db-client.js`: Dual-database manager supporting Supabase Cloud PostgreSQL and local SQLite (`better-sqlite3`).
   - `venue-repository.js`: Radius filtering, attribute normalization, truthful status computation.

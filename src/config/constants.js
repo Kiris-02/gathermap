@@ -4,9 +4,9 @@
  */
 
 const SCORING_WEIGHTS = {
-    // Individual Member Score: 70% Preference Satisfaction + 30% Travel Burden
-    MEMBER_PREFERENCE: 0.70,
-    MEMBER_TRAVEL: 0.30,
+    // Individual Member Score: 100% Preference Satisfaction (Geography strictly for candidate eligibility)
+    MEMBER_PREFERENCE: 1.00,
+    MEMBER_TRAVEL: 0.00,
 
     // Group Score: 65% Group Average + 35% Minimum Individual Satisfaction
     GROUP_AVERAGE: 0.65,

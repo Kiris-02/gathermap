@@ -10,7 +10,7 @@
 
 Backend đã được hoàn thiện 100%, bảo mật, tối ưu token theo triết lý Hackathon Winner (Jake Kang Framework):
 - **Cơ sở dữ liệu**: SQLite 148 KB tại `gathermap.db` chứa 24 quán ăn Sài Gòn đã xác thực tọa độ thật, kèm 50+ trích dẫn reviewer (Google Local Guide, TikTok KOC, Facebook, ShopeeFood).
-- **Thuật toán công bằng**: Tính tâm hình học Weiszfeld Geometric Median với tỷ lệ 65% khoảng cách + 35% khẩu vị.
+- **Thuật toán công bằng**: Vị trí địa lý chỉ dùng lọc bán kính ứng viên hợp lệ. Điểm cá nhân là 100% mức độ thỏa mãn khẩu vị. Điểm công bằng nhóm gồm 65% điểm khẩu vị trung bình + 35% điểm khẩu vị thấp nhất.
 - **Hệ thống phòng thủ (Smart Fallbacks)**: Tự động chạy dữ liệu nội bộ nếu không có Google API Key hoặc Gemini bị timeout.
 
 ---

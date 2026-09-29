@@ -706,6 +706,123 @@ async function runAllTests() {
             assert.strictEqual(m1.preferenceScore, m2.preferenceScore, 'Group preference must score equally for both members at same location');
         });
 
+        await it('Regression (GAT-PROD-001): varying participant coordinates leaves venue ranking and group scores invariant under radius-only model', async () => {
+            const baseBody = {
+                center: { lat: 10.7769, lng: 106.7009 },
+                radiusMeters: 4000,
+                hardConstraints: {},
+                cuisines: [{ value: 'korean', weight: 5, memberName: 'Group' }],
+                dishes: [{ value: 'bbq', weight: 5, memberName: 'Group' }]
+            };
+
+            // Run 1: participants close to center (dist ~0.1 km)
+            const res1 = await request('/api/venues/search-and-rank', {
+                method: 'POST',
+                body: {
+                    ...baseBody,
+                    friends: [
+                        { id: 1, name: 'Alice', lat: 10.7770, lng: 106.7010 },
+                        { id: 2, name: 'Bob', lat: 10.7765, lng: 106.7005 }
+                    ]
+                }
+            });
+
+            // Run 2: participants moved far away (dist 8-10 km)
+            const res2 = await request('/api/venues/search-and-rank', {
+                method: 'POST',
+                body: {
+                    ...baseBody,
+                    friends: [
+                        { id: 1, name: 'Alice', lat: 10.7100, lng: 106.6300 },
+                        { id: 2, name: 'Bob', lat: 10.8400, lng: 106.7700 }
+                    ]
+                }
+            });
+
+            assert.strictEqual(res1.status, 200);
+            assert.strictEqual(res2.status, 200);
+            assert.ok(res1.data.shortlist.length > 0);
+            assert.ok(res2.data.shortlist.length > 0);
+
+            // Informational distance/travel fields must differ
+            const top1 = res1.data.shortlist[0];
+            const top2 = res2.data.shortlist[0];
+            assert.notStrictEqual(top1.memberBreakdowns[0].distKm, top2.memberBreakdowns[0].distKm, 'Participant distances must differ between runs');
+            assert.notStrictEqual(top1.memberBreakdowns[0].travelScore, top2.memberBreakdowns[0].travelScore, 'Participant travel scores must differ between runs');
+            assert.notStrictEqual(top1.travelScore, top2.travelScore, 'Aggregated venue travelScore must differ between runs');
+
+            // Ranking, venue IDs, preference scores, and group scores must remain 100% identical
+            const ids1 = res1.data.shortlist.map(v => v.id);
+            const ids2 = res2.data.shortlist.map(v => v.id);
+            assert.deepStrictEqual(ids1, ids2, 'Shortlist venue IDs and ranking must remain identical regardless of participant coordinates');
+
+            const groupScores1 = res1.data.shortlist.map(v => v.groupScore);
+            const groupScores2 = res2.data.shortlist.map(v => v.groupScore);
+            assert.deepStrictEqual(groupScores1, groupScores2, 'Group scores must remain identical regardless of participant coordinates');
+
+            for (let i = 0; i < res1.data.shortlist.length; i++) {
+                const b1 = res1.data.shortlist[i].memberBreakdowns;
+                const b2 = res2.data.shortlist[i].memberBreakdowns;
+                const scores1 = b1.map(m => m.score);
+                const scores2 = b2.map(m => m.score);
+                assert.deepStrictEqual(scores1, scores2, `Venue ${ids1[i]} member satisfaction scores must remain identical`);
+
+                const prefScores1 = b1.map(m => m.preferenceScore);
+                const prefScores2 = b2.map(m => m.preferenceScore);
+                assert.deepStrictEqual(prefScores1, prefScores2, `Venue ${ids1[i]} member preference scores must remain identical`);
+            }
+        });
+
+        await it('Regression (GAT-PROD-001): farther eligible venue with stronger preference outranks closer venue with weaker preference; out-of-radius strictly excluded', async () => {
+            const res = await request('/api/venues/search-and-rank', {
+                method: 'POST',
+                body: {
+                    center: { lat: 10.7769, lng: 106.7009 },
+                    radiusMeters: 2000, // 2.0 km radius
+                    cuisines: [{ value: 'korean', weight: 5, memberName: 'Group' }],
+                    dishes: [{ value: 'bbq', weight: 5, memberName: 'Group' }],
+                    friends: [{ id: 1, name: 'Alice', lat: 10.7769, lng: 106.7009 }]
+                }
+            });
+
+            assert.strictEqual(res.status, 200);
+            assert.ok(res.data.shortlist.length > 0, 'Shortlist must contain eligible venues');
+
+            // Find farther BBQ venue (e.g. Meat & Meet at ~1.18km or GoGi House at ~1.38km)
+            const bbqVenue = res.data.shortlist.find(v => (v.name + ' ' + (v.tags || []).join(' ')).toLowerCase().includes('bbq'));
+            assert.ok(bbqVenue, 'Korean BBQ venue must be in shortlist');
+
+            // Verify top venue in shortlist is a strong preference match
+            const topVenue = res.data.shortlist[0];
+            assert.ok(
+                topVenue.name.toLowerCase().includes('bbq') || topVenue.category.toLowerCase().includes('bbq') || topVenue.tags.some(t => t.toLowerCase().includes('bbq')),
+                'Top venue must be the strong preference match (BBQ)'
+            );
+
+            // If a non-matching closer venue is in shortlist (e.g. bakery/cafe at 0.3-0.8km), BBQ must outrank it
+            const closerNonBbq = res.data.shortlist.find(v => v.distFromCenterKm < bbqVenue.distFromCenterKm && !v.name.toLowerCase().includes('bbq'));
+            if (closerNonBbq) {
+                const bbqIndex = res.data.shortlist.findIndex(v => v.id === bbqVenue.id);
+                const closerIndex = res.data.shortlist.findIndex(v => v.id === closerNonBbq.id);
+                assert.ok(bbqIndex < closerIndex, `Farther BBQ venue (${bbqVenue.distFromCenterKm}km) must outrank closer non-matching venue (${closerNonBbq.distFromCenterKm}km)`);
+                assert.ok(bbqVenue.groupScore > closerNonBbq.groupScore, 'Farther BBQ venue must have higher groupScore than closer non-matching venue');
+            }
+
+            // Verify all venues in strict shortlist are within radius (<= 2.0 km)
+            for (const v of res.data.shortlist) {
+                assert.ok(v.distFromCenterKm <= 2.0, `Venue ${v.name} (${v.distFromCenterKm}km) must be within 2.0 km radius`);
+            }
+
+            // Verify out-of-radius venues are excluded from shortlist and present in nearbyAlternatives
+            assert.ok(res.data.nearbyAlternatives.length > 0, 'nearbyAlternatives must contain out-of-radius venues');
+            for (const alt of res.data.nearbyAlternatives) {
+                assert.ok(
+                    alt.violations && alt.violations.some(viol => viol.includes('bán kính') || viol.includes('Bán kính') || viol.includes('km')),
+                    `Alternative ${alt.name} must have radius violation`
+                );
+            }
+        });
+
     } finally {
         if (server) {
             server.close();
