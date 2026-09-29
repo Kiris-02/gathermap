@@ -39,9 +39,14 @@ const API_PROVIDERS = {
     GOOGLE_GEOCODE_URL: 'https://maps.googleapis.com/maps/api/geocode/json'
 };
 
+const CLIENT_CONFIG = {
+    DEFAULT_TIMEOUT_MS: 15000
+};
+
 module.exports = {
     SCORING_WEIGHTS,
     TRAVEL_PARAMS,
     GEOMETRIC_PARAMS,
-    API_PROVIDERS
+    API_PROVIDERS,
+    CLIENT_CONFIG
 };
