@@ -84,14 +84,53 @@ def log(msg: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Single-Instance Lock Management (Atomic O_CREAT | O_EXCL & Strict Ownership)
+# Single-Instance Lock Management (Atomic O_CREAT | O_EXCL, Serialized Reclaim & Strict Ownership)
 # ---------------------------------------------------------------------------
+
+def _acquire_os_lock(fd: int) -> bool:
+    """Acquire non-blocking exclusive lock on file descriptor across platforms."""
+    if sys.platform == "win32":
+        import msvcrt
+        try:
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            return True
+        except OSError:
+            return False
+    else:
+        import fcntl
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except OSError:
+            return False
+
+
+def _release_os_lock(fd: int) -> bool:
+    """Release exclusive lock on file descriptor across platforms."""
+    if sys.platform == "win32":
+        import msvcrt
+        try:
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+            return True
+        except OSError:
+            return False
+    else:
+        import fcntl
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            return True
+        except OSError:
+            return False
+
 
 def acquire_lock(lock_path: Path | None = None) -> bool:
     """Acquire single-instance lock file atomically via kernel O_CREAT | O_EXCL.
 
     Guarantees that a partial, unreadable, or malformed lock is never removed by a contender
     without safely establishing that its owner process is dead.
+    Guarantees that stale-lock recovery is serialized via OS-level kernel locking and atomic
+    os.replace, preventing TOCTOU races and ensuring losing reclaimers cannot delete a winner's
+    newly established lock.
     """
     target_lock = lock_path or LOCK_FILE
     target_lock.parent.mkdir(parents=True, exist_ok=True)
@@ -145,30 +184,65 @@ def acquire_lock(lock_path: Path | None = None) -> bool:
         log(f"[LOCK] Active bridge instance already running with PID {existing_pid}.")
         return False
 
-    # Owner is safely verified to be dead
-    log(f"[LOCK] Stale lock file verified for dead PID {existing_pid}. Attempting safe takeover.")
+    # Owner is safely verified to be dead.
+    # To prevent TOCTOU races between multiple competing reclaimers, stale-lock
+    # reclamation is strictly serialized via an OS-level kernel locked mutex.
+    log(f"[LOCK] Stale lock file verified for dead PID {existing_pid}. Attempting safe serialized takeover.")
+    reclaim_lock_path = target_lock.with_name(f"{target_lock.name}.reclaim")
     try:
-        # Only unlink if the file still contains the dead PID we verified
-        current_data = json.loads(target_lock.read_text(encoding="utf-8"))
-        if current_data.get("pid") == existing_pid:
-            target_lock.unlink(missing_ok=True)
-    except Exception:
+        reclaim_fd = os.open(str(reclaim_lock_path), os.O_CREAT | os.O_RDWR)
+    except Exception as exc:
+        log(f"[LOCK] Failed to open reclaim mutex ({exc}). Refusing to delete lock.")
         return False
 
-    # Attempt 2: Atomic creation after removing verified dead lock
+    if not _acquire_os_lock(reclaim_fd):
+        # Another process holds the reclaim mutex; this process lost the race.
+        # Fail closed immediately without touching or unlinking target_lock!
+        os.close(reclaim_fd)
+        log("[LOCK] Lost race: another process is actively reclaiming the stale lock.")
+        return False
+
+    temp_lock: Path | None = None
+    acquired = False
     try:
-        fd = os.open(str(target_lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        # Inside the serialized reclaim critical section:
+        # Re-verify that target_lock still exists and STILL belongs to the verified dead PID.
+        try:
+            cur_content = target_lock.read_text(encoding="utf-8").strip()
+            cur_data = json.loads(cur_content)
+            if not isinstance(cur_data, dict) or cur_data.get("pid") != existing_pid:
+                log(f"[LOCK] Lock file state changed before reclaim mutex was acquired (now PID {cur_data.get('pid')}). Aborting reclaim.")
+                return False
+        except Exception as exc:
+            log(f"[LOCK] Unable to re-verify lock file under reclaim mutex ({exc}). Aborting reclaim.")
+            return False
+
+        # Atomically replace target_lock using a uniquely named temporary file.
+        # atomic os.replace guarantees no intermediate unlinked gap, and prevents
+        # losing contenders from ever unlinking the winner's new lock.
+        temp_lock = target_lock.with_name(f"{target_lock.name}.tmp.{my_pid}")
         payload = json.dumps({
             "pid": my_pid,
             "acquired_at": datetime.now(timezone.utc).isoformat(),
-        }, indent=2).encode("utf-8")
-        os.write(fd, payload)
-        os.close(fd)
+        }, indent=2)
+        temp_lock.write_text(payload, encoding="utf-8")
+        os.replace(temp_lock, target_lock)
         atexit.register(release_lock, target_lock)
-        return True
-    except (FileExistsError, OSError):
-        log("[LOCK] Lost race during stale lock acquisition.")
-        return False
+        log(f"[LOCK] Stale lock for dead PID {existing_pid} cleanly reclaimed by PID {my_pid}.")
+        acquired = True
+    except Exception as exc:
+        log(f"[LOCK] Error during atomic stale lock replacement: {exc}")
+        acquired = False
+    finally:
+        if temp_lock and temp_lock.exists():
+            try:
+                temp_lock.unlink(missing_ok=True)
+            except Exception:
+                pass
+        _release_os_lock(reclaim_fd)
+        os.close(reclaim_fd)
+
+    return acquired
 
 
 def release_lock(lock_path: Path | None = None) -> bool:

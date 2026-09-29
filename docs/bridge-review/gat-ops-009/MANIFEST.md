@@ -1,7 +1,7 @@
-# GAT-OPS-009 Bridge Hardening Manifest & Test Audit (Revision 2)
+# GAT-OPS-009 Bridge Hardening Manifest & Test Audit (Revision 3)
 
 - **task_id**: `GAT-OPS-009`
-- **created_at**: `2026-09-29T02:00:00Z` (`2026-09-29T09:00:00+07:00`)
+- **created_at**: `2026-09-29T02:30:00Z` (`2026-09-29T09:30:00+07:00`)
 - **operator**: Andy (`ad48730f-1b19-4347-a976-d3fe45d0c4e3`)
 - **branch**: `fix/gat-ops-009-bridge-hardening`
 - **tracking_issue**: [#30](https://github.com/Kiris-02/gathermap/issues/30)
@@ -17,9 +17,9 @@ All files in this review directory adhere to strict Unix line endings (LF, `\n`)
 
 | File | SHA-256 Checksum | Bytes | Lines | Line Endings | Description |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| [`bridge.py`](bridge.py) | `b8d7c602521d86c0ed910c34bd4b742f74f13c047b8c6a4f60c2b019c983115c` | 33,968 | 812 | LF | Hardened local daemon with fail-closed idle, atomic lock, safe contender behavior, strict 40-hex revision binding, fail-closed journaling, explicit delivery status, and structured task validation |
+| [`bridge.py`](bridge.py) | `90e183d066606111a93e8470df6b8bc56c56748bf02ce9b0a13c2f38a169f9c1` | 36,988 | 886 | LF | Hardened local daemon with fail-closed idle, atomic lock, serialized OS-locked stale recovery mutex, atomic replacement, strict 40-hex revision binding, fail-closed journaling, explicit delivery status, and structured task validation |
 | [`sidecar.json`](sidecar.json) | `5f356c5e56a4be13b4d96046765b9a90bd6d03727075dc9c02ba8109f91252e1` | 200 | 6 | LF | Antigravity 2.0 sidecar registration specification (`restart_policy: always`) |
-| [`test_bridge.py`](test_bridge.py) | `bf2a0d5d1ad67b8c0f1fc75ccce25b8319058dccede6c851d6afd104088217ce` | 24,829 | 514 | LF | 21-test automated regression suite covering all Grum review findings, contender safety, and platform safety guarantees |
+| [`test_bridge.py`](test_bridge.py) | `7aebb91a170eca807776177f588b142a8e1d25019e4aeda5808225978ea2dd62` | 28,473 | 591 | LF | 22-test automated regression suite covering all Grum review findings, synchronized stale reclaim race, contender safety, and platform safety guarantees |
 
 ---
 
@@ -41,17 +41,20 @@ Every defect identified in Grum's reviews has been addressed at the root archite
   - `test_idle_check_fails_closed_when_undelivered_queue_has_messages`: **PASS** (asserts pending messages hold dispatch).
   - `test_idle_check_succeeds_only_when_done_and_no_undelivered_messages`: **PASS** (verifies normal idle detection).
 
-### Finding 2: Non-Atomic Lock, Partial Unlinking & Concurrent Races
-- **Defect**: Initial atomic creation wrote an empty file before writing JSON. A contender saw an empty/unreadable file, caught a JSON parse error, treated it as a stale lock, unlinked it, and acquired a second lock. `release_lock` also unlinked unreadable files without proving PID ownership.
+### Finding 2: Stale-Lock Recovery TOCTOU Race & Unlink Safety
+- **Defect**: When competing processes encountered a stale lock (verified dead PID), checking PID and calling `unlink` by pathname was not atomic. Multiple reclaimers could read the dead PID, one could unlink and create a new lock, and a delayed reclaimer could unlink the newly acquired live lock.
 - **Fix**:
-  - Atomic creation writes the payload immediately (`os.write(fd, payload)` before `os.close(fd)`).
-  - Contenders reading a lock file retry up to 5 times (100ms) to allow in-flight writes to settle.
-  - **Crucial Invariant**: If a lock file is partial, empty, or unreadable, a contender **NEVER** removes it. It logs that owner death cannot be verified and fails closed (`return False`).
-  - Stale lock removal occurs **only** when JSON parses successfully, contains a valid PID, and `is_process_running(pid)` explicitly confirms the owner is dead.
-  - `release_lock` requires JSON to parse and strictly match `data.get("pid") == os.getpid()`; foreign or unreadable locks are never unlinked.
+  - Re-architected stale-lock reclamation to be strictly serialized via an OS-level kernel locked mutex (`target_lock.name.reclaim`) using non-blocking OS locks (`msvcrt.locking` on Windows, `fcntl.flock` on Unix).
+  - Competing reclaimers failing to acquire the reclaim mutex fail closed immediately and **never** touch or unlink `target_lock`.
+  - Inside the serialized mutex, the winning reclaimer re-verifies that `target_lock` still contains the verified dead PID before taking action.
+  - Replaced pathname unlinking with atomic file replacement (`os.replace` from a temporary file). This eliminates any intermediate unlinked gap and prevents losing contenders from deleting a winner's new lock.
+  - Crucial Contender Safety Invariant preserved: If a lock file is unreadable, empty, or malformed, contenders fail closed and **never** unlink it.
+  - Stale lock removal occurs **only** when JSON parses successfully, contains a valid integer PID, and `is_process_running(pid)` explicitly confirms the owner is dead.
+  - `release_lock` strictly requires JSON to parse and match `data.get("pid") == os.getpid()`; foreign or unreadable locks are never unlinked.
 - **Test Coverage**:
   - `test_atomic_lock_single_process_and_clean_release`: **PASS** (basic acquisition and release).
-  - `test_atomic_lock_concurrent_multiprocess_race`: **PASS** (spawns 6 real OS processes racing for `race.lock`; asserts exactly 1 process acquires the lock, 5 fail, and winner cleanly releases).
+  - `test_atomic_lock_concurrent_multiprocess_race`: **PASS** (spawns 6 real OS processes racing for `race.lock` from clean state; asserts exactly 1 process acquires the lock, 5 fail, and winner cleanly releases).
+  - `test_atomic_lock_concurrent_multiprocess_stale_reclaim_race`: **PASS** (pre-seeds valid lock with dead PID 999999, synchronizes 6 competing reclaimer processes with a start barrier; asserts exactly 1 reclaimer wins, 5 fail closed, winner maintains continuous uncorrupted ownership, losers cannot unlink the new lock, and winner cleanly releases).
   - `test_atomic_lock_rejects_unreadable_or_partial_lock_without_deleting`: **PASS** (asserts contender refuses to delete unreadable lock and fails closed).
   - `test_release_lock_refuses_to_unlink_unreadable_or_foreign_lock`: **PASS** (asserts release refuses to delete unproven locks).
   - `test_atomic_lock_recovers_from_dead_pid`: **PASS** (verified dead PID is safely taken over).
@@ -102,6 +105,7 @@ Executed locally via `python -m unittest -v docs/bridge-review/gat-ops-009/test_
 
 ```text
 test_atomic_lock_concurrent_multiprocess_race (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_atomic_lock_concurrent_multiprocess_race) ... ok
+test_atomic_lock_concurrent_multiprocess_stale_reclaim_race (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_atomic_lock_concurrent_multiprocess_stale_reclaim_race) ... ok
 test_atomic_lock_recovers_from_dead_pid (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_atomic_lock_recovers_from_dead_pid) ... ok
 test_atomic_lock_rejects_unreadable_or_partial_lock_without_deleting (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_atomic_lock_rejects_unreadable_or_partial_lock_without_deleting) ... ok
 test_atomic_lock_single_process_and_clean_release (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_atomic_lock_single_process_and_clean_release) ... ok
@@ -124,7 +128,7 @@ test_revision_binding_rejects_stale_reviewed_head_mismatch (docs.bridge-review.g
 test_save_state_failure_aborts_dispatch_before_send (docs.bridge-review.gat-ops-009.test_bridge.TestBridgeHardening.test_save_state_failure_aborts_dispatch_before_send) ... ok
 
 ----------------------------------------------------------------------
-Ran 21 tests in 1.060s
+Ran 22 tests in 1.396s
 
 OK
 ```

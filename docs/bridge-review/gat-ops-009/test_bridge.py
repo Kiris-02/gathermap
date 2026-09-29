@@ -49,6 +49,46 @@ def _multiprocess_lock_worker(lock_path_str: str) -> int:
     return 0
 
 
+def _multiprocess_stale_reclaim_worker(args: tuple[str, str]) -> int:
+    """Module-level worker for synchronized multi-process stale-lock recovery race test.
+
+    Waits for sync_file start barrier, then attempts acquire_lock.
+    If acquired, holds the lock briefly while other competing processes attempt reclaim.
+    Verifies continuous uninterrupted ownership before releasing.
+    Returns:
+       1 if lock acquired and verified continuously owned
+      -1 if lock acquired but lost/corrupted during hold
+       0 if lock acquisition failed cleanly (lost race)
+    """
+    lock_path_str, sync_file_str = args
+    lock_path = Path(lock_path_str)
+    sync_file = Path(sync_file_str)
+
+    # Wait for synchronization barrier
+    start_wait = time.time()
+    while not sync_file.exists():
+        time.sleep(0.005)
+        if time.time() - start_wait > 5.0:
+            break
+
+    acquired = bridge.acquire_lock(lock_path)
+    if acquired:
+        # Hold lock briefly to test whether losing contenders delete/overwrite it
+        time.sleep(0.2)
+        still_owned = False
+        try:
+            content = json.loads(lock_path.read_text(encoding="utf-8"))
+            if content.get("pid") == os.getpid():
+                still_owned = True
+        except Exception:
+            pass
+
+        # Cleanly release as owner
+        bridge.release_lock(lock_path)
+        return 1 if still_owned else -1
+    return 0
+
+
 class TestBridgeHardening(unittest.TestCase):
 
     def setUp(self):
@@ -206,6 +246,43 @@ class TestBridgeHardening(unittest.TestCase):
             self.assertEqual(content["pid"], os.getpid())
 
         bridge.release_lock()
+
+    def test_atomic_lock_concurrent_multiprocess_stale_reclaim_race(self):
+        """Synchronized multi-process stale-lock reclamation race test.
+
+        Pre-seeds a valid lock file with a dead PID (e.g. 999999).
+        Synchronizes 6 competing processes to reclaim the stale lock at the exact same instant.
+        Asserts:
+          - Exactly 1 process successfully reclaims ownership.
+          - Exactly 5 processes fail closed and lose the race.
+          - 0 processes have their lock stolen or unlinked while holding it.
+          - Losing processes CANNOT unlink or overwrite the winner's new lock.
+          - Winner cleanly releases the lock upon completion.
+        """
+        stale_race_lock = self.test_dir / "stale_race.lock"
+        sync_file = self.test_dir / "reclaim_start.flag"
+        num_workers = 6
+
+        # Pre-seed valid lock with verified dead PID
+        dead_pid = 999999
+        stale_race_lock.write_text(json.dumps({
+            "pid": dead_pid,
+            "acquired_at": "2026-01-01T00:00:00Z"
+        }, indent=2), encoding="utf-8")
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
+            args = [(str(stale_race_lock), str(sync_file)) for _ in range(num_workers)]
+            futures = [executor.submit(_multiprocess_stale_reclaim_worker, a) for a in args]
+            # Brief pause to ensure all worker processes are spawned and waiting on sync_file
+            time.sleep(0.15)
+            # Release all workers simultaneously
+            sync_file.write_text("go", encoding="utf-8")
+            results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+        self.assertEqual(results.count(1), 1, f"Expected exactly 1 reclaimer to win; got {results.count(1)} out of {num_workers} (results={results})")
+        self.assertEqual(results.count(0), num_workers - 1, f"Expected {num_workers - 1} reclaimers to cleanly fail closed; got {results.count(0)} (results={results})")
+        self.assertEqual(results.count(-1), 0, "No winner should have its lock corrupted or stolen by losing contenders!")
+        self.assertFalse(stale_race_lock.exists(), "Winning process should have cleanly released the lock upon completion")
 
     # -----------------------------------------------------------------------
     # Requirement 3: Strict 40-Hex Revision Binding (reviewed_head == headRefOid)
